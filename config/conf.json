@@ -1,0 +1,22 @@
+{
+    "server" : {
+      "name" : "GoServer-QuickStart",
+      "version" : "1.0.1",
+      "port" : "3003",
+      "model" : "debug",
+      "author" : "Taota"
+    },
+    "redis" : {
+        "host": "localhost",
+        "port":"6379",
+        "DB": "0",
+        "password": ""
+    },
+    "mysql": {
+      "userid": "root",
+      "password": "root",
+      "port": "3306",
+      "host": "localhost",
+      "database": "hello-go-server"
+    }
+  }
