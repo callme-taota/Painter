@@ -1,17 +1,17 @@
 package cache
 
 import (
-	conf "backendQucikStart/config"
-	"backendQucikStart/tolog"
 	"fmt"
 	"github.com/go-redis/redis"
+	conf "painter-server-new/conf"
+	"painter-server-new/tolog"
 	"strconv"
 )
 
-// 'RedisClient' is a global variable representing the Redis client.
+// RedisClient is a global variable representing the Redis client.
 var RedisClient *redis.Client
 
-// 'InitCache' initializes the Redis cache connection.
+// InitCache initializes the Redis cache connection.
 func InitCache() error {
 	// Convert the cache DB string to an integer.
 	db, _ := strconv.Atoi(conf.CacheConf.DB)

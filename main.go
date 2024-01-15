@@ -1,15 +1,15 @@
 package main
 
 import (
-	"backendQucikStart/api"
-	"backendQucikStart/cache"
-	conf "backendQucikStart/config"
-	"backendQucikStart/database"
+	"painter-server-new/cache"
+	conf "painter-server-new/conf"
+	"painter-server-new/database"
+	"painter-server-new/server"
 )
 
 func main() {
 	conf.InitConf()
 	cache.InitCache()
 	database.InitDB()
-	api.InitServer()
+	server.InitServer()
 }

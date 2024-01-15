@@ -1,12 +1,10 @@
-package api
+package server
 
 import (
-	conf "backendQucikStart/config"
-	"backendQucikStart/tolog"
 	"fmt"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"time"
+	conf "painter-server-new/conf"
+	"painter-server-new/tolog"
 )
 
 // Server represents the main Gin engine.
@@ -16,19 +14,10 @@ var Server *gin.Engine
 func InitServer() error {
 	// Create a new default Gin server instance.
 	ginServer := gin.Default()
-	//gin.SetMode(gin.ReleaseMode)
+	SetGinMode()
 
 	// Configure CORS settings.
-	ginServer.Use(cors.New(cors.Config{ //conf
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "session"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour, //time
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowOriginFunc: func(origin string) bool { //allow
-			return true //all
-		},
-	}))
+	ginServer.Use(CorsMid)
 
 	// Set the global Server variable to the configured Gin server.
 	Server = ginServer

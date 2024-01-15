@@ -1,10 +1,10 @@
 package database
 
 import (
-	conf "backendQucikStart/config"
-	"backendQucikStart/tolog"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	conf "painter-server-new/conf"
+	"painter-server-new/tolog"
 	"strings"
 )
 
@@ -37,13 +37,4 @@ func InitDB() error {
 
 func GetDB() *gorm.DB {
 	return Dbengine
-}
-
-func Migrate() error {
-	err := MigrateUserTable()
-	if err != nil {
-		tolog.Log().Errorf("migrate user table error %e:", err).PrintAndWriteSafe()
-		return err
-	}
-	return nil
 }

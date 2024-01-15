@@ -1,4 +1,4 @@
-module backendQucikStart
+module painter-server-new
 
 go 1.20
 

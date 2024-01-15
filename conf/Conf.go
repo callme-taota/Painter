@@ -1,22 +1,22 @@
 package conf
 
 import (
-	"backendQucikStart/tolog"
-	"backendQucikStart/utils"
 	"fmt"
 	"os"
+	"painter-server-new/tolog"
+	"painter-server-new/utils"
 )
 
-// The 'server' struct defines the configuration options for the server.
+// The server struct defines the configuration options for the server.
 type server struct {
 	Port  string // Server port
 	Model string // Server model
 }
 
-// 'Server' is a global variable to store server configuration.
+// Server is a global variable to store server configuration.
 var Server server
 
-// The 'cacheConf' struct defines the configuration options for the cache.
+// The cacheConf struct defines the configuration options for the cache.
 type cacheConf struct {
 	Host     string // Cache host
 	Port     string // Cache port
@@ -24,7 +24,7 @@ type cacheConf struct {
 	DB       string // Cache database
 }
 
-// 'CacheConf' is a global variable to store cache configuration.
+// CacheConf is a global variable to store cache configuration.
 var CacheConf cacheConf
 
 type mysqlConf struct {
@@ -37,17 +37,17 @@ type mysqlConf struct {
 
 var MysqlConf mysqlConf
 
-// 'InitConf' initializes the configuration by reading from a JSON file.
+// InitConf initializes the configuration by reading from a JSON file.
 func InitConf() error {
 	// Read configuration from the JSON file.
-	confjson, err := utils.JSONReader("./conf/conf.json")
+	confJSON, err := utils.JSONReader("./conf/conf.json")
 	if err != nil {
 		tolog.Log().Error(fmt.Sprintf("jsonReader%e", err)).PrintAndWriteSafe()
 		return err
 	}
 
 	// Process server configuration.
-	serverMap := confjson["server"]
+	serverMap := confJSON["server"]
 	server := utils.JSONConvertToMapString(serverMap)
 	port := getEnv("SERVER_PORT", server["port"])
 	name, version, model := server["name"], server["version"], server["model"]
@@ -61,7 +61,7 @@ func InitConf() error {
 	tolog.Log().Infof("Running on model:%s", model).PrintAndWriteSafe()
 
 	// Process cache configuration.
-	cacheMap := confjson["redis"]
+	cacheMap := confJSON["redis"]
 	cache := utils.JSONConvertToMapString(cacheMap)
 	cacheHost := getEnv("REDIS_HOST", cache["host"])
 	cachePort := getEnv("REDIS_PORT", cache["port"])
@@ -70,7 +70,7 @@ func InitConf() error {
 	CacheConf.Host, CacheConf.Port, CacheConf.Password, CacheConf.DB = cacheHost, cachePort, cachePassword, cacheDB
 
 	//Mysql
-	mysqlMap := confjson["mysql"]
+	mysqlMap := confJSON["mysql"]
 	mysql := utils.JSONConvertToMapString(mysqlMap)
 	mysqlUser := getEnv("MYSQL_USER", mysql["user"])
 	mysqlPassword := getEnv("MYSQL_PASS", mysql["password"])
@@ -82,7 +82,7 @@ func InitConf() error {
 	return nil
 }
 
-// 'getEnv' retrieves the value of an environment variable, using a default value if it doesn't exist.
+// getEnv retrieves the value of an environment variable, using a default value if it doesn't exist.
 func getEnv(key, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value

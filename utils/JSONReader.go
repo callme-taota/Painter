@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"backendQucikStart/tolog"
 	"encoding/json"
 	"fmt"
 	"os"
+	"painter-server-new/tolog"
 	"path/filepath"
 )
 
