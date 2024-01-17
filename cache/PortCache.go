@@ -1,17 +1,20 @@
 package cache
 
-import "time"
+import (
+	"github.com/gin-gonic/gin"
+	"time"
+)
 
 type AutoCacheStatus struct {
 	Status uint
 }
 
 const (
-	KCacheStatusOn       = 1
-	KCacheStatusOutdated = 2
-	KCacheStatusOff      = 3
-	KCacheStatusUpdating = 4
-	KCacheStatusLocked   = 5
+	KCacheStatusOn = iota
+	KCacheStatusOutdated
+	KCacheStatusOff
+	KCacheStatusUpdating
+	KCacheStatusLocked
 )
 
 type Param struct {
@@ -20,7 +23,7 @@ type Param struct {
 }
 type Params []Param
 
-type AutoCacheContext struct {
+type Context struct {
 	Type       AutoCacheStatus
 	Request    string
 	SubRequest string
@@ -28,63 +31,34 @@ type AutoCacheContext struct {
 
 	LastUpdate time.Time
 	Duration   time.Time
-
-	Stamp string
 }
 
-func SetContextStamp() {
-
+func GetStatusName(t AutoCacheStatus) string {
+	switch t.Status {
+	case 0:
+		return "on"
+	case 1:
+		return "outdated"
+	case 2:
+		return "off"
+	case 3:
+		return "updating"
+	case 4:
+		return "locked"
+	}
+	return ""
 }
 
-func AutoCache(ctx AutoCacheContext) (any, error) {
+func (c *Context) StatusName() string {
+	return GetStatusName(c.Type)
+}
+
+func AutoCache(ctx Context) (any, error) {
 
 	return nil, nil
 }
 
-func InitContext() {
-
-}
-
-func InitContextPool() {
-
-}
-
-func SetContextDuration() {
-
-}
-
-func ReSetContextDuration() {
-
-}
-
-func FillContextRequest() {
-
-}
-
-func CompleteContextSubRequest() {
-
-}
-
-func DestroyContext() {
-
-}
-
-func SetContextStatus() {
-
-}
-
-func SetContextTime() {
-
-}
-
-func DoInitializeCache() {
-
-}
-
-func GetCache() {
-
-}
-
-func SetCache() {
+func SetContext(c *gin.Context) {
+	fullRequest := c.Request.URL.String()
 
 }
