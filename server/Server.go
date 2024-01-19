@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"painter-server-new/cache"
 	conf "painter-server-new/conf"
 	"painter-server-new/tolog"
 )
@@ -22,6 +23,7 @@ func InitServer() error {
 	// Set the global Server variable to the configured Gin server.
 	Server = ginServer
 	LinkAPI()
+	ginServer.GET("/test", TestHandler)
 
 	// Log server initialization information.
 	tolog.Log().Info("Gin Main Server Start").PrintAndWriteSafe()
@@ -41,4 +43,9 @@ func InitServer() error {
 func LinkAPI() {
 	// Link User and Message APIs to the main server.
 	LinkUser()
+}
+
+func TestHandler(c *gin.Context) {
+	cache.SetContext(c)
+	return
 }

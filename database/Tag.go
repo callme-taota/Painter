@@ -1,10 +1,8 @@
 package database
 
-import "painter-server-new/models"
-
-func CreateTag() {
-	tag := models.TagTable{}
-}
+//func CreateTag() {
+//	tag := models.TagTable{}
+//}
 
 func UpdateTagName() {
 
