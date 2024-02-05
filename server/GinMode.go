@@ -14,10 +14,8 @@ const (
 	TestMode = "test"
 )
 
-var serverMode = conf.Server.Model
-
 func SetGinMode() {
-	switch serverMode {
+	switch conf.Server.Model {
 	case DebugMode:
 		gin.SetMode(DebugMode)
 		return

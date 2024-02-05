@@ -5,22 +5,12 @@ import (
 	"gorm.io/gorm"
 	conf "painter-server-new/conf"
 	"painter-server-new/tolog"
-	"strings"
-)
-
-var (
-	user     = conf.MysqlConf.User
-	password = conf.MysqlConf.Password
-	port     = conf.MysqlConf.Port
-	database = conf.MysqlConf.Database
-	host     = conf.MysqlConf.Host
 )
 
 var Dbengine *gorm.DB
 
-var dataSourceName = strings.Join([]string{user + ":" + password + "@tcp(" + host + ":" + port + ")/" + database}, "")
-
 func InitDB() error {
+	dataSourceName := conf.MysqlConf.User + ":" + conf.MysqlConf.Password + "@tcp(" + conf.MysqlConf.Host + ":" + conf.MysqlConf.Port + ")/" + conf.MysqlConf.Database
 	db, err := gorm.Open(mysql.Open(dataSourceName), &gorm.Config{})
 	if err != nil {
 		tolog.Log().Errorf("Mysql init error %e", err)

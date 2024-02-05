@@ -3,8 +3,9 @@ package server
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"painter-server-new/cache"
+	"net/http"
 	conf "painter-server-new/conf"
+	"painter-server-new/models"
 	"painter-server-new/tolog"
 )
 
@@ -23,7 +24,7 @@ func InitServer() error {
 	// Set the global Server variable to the configured Gin server.
 	Server = ginServer
 	LinkAPI()
-	ginServer.GET("/test", TestHandler)
+	ginServer.POST("/test", TestHandler)
 
 	// Log server initialization information.
 	tolog.Log().Info("Gin Main Server Start").PrintAndWriteSafe()
@@ -46,6 +47,22 @@ func LinkAPI() {
 }
 
 func TestHandler(c *gin.Context) {
-	cache.SetContext(c)
+	//cache.SetContext(c)
+	var json TestJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	stringmap := []string{"Name", "Email"}
+	stringmap2 := []string{"Name", "axsa"}
+	flag1 := models.ShouldCheckJSON(json, stringmap)
+	flag2 := models.ShouldCheckJSON(json, stringmap2)
+	tolog.Log().Infoln("JSON checking flag1", flag1).PrintLog()
+	tolog.Log().Infoln("JSON checking flag2", flag2).PrintLog()
 	return
+}
+
+type TestJSON struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
