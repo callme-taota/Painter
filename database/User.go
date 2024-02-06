@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-func CreateUser(username, email, nickname string, phonenum int, header_field, password string) (int, error) {
+func CreateUser(username, email, nickname string, phoneNum int, headerField, password string) (int, error) {
 	user := models.UserTable{
 		UserName:    username,
 		Email:       email,
 		NickName:    nickname,
-		PhoneNum:    phonenum,
-		HeaderField: header_field,
+		PhoneNum:    phoneNum,
+		HeaderField: headerField,
 		LastLogin:   time.Now(),
 	}
 	err := Dbengine.Create(&user).Error

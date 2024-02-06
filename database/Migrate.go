@@ -56,11 +56,6 @@ func Migrate() error {
 		tolog.Log().Errorf("Migrate table article %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.ArticleCategoryTable{})
-	if err != nil {
-		tolog.Log().Errorf("Migrate table article_category %e:", err).PrintAndWriteSafe()
-		return err
-	}
 	err = Dbengine.AutoMigrate(&models.ArticleContentTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table article_content %e:", err).PrintAndWriteSafe()
@@ -71,7 +66,7 @@ func Migrate() error {
 		tolog.Log().Errorf("Migrate table article_like %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.ArticleTable{})
+	err = Dbengine.AutoMigrate(&models.ArticleTagTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table article_tag %e:", err).PrintAndWriteSafe()
 		return err

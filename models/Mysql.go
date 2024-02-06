@@ -107,29 +107,21 @@ func (CategoryTable) TableName() string {
 }
 
 type ArticleTable struct {
-	ArticleID int `gorm:"primaryKey;autoIncrement"`
-	Title     string
-	Author    int
-	Summary   string
-	ReadCount int
-	IsTop     bool
-	Status    int `gorm:"comment:0 草稿，1 发布，2 隐藏，3 限制，4 封禁'"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	ArticleID  int `gorm:"primaryKey;autoIncrement"`
+	Title      string
+	Author     int
+	Summary    string
+	ReadCount  int
+	IsTop      bool
+	Status     int `gorm:"comment:0 草稿，1 发布，2 隐藏，3 限制，4 封禁'"`
+	CategoryID int
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func (ArticleTable) TableName() string {
 	return "article"
-}
-
-type ArticleCategoryTable struct {
-	ArticleID  int `gorm:"uniqueIndex:art_ctg"`
-	CategoryID int `gorm:"uniqueIndex:art_ctg"`
-}
-
-func (ArticleCategoryTable) TableName() string {
-	return "article_category"
 }
 
 type ArticleContentTable struct {
