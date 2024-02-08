@@ -13,13 +13,13 @@ func InitDB() error {
 	dataSourceName := conf.MysqlConf.User + ":" + conf.MysqlConf.Password + "@tcp(" + conf.MysqlConf.Host + ":" + conf.MysqlConf.Port + ")/" + conf.MysqlConf.Database
 	db, err := gorm.Open(mysql.Open(dataSourceName), &gorm.Config{})
 	if err != nil {
-		tolog.Log().Errorf("Mysql init error %e", err)
+		tolog.Log().Errorf("Mysql init error %e", err).PrintAndWriteSafe()
 		return err
 	}
 	Dbengine = db
 	err = Migrate()
 	if err != nil {
-		tolog.Log().Errorf("migrate user table error %e:", err).PrintAndWriteSafe()
+		tolog.Log().Errorf("Migrate user table error %e:", err).PrintAndWriteSafe()
 		return err
 	}
 	return nil

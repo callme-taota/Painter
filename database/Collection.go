@@ -8,8 +8,8 @@ import (
 
 func CreateCollection(userId, articleId int) error {
 	collection := models.CollectionTable{
-		UserId:         userId,
-		ArticleId:      articleId,
+		UserID:         userId,
+		ArticleID:      articleId,
 		CollectionTime: int(time.Now().Unix()),
 	}
 

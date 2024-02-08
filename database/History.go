@@ -8,8 +8,8 @@ import (
 
 func CreateHistory(userID, articleID int) (int, error) {
 	history := models.HistoryTable{
-		UserId:      userID,
-		ArticleId:   articleID,
+		UserID:      userID,
+		ArticleID:   articleID,
 		HistoryTime: time.Now(),
 	}
 
@@ -18,7 +18,7 @@ func CreateHistory(userID, articleID int) (int, error) {
 		tolog.Log().Infof("Error while create history %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
 	}
-	return history.HistoryId, nil
+	return history.HistoryID, nil
 }
 
 func GetUserHistory(userID, limit, offset int) ([]models.HistoryTable, error) {
@@ -51,7 +51,7 @@ func UpdateHistoryTimeByUserIDAndArticleID(userID, articleID int) error {
 	if err != nil {
 		return err
 	}
-	id := history.HistoryId
+	id := history.HistoryID
 	err = UpdateHistoryTime(id)
 	if err != nil {
 		return err

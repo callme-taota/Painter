@@ -15,7 +15,7 @@ func CreateTag(name, description string) (int, error) {
 		tolog.Log().Infof("Error while create tag %e", err).PrintAndWriteSafe()
 		return -1, err
 	}
-	id := tag.TagId
+	id := tag.TagID
 	return id, nil
 }
 
@@ -64,7 +64,7 @@ func GetTagID(name string) (int, error) {
 		tolog.Log().Infof("Error while get tag id %e", result.Error)
 		return -1, result.Error
 	}
-	return tag.TagId, nil
+	return tag.TagID, nil
 }
 
 func GetTag(id int) (models.TagTable, error) {

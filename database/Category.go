@@ -15,7 +15,7 @@ func CreateCategory(name, description string) (int, error) {
 		tolog.Log().Infof("Error while create category %e", err).PrintAndWriteSafe()
 		return -1, err
 	}
-	id := category.CategoryId
+	id := category.CategoryID
 	return id, nil
 }
 
@@ -23,13 +23,13 @@ func UpdateCategoryName(id int, name string) error {
 	category := &models.CategoryTable{}
 	res := Dbengine.First(&category, id)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update category name %e", res.Error)
+		tolog.Log().Infof("Error while update category name %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	category.CategoryName = name
 	res = Dbengine.Save(&category)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update category name %e", res.Error)
+		tolog.Log().Infof("Error while update category name %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	return nil
@@ -39,13 +39,13 @@ func UpdateCategoryDesc(id int, description string) error {
 	category := &models.CategoryTable{}
 	res := Dbengine.First(&category, id)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update category description %e", res.Error)
+		tolog.Log().Infof("Error while update category description %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	category.Description = description
 	res = Dbengine.Save(&category)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update category description %e", res.Error)
+		tolog.Log().Infof("Error while update category description %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	return nil
@@ -64,7 +64,7 @@ func GetCategoryID(name string) (int, error) {
 		tolog.Log().Infof("Error while get category id %e", result.Error)
 		return -1, result.Error
 	}
-	return category.CategoryId, nil
+	return category.CategoryID, nil
 }
 
 func GetCategory(id int) (models.CategoryTable, error) {

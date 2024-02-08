@@ -33,7 +33,7 @@ func (UserPassTable) TableName() string {
 }
 
 type TagTable struct {
-	TagId       int    `gorm:"primaryKey;not null,"`
+	TagID       int    `gorm:"primaryKey;not null,"`
 	TagName     string `gorm:"type:varchar(255);unique"`
 	Description string
 }
@@ -43,9 +43,9 @@ func (TagTable) TableName() string {
 }
 
 type HistoryTable struct {
-	HistoryId   int `gorm:"primaryKey;autoIncrement"`
-	UserId      int `gorm:"index"`
-	ArticleId   int
+	HistoryID   int `gorm:"primaryKey;autoIncrement"`
+	UserID      int `gorm:"index"`
+	ArticleID   int
 	HistoryTime time.Time
 }
 
@@ -54,7 +54,7 @@ func (HistoryTable) TableName() string {
 }
 
 type FollowTable struct {
-	FollowId    int       `gorm:"primaryKey;autoIncrement"`
+	FollowID    int       `gorm:"primaryKey;autoIncrement"`
 	FollowerID  int       `gorm:"uniqueIndex:fl;not null"`
 	FollowingID int       `gorm:"uniqueIndex:fl;not null"`
 	FollowTime  time.Time `gorm:"autoCreateTime"`
@@ -65,10 +65,10 @@ func (FollowTable) TableName() string {
 }
 
 type CommentTable struct {
-	CommentId  int `gorm:"primaryKey;autoIncrement"`
+	CommentID  int `gorm:"primaryKey;autoIncrement"`
 	Content    string
-	UserId     int
-	ArticleId  int
+	UserID     int
+	ArticleID  int
 	CreateTime int `gorm:"autoUpdateTime"`
 }
 
@@ -77,8 +77,8 @@ func (CommentTable) TableName() string {
 }
 
 type CommentLikeTable struct {
-	CommentId int `gorm:"uniqueIndex:com_like"`
-	UserId    int `gorm:"uniqueIndex:com_like"`
+	CommentID int `gorm:"uniqueIndex:com_like"`
+	UserID    int `gorm:"uniqueIndex:com_like"`
 }
 
 func (CommentLikeTable) TableName() string {
@@ -86,9 +86,9 @@ func (CommentLikeTable) TableName() string {
 }
 
 type CollectionTable struct {
-	CollectionId   int `gorm:"primaryKey;autoIncrement"`
-	UserId         int `gorm:"uniqueIndex:collection_ua"`
-	ArticleId      int `gorm:"uniqueIndex:collection_ua"`
+	CollectionID   int `gorm:"primaryKey;autoIncrement"`
+	UserID         int `gorm:"uniqueIndex:collection_ua"`
+	ArticleID      int `gorm:"uniqueIndex:collection_ua"`
 	CollectionTime int `gorm:"autoUpdateTime"`
 }
 
@@ -97,7 +97,7 @@ func (CollectionTable) TableName() string {
 }
 
 type CategoryTable struct {
-	CategoryId   int    `gorm:"primaryKey;autoIncrement"`
+	CategoryID   int    `gorm:"primaryKey;autoIncrement"`
 	CategoryName string `gorm:"type:varchar(255)"`
 	Description  string
 }
@@ -135,7 +135,7 @@ func (ArticleContentTable) TableName() string {
 
 type ArticleLikeTable struct {
 	ArticleID int `gorm:"uniqueIndex:art_like"`
-	UserId    int `gorm:"uniqueIndex:art_like"`
+	UserID    int `gorm:"uniqueIndex:art_like"`
 	CreatedAt time.Time
 }
 
@@ -145,9 +145,26 @@ func (ArticleLikeTable) TableName() string {
 
 type ArticleTagTable struct {
 	ArticleID int `gorm:"uniqueIndex:art_tag"`
-	TagId     int `gorm:"uniqueIndex:art_tag"`
+	TagID     int `gorm:"uniqueIndex:art_tag"`
 }
 
 func (ArticleTagTable) TableName() string {
 	return "article_tag"
+}
+
+type FullArticle struct {
+	ArticleTable        ArticleTable
+	ArticleTagTable     ArticleTagTable
+	ArticleContentTable ArticleContentTable
+	LikesNumber         int
+	CollectionNumber    int
+	CommentNumber       int
+}
+
+type ArticleInfo struct {
+	ArticleTable     ArticleTable
+	ArticleTagTable  ArticleTagTable
+	LikesNumber      int
+	CollectionNumber int
+	CommentNumber    int
 }
