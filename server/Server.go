@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"painter-server-new/api"
 	conf "painter-server-new/conf"
 	"painter-server-new/models"
 	"painter-server-new/tolog"
@@ -11,6 +12,7 @@ import (
 
 // Server represents the main Gin engine.
 var Server *gin.Engine
+var LoginGroup *gin.RouterGroup
 
 // InitServer initializes the main Gin server with CORS configuration.
 func InitServer() error {
@@ -20,6 +22,10 @@ func InitServer() error {
 
 	// Configure CORS settings.
 	ginServer.Use(CorsMid)
+
+	loginGroup := ginServer.Group("")
+	loginGroup.Use(api.CheckLoginMid())
+	LoginGroup = loginGroup
 
 	// Set the global Server variable to the configured Gin server.
 	Server = ginServer
@@ -44,6 +50,12 @@ func InitServer() error {
 func LinkAPI() {
 	// Link User and Message APIs to the main server.
 	LinkUser()
+	LinkTag()
+	LinkHistory()
+	LinkFollow()
+	LinkComment()
+	LinkCollection()
+	LinkCategory()
 }
 
 func TestHandler(c *gin.Context) {

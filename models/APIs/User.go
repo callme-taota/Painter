@@ -1,4 +1,4 @@
-package models
+package APIs
 
 type UserSignUpJSON struct {
 	UserName    string `json:"username"`

@@ -39,11 +39,11 @@ func GetCollections(userId, limit, offset int) ([]models.CollectionTable, error)
 	return collections, nil
 }
 
-func GetCollectionsNumber(userId int) (int64, error) {
+func GetCollectionsNumber(userId int) (int, error) {
 	var count int64
 	result := Dbengine.Model(&models.CollectionTable{}).Where("user_id = ?", userId).Count(&count)
 	if result.Error != nil {
 		return 0, result.Error
 	}
-	return count, nil
+	return int(count), nil
 }

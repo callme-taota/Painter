@@ -81,7 +81,7 @@ func Rs(msg string, ok bool, data any) *ReturnDatas {
 	return &ReturnDatas{msg, ok, data}
 }
 
-func Rl(msg string, ok bool, data []interface{}) *ReturnDatal {
+func Rl(msg string, ok bool, data []any) *ReturnDatal {
 	return &ReturnDatal{msg, ok, data}
 }
 
@@ -109,4 +109,9 @@ func ShouldCheckJSON(obj interface{}, checking []string) bool {
 	}
 
 	return true
+}
+
+type OnlyPageOption struct {
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
 }

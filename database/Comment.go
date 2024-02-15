@@ -20,9 +20,17 @@ func CreateComment(articleID, userID int, content string) (int, error) {
 	return commentID, nil
 }
 
-func DeleteComment(commentID int) (bool, error) {
+func DeleteComment(userID, commentID int) (bool, error) {
 	var comment models.CommentTable
-	result := Dbengine.Delete(&comment, commentID)
+	result := Dbengine.First(&comment, commentID)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
+		return false, result.Error
+	}
+	if comment.UserID != userID {
+		return false, nil
+	}
+	result = Dbengine.Delete(&comment, commentID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error

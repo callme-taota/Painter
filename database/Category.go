@@ -1,11 +1,16 @@
 package database
 
 import (
+	"errors"
 	"painter-server-new/models"
 	"painter-server-new/tolog"
 )
 
 func CreateCategory(name, description string) (int, error) {
+	flag := CheckCategoryExist(name)
+	if flag == true {
+		return -1, errors.New("Category is already exist ")
+	}
 	category := models.CategoryTable{
 		CategoryName: name,
 		Description:  description,
@@ -35,6 +40,20 @@ func UpdateCategoryName(id int, name string) error {
 	return nil
 }
 
+func UpdateCategoryNameByName(oldName, newName string) error {
+	categoryID, err := GetCategoryID(oldName)
+	if err != nil {
+		tolog.Log().Infof("Error while UpdateCategoryNameByName %e", err).PrintAndWriteSafe()
+		return err
+	}
+	err = UpdateCategoryName(categoryID, newName)
+	if err != nil {
+		tolog.Log().Infof("Error while UpdateCategoryNameByName %e", err).PrintAndWriteSafe()
+		return err
+	}
+	return nil
+}
+
 func UpdateCategoryDesc(id int, description string) error {
 	category := &models.CategoryTable{}
 	res := Dbengine.First(&category, id)
@@ -47,6 +66,20 @@ func UpdateCategoryDesc(id int, description string) error {
 	if res.Error != nil {
 		tolog.Log().Infof("Error while update category description %e", res.Error).PrintAndWriteSafe()
 		return res.Error
+	}
+	return nil
+}
+
+func UpdateCategoryDescByName(name, desc string) error {
+	categoryID, err := GetCategoryID(name)
+	if err != nil {
+		tolog.Log().Infof("Error while UpdateCategoryDescByName %e", err).PrintAndWriteSafe()
+		return err
+	}
+	err = UpdateCategoryDesc(categoryID, desc)
+	if err != nil {
+		tolog.Log().Infof("Error while UpdateCategoryDescByName %e", err).PrintAndWriteSafe()
+		return err
 	}
 	return nil
 }

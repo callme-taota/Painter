@@ -186,7 +186,7 @@ func GetUserInfo(id string) (map[string]any, error) {
 	return userJson, nil
 }
 
-func GetUserInfoDetail(id string) (map[string]any, error) {
+func GetUserInfoDetail(id int) (map[string]any, error) {
 	user := &models.UserTable{}
 	res := Dbengine.First(&user, id)
 	if res.Error != nil {
@@ -212,8 +212,8 @@ func GetUserInfoDetail(id string) (map[string]any, error) {
 	res = Dbengine.Where("user_id", id).Find(&coll)
 	collectionNum := res.RowsAffected
 
-	//followingNum, _ := GetFollowingNum(id)
-	//followerNum, _ := GetFollowerNum(id)
+	followingNum, _ := GetFollowingNumber(id)
+	followerNum, _ := GetFollowerNumber(id)
 
 	var userJson map[string]interface{}
 	userJson["Email"] = user.Email
@@ -225,8 +225,8 @@ func GetUserInfoDetail(id string) (map[string]any, error) {
 	userJson["ArticleNum"] = articleNum
 	userJson["ArticleList"] = artList
 	userJson["CollectionNum"] = collectionNum
-	//userJson["FollowingNum"] = followingNum
-	//userJson["FollowerNum"] = followerNum
+	userJson["FollowingNum"] = followingNum
+	userJson["FollowerNum"] = followerNum
 
 	return userJson, nil
 }
