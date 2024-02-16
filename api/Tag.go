@@ -9,7 +9,7 @@ import (
 )
 
 func SuggestTags(c *gin.Context) {
-	var json APIs.SuggestionTagsJSON
+	var json models.OnlyPageOption
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -24,12 +24,17 @@ func SuggestTags(c *gin.Context) {
 }
 
 func TagsList(c *gin.Context) {
-	var json APIs.SuggestionTagsJSON
+	var json models.OnlyPageOption
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	limit, offset := json.Limit, json.OffSet
+	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	limit, offset := json.Limit, json.Offset
 	tags, err := database.GetTags(limit, offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -45,6 +50,11 @@ func NewTag(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Name", "Description"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	id, err := database.CreateTag(json.Name, json.Description)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -58,6 +68,11 @@ func UpdateTagName(c *gin.Context) {
 	var json APIs.UpdateTagNameJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"TagID", "Name"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	tag, err := database.GetTag(json.TagID)
@@ -78,6 +93,11 @@ func UpdateTagDesc(c *gin.Context) {
 	var json APIs.UpdateTagDescJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"TagID", "Description"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	tag, err := database.GetTag(json.TagID)

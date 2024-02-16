@@ -19,7 +19,7 @@ type LoginUsingEmailJson struct {
 }
 
 type LoginUsingPhoneJson struct {
-	Phone    string `json:"email"`
+	Phone    string `json:"phone"`
 	Password string `json:"password"`
 }
 

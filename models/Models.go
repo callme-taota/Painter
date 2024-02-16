@@ -9,13 +9,14 @@ const (
 	KReturnMsgSuccess = "success"
 	KReturnMsgError   = "error"
 
-	KErrorInvalid        = "post data invalid"
-	KErrorMissing        = "post data missing"
-	KErrorTypeError      = "post data type error"
-	KErrorNotFound       = "not found"
-	KErrorNoUser         = "user not found"
-	KErrorSessionInvalid = "user session invalid"
-	KErrorPassword       = "password error"
+	KErrorInvalid          = "post data invalid"
+	KErrorMissing          = "post data missing"
+	KErrorTypeError        = "post data type error"
+	KErrorPermissionDenied = "permission denied"
+	KErrorNotFound         = "not found"
+	KErrorNoUser           = "user not found"
+	KErrorSessionInvalid   = "user session invalid"
+	KErrorPassword         = "password error"
 )
 
 const (

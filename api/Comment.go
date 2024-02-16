@@ -14,6 +14,11 @@ func CreateComment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "Content"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -32,6 +37,11 @@ func DeleteComment(c *gin.Context) {
 	var json APIs.CommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"CommentID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	userID, flag := c.Get("userID")
@@ -54,6 +64,11 @@ func CreateCommentLike(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"CommentID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -72,6 +87,11 @@ func DeleteCommentLike(c *gin.Context) {
 	var json APIs.CommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"CommentID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	userID, flag := c.Get("userID")

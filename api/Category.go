@@ -14,6 +14,11 @@ func CreateCategory(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Name", "Description"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	categoryID, err := database.CreateCategory(json.Name, json.Description)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -27,6 +32,11 @@ func UpdateCategoryName(c *gin.Context) {
 	var json APIs.UpdateCategoryNameJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"OldName", "NewName"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	err := database.UpdateCategoryNameByName(json.OldName, json.NewName)
@@ -44,6 +54,11 @@ func UpdateCategoryDesc(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Name", "Description"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	err := database.UpdateCategoryDescByName(json.Name, json.Description)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -59,7 +74,12 @@ func GetCategories(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	categories, err := database.GetCategories(json.Limit, json.Offset)
+	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	Limit, Offset := json.Limit, json.Offset
+	if ok != true {
+		Limit, Offset = 20, 0
+	}
+	categories, err := database.GetCategories(Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

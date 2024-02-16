@@ -78,3 +78,29 @@ func LinkCategory() {
 	CategoryLoginGroup.POST("/update/desc", api.UpdateCategoryDesc)
 
 }
+
+func LinkArticle() {
+	ArticleGroup := Server.Group("/article")
+	ArticleLoginGroup := LoginGroup.Group("/article")
+
+	ArticleGroup.GET("/get/author", api.GetArticleByAuthor)
+	ArticleGroup.GET("/get/title", api.GetArticlesByTitle)
+	ArticleGroup.GET("/get/content", api.GetArticlesByContent)
+	ArticleGroup.GET("/get/category", api.GetArticlesByCategory)
+	ArticleGroup.GET("/get/tag", api.GetArticlesByTag)
+	ArticleGroup.GET("/get", api.GetFullArticle)
+
+	ArticleLoginGroup.POST("/create", api.CreateArticle)
+	ArticleLoginGroup.POST("/update/content", api.UpdateArticleContent)
+	ArticleLoginGroup.POST("/update/summary", api.UpdateArticleSummary)
+	ArticleLoginGroup.POST("/update/readcount", api.UpdateArticleReadCount)
+	ArticleLoginGroup.POST("/update/title", api.UpdateArticleTitle)
+	ArticleLoginGroup.POST("/update/status", api.UpdateArticleStatus)
+	ArticleLoginGroup.POST("/update/istop", api.UpdateArticleIsTop)
+	ArticleLoginGroup.POST("/delete", api.DeleteArticle)
+
+	ArticleLoginGroup.POST("/like/create", api.CreateArticleLike)
+	ArticleLoginGroup.POST("/like/delete", api.DeleteArticleLike)
+	ArticleLoginGroup.POST("/tag/create", api.CreateArticleTag)
+	ArticleLoginGroup.POST("/tag/delete", api.DeleteArticleTag)
+}

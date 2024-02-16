@@ -1,10 +1,5 @@
 package APIs
 
-type SuggestionTagsJSON struct {
-	Limit  int `json:"limit"`
-	OffSet int `json:"offset"`
-}
-
 type CreateTagJSON struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`

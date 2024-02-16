@@ -56,6 +56,7 @@ func LinkAPI() {
 	LinkComment()
 	LinkCollection()
 	LinkCategory()
+	LinkArticle()
 }
 
 func TestHandler(c *gin.Context) {

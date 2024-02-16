@@ -1,5 +1,5 @@
 package APIs
 
-type CreateFollowJSON struct {
+type FollowJSON struct {
 	FollowingID int `json:"followingID"`
 }

@@ -9,9 +9,14 @@ import (
 )
 
 func CreateFollow(c *gin.Context) {
-	var json APIs.CreateFollowJSON
+	var json APIs.FollowJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"FollowingID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	userID, flag := c.Get("userID")
@@ -29,9 +34,14 @@ func CreateFollow(c *gin.Context) {
 }
 
 func UnFollow(c *gin.Context) {
-	var json APIs.CreateFollowJSON
+	var json APIs.FollowJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"FollowingID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	userID, flag := c.Get("userID")
@@ -54,12 +64,17 @@ func GetFollowers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	Limit, Offset := json.Limit, json.Offset
+	if ok != true {
+		Limit, Offset = 20, 0
+	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	followers, err := database.GetFollowers(userID.(int), json.Limit, json.Offset)
+	followers, err := database.GetFollowers(userID.(int), Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -79,12 +94,17 @@ func GetFollowings(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	Limit, Offset := json.Limit, json.Offset
+	if ok != true {
+		Limit, Offset = 20, 0
+	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	followings, err := database.GetFollowings(userID.(int), json.Limit, json.Offset)
+	followings, err := database.GetFollowings(userID.(int), Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

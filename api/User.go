@@ -18,6 +18,11 @@ func CheckLogin(c *gin.Context) {
 		c.JSON(400, gin.H{"msg": "post data error", "ok": "false", "userid": ""})
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Session"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	session := json.Session
 	userid, err := cache.GetUserIDByUserSession(session)
 	if err != nil {
@@ -71,6 +76,11 @@ func UserSignUp(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"userid": ""}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"UserName", "Email", "NickName", "PhoneNum", "Password"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	id, err := database.CreateUser(json.UserName, json.Email, json.NickName, json.PhoneNum, json.HeaderField, json.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"userid": ""}))
@@ -87,6 +97,11 @@ func EmailLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Email", "Password"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	email, password := json.Email, json.Password
 	if !utils.CheckMissings(email, password) {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Session": ""}))
@@ -97,7 +112,7 @@ func EmailLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	ok, _ := database.CheckUserPassword(id, password)
+	ok, _ = database.CheckUserPassword(id, password)
 	if ok == false {
 		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
@@ -123,6 +138,11 @@ func PhoneLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Phone", "Password"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	phone, password := json.Phone, json.Password
 	if !utils.CheckMissings(phone, password) {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Session": ""}))
@@ -133,7 +153,7 @@ func PhoneLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	ok, _ := database.CheckUserPassword(id, password)
+	ok, _ = database.CheckUserPassword(id, password)
 	if ok == false {
 		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
@@ -159,6 +179,11 @@ func UserNameLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"UserName", "Password"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	username, password := json.UserName, json.Password
 	if !utils.CheckMissings(username, password) {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Session": ""}))
@@ -169,7 +194,7 @@ func UserNameLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	ok, _ := database.CheckUserPassword(id, password)
+	ok, _ = database.CheckUserPassword(id, password)
 	if ok == false {
 		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
@@ -193,6 +218,11 @@ func LogOut(c *gin.Context) {
 	headSession := c.Request.Header.Get("Session")
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"Session"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	session := json.Session
@@ -224,6 +254,11 @@ func UserNameUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok = models.ShouldCheckJSON(json, []string{"Name"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	err := database.UpdateUserName(userid.(int), json.Name)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -242,6 +277,11 @@ func UserEmailUpdate(c *gin.Context) {
 	var json APIs.UserEmailUpdateJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok = models.ShouldCheckJSON(json, []string{"Email"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	err := database.UpdateUserEmail(userid.(int), json.Email)
@@ -264,6 +304,11 @@ func UserNickNameUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok = models.ShouldCheckJSON(json, []string{"NickName"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	err := database.UpdateUserNickName(userid.(int), json.NickName)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -282,6 +327,11 @@ func UserPhoneUpdate(c *gin.Context) {
 	var json APIs.UserPhoneUpdateJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok = models.ShouldCheckJSON(json, []string{"PhoneNum"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	err := database.UpdateUserPhoneNum(userid.(int), json.PhoneNum)
@@ -304,6 +354,11 @@ func UserHeaderFieldUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok = models.ShouldCheckJSON(json, []string{"HeaderField"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	err := database.UpdateUserHeaderField(userid.(int), json.HeaderField)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -322,6 +377,11 @@ func UserProfileUpdate(c *gin.Context) {
 	var json APIs.UserProfileJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok = models.ShouldCheckJSON(json, []string{"Name", "Email", "NickName", "PhoneNum", "HeaderField"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	err := database.UpdateUserProfile(userid.(int), json.Name, json.Email, json.NickName, json.PhoneNum)

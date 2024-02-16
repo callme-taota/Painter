@@ -175,8 +175,8 @@ func UpdateArticleUpdateTime(articleID int) error {
 	return nil
 }
 
-func DeleteArticle(articleID int) error {
-	err := Dbengine.Where("article_id = ?", articleID).Delete(&models.ArticleTable{}).Error
+func DeleteArticle(articleID, author int) error {
+	err := Dbengine.Where("article_id = ? and author = ?", articleID, author).Delete(&models.ArticleTable{}).Error
 	if err != nil {
 		tolog.Log().Infof("Error while delete article %e", err).PrintAndWriteSafe()
 		return err
@@ -244,7 +244,7 @@ func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 	return articleIntList, nil
 }
 
-func GetArticleByTag(tagID, limit, offset int) ([]int, error) {
+func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTagTable
 	result := Dbengine.Where("tag_id = ?", tagID).Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
@@ -392,4 +392,14 @@ func DeleteArticleTag(articleID, tagID int) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func CheckArticleAuthor(articleID, author int) (bool, error) {
+	var article models.ArticleTable
+	result := Dbengine.Where("article_id = ? and author = ?", articleID, author).First(&article)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while CheckArticleAuthor %e", result.Error).PrintAndWriteSafe()
+		return false, result.Error
+	}
+	return result.RowsAffected > 0, nil
 }

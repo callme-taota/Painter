@@ -14,6 +14,11 @@ func CreateCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -32,6 +37,11 @@ func DeleteCollection(c *gin.Context) {
 	var json APIs.CollectionJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	userID, flag := c.Get("userID")
@@ -54,12 +64,17 @@ func GetCollections(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	Limit, Offset := json.Limit, json.Offset
+	if ok != true {
+		Limit, Offset = 20, 0
+	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	collections, err := database.GetCollections(userID.(int), json.Limit, json.Offset)
+	collections, err := database.GetCollections(userID.(int), Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
