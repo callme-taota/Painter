@@ -17,8 +17,8 @@ var LoginGroup *gin.RouterGroup
 // InitServer initializes the main Gin server with CORS configuration.
 func InitServer() error {
 	// Create a new default Gin server instance.
-	ginServer := gin.Default()
 	SetGinMode()
+	ginServer := gin.Default()
 
 	// Configure CORS settings.
 	ginServer.Use(CorsMid)

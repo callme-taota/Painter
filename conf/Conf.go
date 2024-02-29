@@ -50,7 +50,8 @@ func InitConf() error {
 	serverMap := confJSON["server"]
 	server := utils.JSONConvertToMapString(serverMap)
 	port := getEnv("SERVER_PORT", server["port"])
-	name, version, model := server["name"], server["version"], server["model"]
+	model := getEnv("SERVER_MODEL", server["model"])
+	name, version := server["name"], server["version"]
 	Server.Port, Server.Model = port, model
 
 	// Print server configuration information.

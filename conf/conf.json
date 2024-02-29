@@ -13,10 +13,10 @@
         "password": ""
     },
     "mysql": {
-      "userid": "root",
-      "password": "root",
+      "user": "root",
+      "password": "Mysqlroot",
       "port": "3306",
       "host": "localhost",
-      "database": "hello-go-server"
+      "database": "painter-blog-new"
     }
   }
