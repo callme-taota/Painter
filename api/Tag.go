@@ -36,11 +36,12 @@ func TagsList(c *gin.Context) {
 	}
 	limit, offset := json.Limit, json.Offset
 	tags, err := database.GetTags(limit, offset)
+	tagNumber := database.GetTagTotalNumber()
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, tags))
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Tags": tags, "TagNumber": tagNumber}))
 	return
 }
 

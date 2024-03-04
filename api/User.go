@@ -34,13 +34,13 @@ func CheckLogin(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"userid": userid}))
 	return
 }
 
 func CheckLoginMid() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := c.Request.Header.Get("Session")
+		session, _ := c.Cookie("session")
+		//session := c.Request.Header.Get("Session")
 		if session == "" {
 			c.JSON(http.StatusBadRequest, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{"userid": ""}))
 			c.Abort()
@@ -63,7 +63,7 @@ func CheckLoginMid() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"userid": userID}))
+		//c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"userid": userID}))
 		c.Set("userID", userID)
 		c.Next()
 	}
@@ -117,16 +117,17 @@ func EmailLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d %s", id, email))
+	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
 	if !utils.StringIsEmpty(session) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 		return
 	}
-	session, err = cache.AddUser(fmt.Sprintf("%d %s", id, email))
+	session, err = cache.AddUser(fmt.Sprintf("%d", id))
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
+	c.SetCookie("session", session, 3600*24*30, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 	return
 }
@@ -158,16 +159,17 @@ func PhoneLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d %s", id, phone))
+	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
 	if !utils.StringIsEmpty(session) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 		return
 	}
-	session, err = cache.AddUser(fmt.Sprintf("%d %s", id, phone))
+	session, err = cache.AddUser(fmt.Sprintf("%d", id))
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
+	c.SetCookie("session", session, 3600*24*30, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 	return
 }
@@ -199,23 +201,24 @@ func UserNameLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d %s", id, username))
+	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
 	if !utils.StringIsEmpty(session) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 		return
 	}
-	session, err = cache.AddUser(fmt.Sprintf("%d %s", id, username))
+	session, err = cache.AddUser(fmt.Sprintf("%d", id))
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
+	c.SetCookie("session", session, 3600*24*30, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 	return
 }
 
 func LogOut(c *gin.Context) {
 	var json APIs.LogOutJson
-	headSession := c.Request.Header.Get("Session")
+	headSession, _ := c.Cookie("session")
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -239,6 +242,7 @@ func LogOut(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorSessionInvalid, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	c.SetCookie("session", "", 1, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
 	return
 }
@@ -395,5 +399,35 @@ func UserProfileUpdate(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"name": json.Name, "email": json.Email, "nickname": json.NickName, "phonenum": json.PhoneNum, "headerField": json.HeaderField}))
+	return
+}
+
+func GetSelfData(c *gin.Context) {
+	userid, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	user, err := database.GetUserInfo(userid.(int))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, user))
+	return
+}
+
+func GetUserData(c *gin.Context) {
+	userid, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	user, err := database.GetUserInfoDetail(userid.(int))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, user))
 	return
 }

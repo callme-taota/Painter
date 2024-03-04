@@ -199,6 +199,16 @@ func GetArticlesByAuthor(userID, limit, offset int) ([]int, error) {
 	return articleIntList, nil
 }
 
+func GetArticleCountByAuthor(userID int) (int, error) {
+	var count int64
+	result := Dbengine.Model(&models.ArticleTable{}).Where("author = ?", userID).Count(&count)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetArticleCountByAuthor %e", result.Error).PrintAndWriteSafe()
+		return 0, result.Error
+	}
+	return int(count), nil
+}
+
 func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
 	result := Dbengine.Where("title like", "%"+title+"%").Limit(limit).Offset(offset).Find(&articles)
@@ -242,6 +252,41 @@ func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 		articleIntList = append(articleIntList, articleID)
 	}
 	return articleIntList, nil
+}
+
+func GetArticleCountByCategory(category int) (int, error) {
+	var count int64
+	result := Dbengine.Model(&models.ArticleTable{}).Where("category_id = ?", category).Count(&count)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetArticleCountByCategory %e", result.Error).PrintAndWriteSafe()
+		return -1, result.Error
+	}
+	return int(count), nil
+}
+
+func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
+	var collections []models.CollectionTable
+	result := Dbengine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&collections)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetArticlesByCollection %e", result.Error).PrintAndWriteSafe()
+		return nil, result.Error
+	}
+
+	var articleIDs []int
+	for _, collection := range collections {
+		articleIDs = append(articleIDs, collection.ArticleID)
+	}
+	return articleIDs, nil
+}
+
+func GetCollectionCountByUser(userID int) (int, error) {
+	var count int64
+	result := Dbengine.Model(&models.CollectionTable{}).Where("user_id = ?", userID).Count(&count)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetCollectionCountByUser %e", result.Error).PrintAndWriteSafe()
+		return -1, result.Error
+	}
+	return int(count), nil
 }
 
 func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
@@ -333,15 +378,20 @@ func GetArticleByIntList(list []int) ([]models.ArticleInfo, error) {
 	var articles []models.ArticleInfo
 	for _, articleID := range list {
 		var article models.ArticleTable
-		var articleTag models.ArticleTagTable
+		var articleTag []models.ArticleTagTable
 		var likesNumber, commentNumber, collectionNumber int64
 		result := Dbengine.First(&article, articleID)
 		if result.Error != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
-		result = Dbengine.First(&articleTag, articleID)
+		result = Dbengine.Where("article_id = ?", articleID).Find(&articleTag)
 		if result.Error != nil {
+			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
+			return nil, result.Error
+		}
+		tagList, err := GetTagListByArticleTagTable(articleTag)
+		if err != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
@@ -362,7 +412,7 @@ func GetArticleByIntList(list []int) ([]models.ArticleInfo, error) {
 		}
 		articleInfo := models.ArticleInfo{
 			ArticleTable:     article,
-			ArticleTagTable:  articleTag,
+			ArticleTagTable:  tagList,
 			LikesNumber:      int(likesNumber),
 			CollectionNumber: int(collectionNumber),
 			CommentNumber:    int(commentNumber),

@@ -8,117 +8,159 @@ import (
 	"painter-server-new/models/APIs"
 )
 
+// CreateArticle handles the creation of a new article.
 func CreateArticle(c *gin.Context) {
 	var json APIs.CreateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
+		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check for required fields
 	ok := models.ShouldCheckJSON(json, []string{"Title", "Content"})
 	if ok != true {
+		// Missing required fields
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Get userID from context
 	userID, flag := c.Get("userID")
 	if flag == false {
+		// Error getting userID
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Create article in database
 	id, err := database.CreateArticle(json.Title, userID.(int), json.Summary, json.CategoryID, json.Content, json.Tags)
 	if err != nil {
+		// Error creating article
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Return success response
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ID": id}))
 	return
 }
 
+// UpdateArticleContent updates the content of an existing article.
 func UpdateArticleContent(c *gin.Context) {
 	var json APIs.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
+		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check for required fields
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "Content"})
 	if ok != true {
+		// Missing required fields
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Get userID from context
 	userID, flag := c.Get("userID")
 	if flag == false {
+		// Error getting userID
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check if user is the author of the article
 	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
+		// Permission denied
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Update article content in database
 	err = database.UpdateArticleContent(json.ArticleID, json.Content)
 	if err != nil {
+		// Error updating article content
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Return success response
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
 	return
 }
 
+// UpdateArticleSummary updates the summary of an existing article.
 func UpdateArticleSummary(c *gin.Context) {
 	var json APIs.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
+		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check for required fields
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "Summary"})
 	if ok != true {
+		// Missing required fields
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Get userID from context
 	userID, flag := c.Get("userID")
 	if flag == false {
+		// Error getting userID
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check if user is the author of the article
 	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
+		// Permission denied
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Update article summary in database
 	err = database.UpdateArticleSummary(json.ArticleID, json.Summary)
 	if err != nil {
+		// Error updating article summary
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Return success response
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
 	return
 }
 
+// UpdateArticleReadCount updates the read count of an existing article.
 func UpdateArticleReadCount(c *gin.Context) {
 	var json APIs.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
+		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check for required fields
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "ReadCount"})
 	if ok != true {
+		// Missing required fields
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Get userID from context
 	userID, flag := c.Get("userID")
 	if flag == false {
+		// Error getting userID
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Check if user is the author of the article
 	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
+		// Permission denied
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Update article read count in database
 	err = database.UpdateArticleReadCount(json.ArticleID, json.ReadCount)
 	if err != nil {
+		// Error updating article read count
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	// Return success response
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
 	return
 }
@@ -258,12 +300,13 @@ func GetArticleByAuthor(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	count, err := database.GetArticleCountByAuthor(json.Author)
 	ArticleList, err := database.GetArticleByIntList(list)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, ArticleList))
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleCount": count, "ArticleList": ArticleList}))
 	return
 }
 
@@ -345,12 +388,51 @@ func GetArticlesByCategory(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	total, err := database.GetArticleCountByCategory(json.CategoryID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	ArticleList, err := database.GetArticleByIntList(list)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, ArticleList))
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleList": ArticleList, "ArticleCount": total}))
+	return
+}
+
+func GetArticlesByCollection(c *gin.Context) {
+	var json APIs.GetArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"UserID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	Limit, Offset := json.Limit, json.Offset
+	if Limit == 0 {
+		Limit = 20
+	}
+	list, err := database.GetArticlesByCollection(json.UserID, Limit, Offset)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	total, err := database.GetCollectionCountByUser(json.CategoryID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ArticleList, err := database.GetArticleByIntList(list)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleList": ArticleList, "ArticleCount": total}))
 	return
 }
 

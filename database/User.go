@@ -170,43 +170,26 @@ func ResetPassWord(id int, oldpassword, newpassword string) error {
 	return nil
 }
 
-func GetUserInfo(id string) (map[string]any, error) {
-	user := &models.UserTable{}
+func GetUserInfo(id int) (models.UserTable, error) {
+	user := models.UserTable{}
 	res := Dbengine.First(&user, id)
 	if res.Error != nil {
-		return nil, res.Error
+		return user, res.Error
 	}
-	var userJson map[string]interface{}
-	userJson["Email"] = user.Email
-	userJson["PhoneNum"] = user.PhoneNum
-	userJson["LastLogin"] = user.LastLogin
-	userJson["UserName"] = user.UserName
-	userJson["UserNickName"] = user.NickName
-	userJson["HeaderField"] = user.HeaderField
-	return userJson, nil
+	return user, nil
 }
 
-func GetUserInfoDetail(id int) (map[string]any, error) {
-	user := &models.UserTable{}
+func GetUserInfoDetail(id int) (models.FullUser, error) {
+	full := models.FullUser{}
+	user := models.UserTable{}
 	res := Dbengine.First(&user, id)
 	if res.Error != nil {
-		return nil, res.Error
+		return full, res.Error
 	}
 
 	var art []models.ArticleTable
 	res = Dbengine.Where("author = ?", id).Find(&art)
 	articleNum := res.RowsAffected
-	var artList []map[string]string
-	for _, artItem := range art {
-		var item map[string]string
-		title := artItem.Title
-		readCount := artItem.ReadCount
-		summary := artItem.Summary
-		item["Title"] = title
-		item["ReadCount"] = fmt.Sprintln(readCount)
-		item["Summary"] = summary
-		artList = append(artList, item)
-	}
 
 	coll := &models.CollectionTable{}
 	res = Dbengine.Where("user_id", id).Find(&coll)
@@ -215,18 +198,12 @@ func GetUserInfoDetail(id int) (map[string]any, error) {
 	followingNum, _ := GetFollowingNumber(id)
 	followerNum, _ := GetFollowerNumber(id)
 
-	var userJson map[string]interface{}
-	userJson["Email"] = user.Email
-	userJson["PhoneNum"] = user.PhoneNum
-	userJson["LastLogin"] = user.LastLogin
-	userJson["UserName"] = user.UserName
-	userJson["UserNickName"] = user.NickName
-	userJson["HeaderField"] = user.HeaderField
-	userJson["ArticleNum"] = articleNum
-	userJson["ArticleList"] = artList
-	userJson["CollectionNum"] = collectionNum
-	userJson["FollowingNum"] = followingNum
-	userJson["FollowerNum"] = followerNum
+	full.UserInfo = user
+	full.ArticleList = art
+	full.ArticleNumber = int(articleNum)
+	full.CollectionNumber = int(collectionNum)
+	full.FollowingNumber = followingNum
+	full.FollowerNumber = followerNum
 
-	return userJson, nil
+	return full, nil
 }

@@ -13,6 +13,8 @@ func LinkUser() {
 	userGroup.POST("/login/phone", api.PhoneLogin)
 	userGroup.POST("/login/uname", api.UserNameLogin)
 	userGroup.POST("/login/check", api.CheckLogin)
+	userLoginGroup.POST("/self", api.GetSelfData)
+	userLoginGroup.POST("/full", api.GetUserData)
 	userLoginGroup.POST("/logout", api.LogOut)
 	userLoginGroup.POST("/update/name", api.UserNameUpdate)
 	userLoginGroup.POST("/update/email", api.UserEmailUpdate)
@@ -71,7 +73,7 @@ func LinkCategory() {
 	CategoryGroup := Server.Group("/category")
 	CategoryLoginGroup := LoginGroup.Group("/category")
 
-	CategoryGroup.Group("/list", api.GetCategories)
+	CategoryGroup.GET("/list", api.GetCategories)
 
 	CategoryLoginGroup.POST("/create", api.CreateCategory)
 	CategoryLoginGroup.POST("/update/name", api.UpdateCategoryName)
@@ -86,6 +88,7 @@ func LinkArticle() {
 	ArticleGroup.GET("/get/author", api.GetArticleByAuthor)
 	ArticleGroup.GET("/get/title", api.GetArticlesByTitle)
 	ArticleGroup.GET("/get/content", api.GetArticlesByContent)
+	ArticleGroup.GET("/get/collection", api.GetArticlesByCollection)
 	ArticleGroup.GET("/get/category", api.GetArticlesByCategory)
 	ArticleGroup.GET("/get/tag", api.GetArticlesByTag)
 	ArticleGroup.GET("/get", api.GetFullArticle)

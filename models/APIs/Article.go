@@ -30,6 +30,7 @@ type GetArticleJSON struct {
 	Content    string `json:"content"`
 	CategoryID int    `json:"categoryID"`
 	TagID      int    `json:"tagID"`
+	UserID     int    `json:"userID"`
 }
 
 type ArticleTagJSON struct {

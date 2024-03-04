@@ -118,6 +118,12 @@ func GetCategories(limit, offset int) ([]models.CategoryTable, error) {
 	return category, nil
 }
 
+func GetCategoriesNumber() int {
+	var count int64
+	Dbengine.Model(&models.CategoryTable{}).Count(&count)
+	return int(count)
+}
+
 func UpdateArticleCategory(articleID, categoryID int) error {
 	var article models.ArticleTable
 	result := Dbengine.First(&article, articleID)

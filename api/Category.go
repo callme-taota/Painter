@@ -80,10 +80,11 @@ func GetCategories(c *gin.Context) {
 		Limit, Offset = 20, 0
 	}
 	categories, err := database.GetCategories(Limit, Offset)
+	categoriesNumber := database.GetCategoriesNumber()
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, categories))
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, models.RDC{"categoriesNumber": categoriesNumber, "categories": categories}))
 	return
 }

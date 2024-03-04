@@ -163,8 +163,17 @@ type FullArticle struct {
 
 type ArticleInfo struct {
 	ArticleTable     ArticleTable
-	ArticleTagTable  ArticleTagTable
+	ArticleTagTable  []TagTable
 	LikesNumber      int
 	CollectionNumber int
 	CommentNumber    int
+}
+
+type FullUser struct {
+	ArticleNumber    int
+	ArticleList      []ArticleTable
+	CollectionNumber int
+	FollowingNumber  int
+	FollowerNumber   int
+	UserInfo         UserTable
 }

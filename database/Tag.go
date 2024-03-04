@@ -84,3 +84,22 @@ func GetTags(limit, offset int) ([]models.TagTable, error) {
 	}
 	return tags, nil
 }
+
+func GetTagTotalNumber() int {
+	var count int64
+	Dbengine.Model(&models.TagTable{}).Count(&count)
+	return int(count)
+}
+
+func GetTagListByArticleTagTable(articleTagTable []models.ArticleTagTable) ([]models.TagTable, error) {
+	var tags []models.TagTable
+	for _, item := range articleTagTable {
+		tag, err := GetTag(item.TagID)
+		if err != nil {
+			tolog.Log().Infof("Error while GetTagListByArticleTagTable %e ", err).PrintAndWriteSafe()
+			return nil, err
+		}
+		tags = append(tags, tag)
+	}
+	return tags, nil
+}

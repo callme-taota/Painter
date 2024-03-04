@@ -48,6 +48,19 @@ func GetFollowings(userID, limit, offset int) ([]models.FollowTable, error) {
 	return followings, nil
 }
 
+func GetFollowingsUsers(followings []models.FollowTable) ([]models.UserTable, error) {
+	var users []models.UserTable
+	for _, following := range followings {
+		var user models.UserTable
+		result := Dbengine.Where("id = ?", following.FollowingID).First(&user)
+		if result.Error != nil {
+			return nil, result.Error
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}
+
 func GetFollowerNumber(userID int) (int, error) {
 	var count int64
 	result := Dbengine.Model(&models.FollowTable{}).Where("following_id = ?", userID).Count(&count)
