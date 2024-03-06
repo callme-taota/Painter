@@ -88,3 +88,23 @@ func GetCategories(c *gin.Context) {
 	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, models.RDC{"categoriesNumber": categoriesNumber, "categories": categories}))
 	return
 }
+
+func GetCategory(c *gin.Context) {
+	var json APIs.CategoryIDJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"CategoryID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	category, err := database.GetCategory(json.CategoryID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, category))
+	return
+}

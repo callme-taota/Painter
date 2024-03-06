@@ -154,7 +154,7 @@ func (ArticleTagTable) TableName() string {
 
 type FullArticle struct {
 	ArticleTable        ArticleTable
-	ArticleTagTable     ArticleTagTable
+	ArticleTagTable     []TagTable
 	ArticleContentTable ArticleContentTable
 	LikesNumber         int
 	CollectionNumber    int

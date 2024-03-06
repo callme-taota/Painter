@@ -9,3 +9,7 @@ type UpdateCategoryNameJSON struct {
 	OldName string `json:"oldName"`
 	NewName string `json:"newName"`
 }
+
+type CategoryIDJSON struct {
+	CategoryID int `json:"ID"`
+}

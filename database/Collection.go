@@ -47,3 +47,28 @@ func GetCollectionsNumber(userId int) (int, error) {
 	}
 	return int(count), nil
 }
+
+func CollectionArticle(articleID, userID int) error {
+	flag, _ := HasCollection(articleID, userID)
+	if flag {
+		err := DeleteCollection(userID, articleID)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err := CreateCollection(userID, articleID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func HasCollection(articleID, userID int) (bool, error) {
+	var existingCollection models.CollectionTable
+	res := Dbengine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingCollection)
+	if res.RowsAffected <= 0 {
+		return false, nil
+	}
+	return true, nil
+}

@@ -67,6 +67,7 @@ func LinkCollection() {
 	CollectionLoginGroup.POST("/create", api.CreateCollection)
 	CollectionLoginGroup.POST("/delete", api.DeleteCollection)
 	CollectionLoginGroup.POST("/list", api.GetCollections)
+	CollectionLoginGroup.POST("/check", api.CheckCollectionArticle)
 }
 
 func LinkCategory() {
@@ -74,6 +75,7 @@ func LinkCategory() {
 	CategoryLoginGroup := LoginGroup.Group("/category")
 
 	CategoryGroup.GET("/list", api.GetCategories)
+	CategoryGroup.GET("/get", api.GetCategory)
 
 	CategoryLoginGroup.POST("/create", api.CreateCategory)
 	CategoryLoginGroup.POST("/update/name", api.UpdateCategoryName)
@@ -104,6 +106,11 @@ func LinkArticle() {
 
 	ArticleLoginGroup.POST("/like/create", api.CreateArticleLike)
 	ArticleLoginGroup.POST("/like/delete", api.DeleteArticleLike)
+	ArticleLoginGroup.POST("/like", api.ArticleLike)
+	ArticleLoginGroup.POST("/like/check", api.CheckArticleLike)
+
+	ArticleLoginGroup.POST("/collection", api.CollectionArticle)
+
 	ArticleLoginGroup.POST("/tag/create", api.CreateArticleTag)
 	ArticleLoginGroup.POST("/tag/delete", api.DeleteArticleTag)
 }

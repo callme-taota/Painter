@@ -456,12 +456,17 @@ func GetArticlesByTag(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	count, err := database.GetArticlesCountByTag(json.TagID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	ArticleList, err := database.GetArticleByIntList(list)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, ArticleList))
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleList": ArticleList, "ArticleCount": count}))
 	return
 }
 
@@ -471,7 +476,7 @@ func GetFullArticle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	ok := models.ShouldCheckJSON(json, []string{"TagID"})
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
@@ -532,6 +537,56 @@ func DeleteArticleLike(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func ArticleLike(c *gin.Context) {
+	var json APIs.ArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err := database.ToggleArticleLike(json.ArticleID, userID.(int))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func CheckArticleLike(c *gin.Context) {
+	var json APIs.ArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"err": err}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	isliked, err := database.HasLikedArticle(json.ArticleID, userID.(int))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"IsLiked": isliked}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"IsLiked": isliked}))
 	return
 }
 

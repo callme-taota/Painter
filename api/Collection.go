@@ -58,6 +58,56 @@ func DeleteCollection(c *gin.Context) {
 	return
 }
 
+func CollectionArticle(c *gin.Context) {
+	var json APIs.CollectionJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err := database.CollectionArticle(json.ArticleID, userID.(int))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func CheckCollectionArticle(c *gin.Context) {
+	var json APIs.CollectionJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	isCollected, _ := database.HasCollection(json.ArticleID, userID.(int))
+	if isCollected {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"IsCollected": isCollected}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"IsCollected": isCollected}))
+	return
+}
+
 func GetCollections(c *gin.Context) {
 	var json models.OnlyPageOption
 	if err := c.ShouldBind(&json); err != nil {

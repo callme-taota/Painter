@@ -304,11 +304,21 @@ func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 	return articleIntList, nil
 }
 
+func GetArticlesCountByTag(tagID int) (int, error) {
+	var count int64
+	result := Dbengine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tagID).Count(&count)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while counting articles %e", result.Error).PrintAndWriteSafe()
+		return 0, result.Error
+	}
+	return int(count), nil
+}
+
 func GetFullArticle(articleID int) (models.FullArticle, error) {
 	var fullArticle models.FullArticle
 	var article models.ArticleTable
 	var articleContent models.ArticleContentTable
-	var articleTag models.ArticleTagTable
+	var articleTag []models.ArticleTagTable
 	var likesNumber, commentNumber, collectionNumber int64
 	result := Dbengine.First(&article, articleID)
 	if result.Error != nil {
@@ -320,9 +330,14 @@ func GetFullArticle(articleID int) (models.FullArticle, error) {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	result = Dbengine.First(&articleTag, articleID)
+	result = Dbengine.Find(&articleTag, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
+		return fullArticle, result.Error
+	}
+	tagList, err := GetTagListByArticleTagTable(articleTag)
+	if err != nil {
+		tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
 	result = Dbengine.Model(&models.ArticleLikeTable{}).Where("article_id = ?", articleID).Count(&likesNumber)
@@ -343,7 +358,7 @@ func GetFullArticle(articleID int) (models.FullArticle, error) {
 	fullArticle = models.FullArticle{
 		ArticleTable:        article,
 		ArticleContentTable: articleContent,
-		ArticleTagTable:     articleTag,
+		ArticleTagTable:     tagList,
 		LikesNumber:         int(likesNumber),
 		CommentNumber:       int(commentNumber),
 		CollectionNumber:    int(collectionNumber),
@@ -372,6 +387,35 @@ func DeleteArticleLike(articleID, userID int) error {
 		return err
 	}
 	return nil
+}
+
+func ToggleArticleLike(articleID, userID int) error {
+	var existingLike models.ArticleLikeTable
+	res := Dbengine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
+	if res.RowsAffected > 0 {
+		err := DeleteArticleLike(articleID, userID)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	err := CreateArticleLike(articleID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func HasLikedArticle(articleID, userID int) (bool, error) {
+	var existingLike models.ArticleLikeTable
+	res := Dbengine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
+	if res.Error != nil || res.RowsAffected <= 0 {
+		tolog.Log().Infof("Error while checking existing like %e", res.Error).PrintAndWriteSafe()
+		return false, res.Error
+	}
+	return true, nil
 }
 
 func GetArticleByIntList(list []int) ([]models.ArticleInfo, error) {
