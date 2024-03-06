@@ -50,7 +50,7 @@ export const GetArticleByTag = async (data: any): Promise<AxiosResponse> => {
 }
 
 export const GetArticle = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosPost({
+    const res = await AxiosGet({
         url:"/article/get",
         data: data
     });
@@ -124,6 +124,22 @@ export const ArticleLikeCreate = async (data: any): Promise<AxiosResponse> => {
 export const ArticleLikeDelete = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
         url:"/article/like/delete",
+        data: data
+    });
+    return res
+}
+
+export const ArticleLike = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosPost({
+        url:"/article/like",
+        data: data
+    });
+    return res
+}
+
+export const ArticleLikeCheck = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosPost({
+        url:"/article/like/check",
         data: data
     });
     return res

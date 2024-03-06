@@ -32,3 +32,11 @@ export const CategoryUpdateDesc = async (data: any): Promise<AxiosResponse> => {
     });
     return res
 }
+
+export const GetCategoryByID = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosGet({
+        url : "/category/get",
+        data: data
+    });
+    return res
+}

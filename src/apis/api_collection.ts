@@ -24,3 +24,19 @@ export const CollectionList = async (data: any): Promise<AxiosResponse> => {
     });
     return res
 }
+
+export const Collection = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosPost({
+        url:"/article/collection",
+        data: data
+    });
+    return res
+}
+
+export const CollectionCheck = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosPost({
+        url:"/collection/check",
+        data: data
+    });
+    return res
+}
