@@ -53,8 +53,11 @@ func LinkFollow() {
 }
 
 func LinkComment() {
+	CommentGroup := Server.Group("/comment")
 	CommentLoginGroup := LoginGroup.Group("/comment")
 
+	CommentGroup.GET("/list", api.GetCommentsByArticleID)
+	CommentLoginGroup.GET("/list/l", api.GetCommentsByArticleIDWithLiked)
 	CommentLoginGroup.POST("/create", api.CreateComment)
 	CommentLoginGroup.POST("/delete", api.DeleteComment)
 	CommentLoginGroup.POST("/like", api.CreateCommentLike)

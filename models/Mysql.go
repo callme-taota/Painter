@@ -177,3 +177,18 @@ type FullUser struct {
 	FollowerNumber   int
 	UserInfo         UserTable
 }
+
+type FullComment struct {
+	CommentTable
+	NickName    string
+	HeaderField string
+	LikeCount   int
+}
+
+type FullCommentWithLike struct {
+	CommentTable
+	NickName    string
+	HeaderField string
+	LikeCount   int
+	Liked       bool
+}

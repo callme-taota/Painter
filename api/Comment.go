@@ -8,6 +8,8 @@ import (
 	"painter-server-new/models/APIs"
 )
 
+const maxCommentLength = 100
+
 func CreateComment(c *gin.Context) {
 	var json APIs.CreateCommentJSON
 	if err := c.ShouldBind(&json); err != nil {
@@ -17,6 +19,10 @@ func CreateComment(c *gin.Context) {
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "Content"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	if len(json.Content) > maxCommentLength {
+		c.JSON(http.StatusOK, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	userID, flag := c.Get("userID")
@@ -75,7 +81,7 @@ func CreateCommentLike(c *gin.Context) {
 		return
 	}
 	flag, err := database.CreateCommentLike(json.CommentID, userID.(int))
-	if err != nil || flag == true {
+	if err != nil || flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
@@ -100,10 +106,63 @@ func DeleteCommentLike(c *gin.Context) {
 		return
 	}
 	flag, err := database.DeleteCommentLike(json.CommentID, userID.(int))
-	if err != nil || flag == true {
+	if err != nil || flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"UserID": userID, "CommentID": json.CommentID}))
+	return
+}
+
+func GetCommentsByArticleID(c *gin.Context) {
+	var json APIs.GetCommentJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	Limit, Offset := json.Limit, json.Offset
+	if Limit == 0 {
+		Limit = 20
+	}
+	list, err := database.GetCommentByArticleID(json.ArticleID, Limit, Offset)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Comments": list}))
+	return
+}
+
+func GetCommentsByArticleIDWithLiked(c *gin.Context) {
+	var json APIs.GetCommentJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	Limit, Offset := json.Limit, json.Offset
+	if Limit == 0 {
+		Limit = 20
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	list, err := database.GetCommentsWithLikeInfoByArticleID(json.ArticleID, Limit, Offset, userID.(int))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Comments": list}))
 	return
 }

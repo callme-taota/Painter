@@ -59,3 +59,45 @@ func DeleteCommentLike(commentID, userID int) (bool, error) {
 	}
 	return true, nil
 }
+
+func GetCommentByArticleID(articleID, limit, offset int) ([]models.FullComment, error) {
+	var comments []models.FullComment
+	res := Dbengine.Select("comment.*, user.nick_name, user.header_field, COUNT(comment_like.comment_id) AS like_count").
+		Joins("INNER JOIN user ON comment.user_id = user.id").
+		Joins("LEFT JOIN comment_like ON comment.comment_id = comment_like.comment_id").
+		Where("article_id = ?", articleID).
+		Group("comment.comment_id").
+		Limit(limit).
+		Offset(offset).
+		Find(&comments)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return comments, nil
+}
+
+func GetCommentLikeCount(commentID int) (int, error) {
+	var count int64
+	res := Dbengine.Model(&models.CommentLikeTable{}).Where("comment_id = ?", commentID).Count(&count)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return int(count), nil
+}
+
+func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([]models.FullCommentWithLike, error) {
+	var comments []models.FullCommentWithLike
+	res := Dbengine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, MAX(cl.user_id) = ? as liked",
+		userID).
+		Joins("inner join user on comment.user_id = user.id").
+		Joins("left join comment_like cl on comment.comment_id = cl.comment_id").
+		Where("article_id = ?", articleID).
+		Group("comment.comment_id").
+		Limit(limit).
+		Offset(offset).
+		Find(&comments)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return comments, nil
+}
