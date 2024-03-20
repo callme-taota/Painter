@@ -14,7 +14,7 @@ func LinkUser() {
 	userGroup.POST("/login/uname", api.UserNameLogin)
 	userGroup.POST("/login/check", api.CheckLogin)
 	userLoginGroup.POST("/self", api.GetSelfData)
-	userLoginGroup.POST("/full", api.GetUserData)
+	userLoginGroup.POST("/self/full", api.GetUserData)
 	userLoginGroup.POST("/logout", api.LogOut)
 	userLoginGroup.POST("/update/name", api.UserNameUpdate)
 	userLoginGroup.POST("/update/email", api.UserEmailUpdate)

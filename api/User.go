@@ -34,6 +34,7 @@ func CheckLogin(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"userid": userid}))
 	return
 }
 
