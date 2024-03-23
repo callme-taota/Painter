@@ -40,3 +40,11 @@ export const GetCategoryByID = async (data: any): Promise<AxiosResponse> => {
     });
     return res
 }
+
+export const GetCategoriesList = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosGet({
+        url : "/category/get/fulllist",
+        data: data
+    });
+    return res
+}

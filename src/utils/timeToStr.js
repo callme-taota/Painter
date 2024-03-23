@@ -12,3 +12,9 @@ export function numTimeToString(numTime) {
     let mimi = mi > 10 ? mi : "0" + mi
     return y + "-" + mm + "-" + dd + " " + hh + ":" + mimi
 }
+
+export function dateToString(d) {
+    let day = new Date(d)
+    let t = day.getTime() / 1000
+    return numTimeToString(t)
+}

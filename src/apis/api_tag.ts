@@ -17,6 +17,14 @@ export const TagList = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
+export const TagListFull = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosGet({
+        url:"/tag/list/full",
+        data: data
+    });
+    return res
+}
+
 export const CreateTag = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
         url:"/tag/create",

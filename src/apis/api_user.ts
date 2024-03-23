@@ -112,7 +112,7 @@ export const UserSelf = async (): Promise<AxiosResponse> => {
 
 export const UserFull = async (): Promise<AxiosResponse> => {
     const res = await AxiosPost({
-        url:"/user/full",
+        url:"/user/self/full",
     });
     return res
 }

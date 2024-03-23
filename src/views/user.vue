@@ -65,6 +65,10 @@ function logout() {
     Router.push("/home")
 }
 
+function goSet() {
+    Router.push("/admin")
+}
+
 </script>
 
 <template>
@@ -110,6 +114,10 @@ function logout() {
     </n-card>
     <n-button @click="logout">
         登出
+    </n-button>
+    &nbsp;
+    <n-button @click="goSet">
+        管理
     </n-button>
 </template>
 

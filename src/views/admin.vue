@@ -1,12 +1,15 @@
 <script setup lang="js">
-import { NH1, NTabs, NTabPane, NTable, NButton, NModal, NCard, NInput, NPagination } from "naive-ui";
+import { NH1, NTabs, NTabPane, NTable, NButton, NModal, NCard, NInput, NPagination, NSelect, NPopconfirm } from "naive-ui";
 import { ref, onMounted, computed } from 'vue';
-import { TagList, CreateTag, UpdateTagName, UpdateTagDesc } from "@/apis/api_tag";
-import { CategoryList, CategoryCreate, CategoryUpdateName, CategoryUpdateDesc } from "@/apis/api_category";
+import { TagList, CreateTag, UpdateTagName, UpdateTagDesc, TagListFull } from "@/apis/api_tag";
+import { CategoryList, CategoryCreate, CategoryUpdateName, CategoryUpdateDesc, GetCategoriesList } from "@/apis/api_category";
+import { GetSelfArticle, CreateArticle, GetArticle, ArticleDelete, ArticleUpdateTitle, ArticleUpdateContent, ArticleUpdateSummary } from "@/apis/api_article";
+import { dateToString } from '@/utils/timeToStr';
 
 onMounted(() => {
     getTags()
     getCates()
+    getArticle()
 })
 
 
@@ -41,6 +44,23 @@ async function submitModal() {
     modalVis.value = false
 }
 
+async function change(target, type) {
+    if (type == 1) {
+        inputValue.value = target.TagName
+    } else if (type == 2) {
+        inputValue.value = target.Description
+    } else if (type == 3) {
+
+    } else if (type == 4) {
+        inputValue.value = target.CategoryName
+    } else if (type == 5) {
+        inputValue.value = target.Description
+    }
+    inputType.value = type
+    inputTarget.value = target
+    modalVis.value = true
+}
+
 // tag pane
 const tagPaneLimit = ref(10);
 const tagPanePageNum = ref(1);
@@ -66,7 +86,6 @@ async function getTags() {
     let res = await TagList({ "Limit": limit, "Offset": offset });
     tagList.value = res.data.Tags
     tagPanePageListTotal.value = res.data.TagNumber
-    console.log(res)
 }
 
 //category pane
@@ -96,22 +115,108 @@ async function getCates() {
     catePanePageListTotal.value = res.data.categoriesNumber
 }
 
+//article pane
+const articlePaneLimit = ref(10);
+const articlePanePageNum = ref(1);
+const articlePanePageListTotal = ref(0);
+const articlePaneTotal = computed(() => {
+    return Math.floor(articlePanePageListTotal.value / articlePaneLimit.value) + 1
+});
+const articleList = ref([])
 
-async function change(target, type) {
+const articleModalVis = ref(false)
+const articleUpdateTitleModalVis = ref(false)
+const articleUpdateContentModalVis = ref(false)
+const articleTitle = ref("")
+const articleContent = ref("")
+const articleCategory = ref(null)
+const articleCategoryOptions = ref([])
+const articleTags = ref([])
+const articleTagOptions = ref([])
+const articleSummary = ref("")
+const articleChange = ref("")
+const articleChangeType = ref(1)
+const articleTarget = ref(null)
+
+async function getarticleWithSizeChange(size) {
+    articlePaneLimit.value = size
+    await getArticle()
+}
+
+async function getarticleWithNumChange(num) {
+    articlePanePageNum.value = num
+    await getArticle()
+}
+
+async function getArticle() {
+    let limit = articlePaneLimit.value;
+    let offset = (articlePanePageNum.value - 1) * limit
+    let res = await GetSelfArticle({ "Limit": limit, "Offset": offset });
+    articleList.value = res.data.ArticleList
+    articlePanePageListTotal.value = res.data.ArticleCount
+}
+
+const createArticle = () => {
+    articleModalVis.value = true
+}
+
+const getCategoryList = async () => {
+    let res = await GetCategoriesList()
+    console.log(res)
+    articleCategoryOptions.value = res.data.categories
+}
+
+const getTagList = async () => {
+    let res = await TagListFull()
+    console.log(res)
+    articleTagOptions.value = res.data.Tags
+}
+
+const articleSubmit = async () => {
+    let res = await CreateArticle({
+        Title: articleTitle.value,
+        Content: articleContent.value,
+        Summary: articleSummary.value,
+        CatrgoryID: articleCategory.value,
+        Tags: articleTags.value
+    })
+    articleModalVis.value = false
+}
+
+const UpdateArticle = async (target, type) => {
+    let ArticleID = target.ArticleTable.ArticleID
+    articleTarget.value = target
+    articleChangeType.value = type
     if (type == 1) {
-        inputValue.value = target.TagName
+        articleUpdateTitleModalVis.value = true
+        articleTitle.value = target.ArticleTable.Title
     } else if (type == 2) {
-        inputValue.value = target.Description
+        articleUpdateContentModalVis.value = true
+        let res = await GetArticle({ ArticleID })
+        articleChange.value = res.data.ArticleContentTable.Content
     } else if (type == 3) {
-
+        articleUpdateContentModalVis.value = true
+        articleChange.value = target.ArticleTable.Summary
     } else if (type == 4) {
-        inputValue.value = target.CategoryName
-    } else if (type == 5) {
-        inputValue.value = target.Description
+        let res = await ArticleDelete({ ArticleID })
     }
-    inputType.value = type
-    inputTarget.value = target
-    modalVis.value = true
+}
+
+const handleNegativeClick = () => { }
+
+const submitArticleModal = async () => {
+    let ArticleID = articleTarget.value.ArticleTable.ArticleID
+    let type = articleChangeType.value
+    if (type == 1) {
+        let res = await ArticleUpdateTitle({ ArticleID, Title: articleTitle.value })
+        articleUpdateTitleModalVis.value = false
+    } else if (type == 2) {
+        let res = await ArticleUpdateContent({ ArticleID, Content: articleChange.value })
+        articleUpdateContentModalVis.value = false
+    } else if (type == 3) {
+        let res = await ArticleUpdateSummary({ ArticleID, Summary: articleChange.value })
+        articleUpdateContentModalVis.value = false
+    }
 }
 
 </script>
@@ -176,6 +281,40 @@ async function change(target, type) {
                 show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getCateWithNumChange"
                 :on-update:page-size="getCateWithSizeChange" />
         </n-tab-pane>
+        <n-tab-pane name="art" tab="文章">
+            <n-button @click="createArticle">新增文章</n-button>
+            <br>
+            <n-table>
+                <thead>
+                    <tr>
+                        <th>文章名</th>
+                        <th>创建时间</th>
+                        <th>动作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="a in articleList">
+                        <td>{{ a.ArticleTable.Title }}</td>
+                        <td>{{ dateToString(a.ArticleTable.CreatedAt) }}</td>
+                        <td>
+                            <n-button @click="UpdateArticle(a, 1)">修改标题</n-button>
+                            <n-button @click="UpdateArticle(a, 2)">修改内容</n-button>
+                            <n-button @click="UpdateArticle(a, 3)">修改简介</n-button>
+                            <n-popconfirm @positive-click="UpdateArticle(a, 4)" @negative-click="handleNegativeClick">
+                                <template #trigger>
+                                    <n-button>删除</n-button>
+                                </template>
+                                是否删除
+                            </n-popconfirm>
+                        </td>
+                    </tr>
+                </tbody>
+            </n-table>
+            <br>
+            <n-pagination v-model:page="catePanePageNum" :page-count="catePaneTotal" v-model:page-size="catePaneLimit"
+                show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getarticleWithNumChange"
+                :on-update:page-size="getarticleWithSizeChange" />
+        </n-tab-pane>
     </n-tabs>
 
     <n-modal v-model:show="modalVis">
@@ -185,6 +324,66 @@ async function change(target, type) {
                 <n-input placeholder="请输入" maxlength="100" show-count v-model:value="inputValue"></n-input>
                 <div style="width: 20px;"></div>
                 <n-button @click="submitModal">提交</n-button>
+            </div>
+        </n-card>
+    </n-modal>
+
+    <n-modal v-model:show="articleModalVis">
+        <n-card style="width: 800px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="文章"
+            :bordered="false" size="huge" role="dialog" aria-modal="true">
+            <div>
+                <div>标题</div>
+                <n-input placeholder="请输入标题" maxlength="60" show-count v-model:value="articleTitle"></n-input>
+                <br>
+                <br>
+                <div style="display: flex; flex-direction: row; justify-content: space-between;">
+                    <div>
+                        <div>类别</div>
+                        <n-select v-model:value="articleCategory" label-field="CategoryName" value-field="CategoryID"
+                            placeholder="类别" filterable :on-focus="getCategoryList" :options="articleCategoryOptions">
+                        </n-select>
+                    </div>
+                    <div>
+                        <div>标签</div>
+                        <n-select style="min-width: 160px;" v-model:value="articleTags" multiple label-field="TagName"
+                            value-field="TagID" placeholder="类别" filterable :on-focus="getTagList"
+                            :options="articleTagOptions"></n-select>
+                    </div>
+                </div>
+                <br>
+                <div>内容</div>
+                <n-input placeholder="文章内容" show-count type="textarea" v-model:value="articleContent"></n-input>
+                <br>
+                <br>
+                <div>总结</div>
+                <n-input placeholder="文章总结" show-count type="textarea" v-model:value="articleSummary"></n-input>
+                <br>
+                <br>
+                <n-button @click="articleSubmit">提交</n-button>
+            </div>
+        </n-card>
+    </n-modal>
+
+    <n-modal v-model:show="articleUpdateTitleModalVis">
+        <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="更改"
+            :bordered="false" size="huge" role="dialog" aria-modal="true">
+            <div class="input-area">
+                <n-input placeholder="请输入" v-model:value="articleTitle"></n-input>
+                <div style="width: 20px;"></div>
+                <n-button @click="submitArticleModal">提交</n-button>
+            </div>
+        </n-card>
+    </n-modal>
+
+    <n-modal v-model:show="articleUpdateContentModalVis">
+        <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="更改"
+            :bordered="false" size="huge" role="dialog" aria-modal="true">
+            <div class="input-area">
+                <n-input placeholder="请输入" v-model:value="articleChange" :autosize="{
+                minRows: 3
+            }" type="textarea"></n-input>
+                <div style="width: 20px;"></div>
+                <n-button @click="submitArticleModal">提交</n-button>
             </div>
         </n-card>
     </n-modal>
