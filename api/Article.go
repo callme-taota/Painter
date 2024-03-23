@@ -310,6 +310,36 @@ func GetArticleByAuthor(c *gin.Context) {
 	return
 }
 
+func GetArticleSelf(c *gin.Context) {
+	var json models.OnlyPageOption
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	Limit, Offset := json.Limit, json.Offset
+	if Limit == 0 {
+		Limit = 20
+	}
+	userid, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	list, err := database.GetArticlesByAuthor(userid.(int), Limit, Offset)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	count, err := database.GetArticleCountByAuthor(userid.(int))
+	ArticleList, err := database.GetArticleByIntList(list)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleCount": count, "ArticleList": ArticleList}))
+	return
+}
+
 func GetArticlesByTitle(c *gin.Context) {
 	var json APIs.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {

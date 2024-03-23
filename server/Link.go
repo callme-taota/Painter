@@ -30,6 +30,7 @@ func LinkTag() {
 
 	TagGroup.GET("/suggest", api.SuggestTags)
 	TagGroup.GET("/list", api.TagsList)
+	TagGroup.GET("/list/full", api.FullTagsList)
 	TagLoginGroup.POST("/create", api.NewTag)
 	TagLoginGroup.POST("/update/name", api.UpdateTagName)
 	TagLoginGroup.POST("/update/desc", api.UpdateTagDesc)
@@ -79,6 +80,7 @@ func LinkCategory() {
 
 	CategoryGroup.GET("/list", api.GetCategories)
 	CategoryGroup.GET("/get", api.GetCategory)
+	CategoryGroup.GET("/get/fulllist", api.GetCategoryList)
 
 	CategoryLoginGroup.POST("/create", api.CreateCategory)
 	CategoryLoginGroup.POST("/update/name", api.UpdateCategoryName)
@@ -96,6 +98,7 @@ func LinkArticle() {
 	ArticleGroup.GET("/get/collection", api.GetArticlesByCollection)
 	ArticleGroup.GET("/get/category", api.GetArticlesByCategory)
 	ArticleGroup.GET("/get/tag", api.GetArticlesByTag)
+	ArticleLoginGroup.GET("/get/self", api.GetArticleSelf)
 	ArticleGroup.GET("/get", api.GetFullArticle)
 
 	ArticleLoginGroup.POST("/create", api.CreateArticle)

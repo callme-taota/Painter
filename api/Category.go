@@ -108,3 +108,14 @@ func GetCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, category))
 	return
 }
+
+func GetCategoryList(c *gin.Context) {
+	categoriesNumber := database.GetCategoriesNumber()
+	categories, err := database.GetCategories(categoriesNumber, 0)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, models.RDC{"categoriesNumber": categoriesNumber, "categories": categories}))
+	return
+}
