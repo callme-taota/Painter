@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 func CreateHistory(c *gin.Context) {
-	var json APIs.CreateHistoryJSON
+	var json Request.CreateHistoryJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

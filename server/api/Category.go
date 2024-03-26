@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 func CreateCategory(c *gin.Context) {
-	var json APIs.CategoryJSON
+	var json Request.CategoryJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -29,7 +29,7 @@ func CreateCategory(c *gin.Context) {
 }
 
 func UpdateCategoryName(c *gin.Context) {
-	var json APIs.UpdateCategoryNameJSON
+	var json Request.UpdateCategoryNameJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -49,7 +49,7 @@ func UpdateCategoryName(c *gin.Context) {
 }
 
 func UpdateCategoryDesc(c *gin.Context) {
-	var json APIs.CategoryJSON
+	var json Request.CategoryJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -90,7 +90,7 @@ func GetCategories(c *gin.Context) {
 }
 
 func GetCategory(c *gin.Context) {
-	var json APIs.CategoryIDJSON
+	var json Request.CategoryIDJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

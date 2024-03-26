@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 const maxCommentLength = 100
 
 func CreateComment(c *gin.Context) {
-	var json APIs.CreateCommentJSON
+	var json Request.CreateCommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -40,7 +40,7 @@ func CreateComment(c *gin.Context) {
 }
 
 func DeleteComment(c *gin.Context) {
-	var json APIs.CommentJSON
+	var json Request.CommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -65,7 +65,7 @@ func DeleteComment(c *gin.Context) {
 }
 
 func CreateCommentLike(c *gin.Context) {
-	var json APIs.CommentJSON
+	var json Request.CommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -90,7 +90,7 @@ func CreateCommentLike(c *gin.Context) {
 }
 
 func DeleteCommentLike(c *gin.Context) {
-	var json APIs.CommentJSON
+	var json Request.CommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -115,7 +115,7 @@ func DeleteCommentLike(c *gin.Context) {
 }
 
 func GetCommentsByArticleID(c *gin.Context) {
-	var json APIs.GetCommentJSON
+	var json Request.GetCommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -139,7 +139,7 @@ func GetCommentsByArticleID(c *gin.Context) {
 }
 
 func GetCommentsByArticleIDWithLiked(c *gin.Context) {
-	var json APIs.GetCommentJSON
+	var json Request.GetCommentJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

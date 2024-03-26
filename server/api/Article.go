@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 // CreateArticle handles the creation of a new article.
 func CreateArticle(c *gin.Context) {
-	var json APIs.CreateArticleJSON
+	var json Request.CreateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -44,7 +44,7 @@ func CreateArticle(c *gin.Context) {
 
 // UpdateArticleContent updates the content of an existing article.
 func UpdateArticleContent(c *gin.Context) {
-	var json APIs.UpdateArticleJSON
+	var json Request.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -85,7 +85,7 @@ func UpdateArticleContent(c *gin.Context) {
 
 // UpdateArticleSummary updates the summary of an existing article.
 func UpdateArticleSummary(c *gin.Context) {
-	var json APIs.UpdateArticleJSON
+	var json Request.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -126,7 +126,7 @@ func UpdateArticleSummary(c *gin.Context) {
 
 // UpdateArticleReadCount updates the read count of an existing article.
 func UpdateArticleReadCount(c *gin.Context) {
-	var json APIs.UpdateArticleJSON
+	var json Request.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		// Bad request
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -166,7 +166,7 @@ func UpdateArticleReadCount(c *gin.Context) {
 }
 
 func UpdateArticleTitle(c *gin.Context) {
-	var json APIs.UpdateArticleJSON
+	var json Request.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -196,7 +196,7 @@ func UpdateArticleTitle(c *gin.Context) {
 }
 
 func UpdateArticleStatus(c *gin.Context) {
-	var json APIs.UpdateArticleJSON
+	var json Request.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -226,7 +226,7 @@ func UpdateArticleStatus(c *gin.Context) {
 }
 
 func UpdateArticleIsTop(c *gin.Context) {
-	var json APIs.UpdateArticleJSON
+	var json Request.UpdateArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -256,7 +256,7 @@ func UpdateArticleIsTop(c *gin.Context) {
 }
 
 func DeleteArticle(c *gin.Context) {
-	var json APIs.ArticleJSON
+	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -281,7 +281,7 @@ func DeleteArticle(c *gin.Context) {
 }
 
 func GetArticleByAuthor(c *gin.Context) {
-	var json APIs.GetArticleJSON
+	var json Request.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -341,7 +341,7 @@ func GetArticleSelf(c *gin.Context) {
 }
 
 func GetArticlesByTitle(c *gin.Context) {
-	var json APIs.GetArticleJSON
+	var json Request.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -370,7 +370,7 @@ func GetArticlesByTitle(c *gin.Context) {
 }
 
 func GetArticlesByContent(c *gin.Context) {
-	var json APIs.GetArticleJSON
+	var json Request.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -399,7 +399,7 @@ func GetArticlesByContent(c *gin.Context) {
 }
 
 func GetArticlesByCategory(c *gin.Context) {
-	var json APIs.GetArticleJSON
+	var json Request.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -433,7 +433,7 @@ func GetArticlesByCategory(c *gin.Context) {
 }
 
 func GetArticlesByCollection(c *gin.Context) {
-	var json APIs.GetArticleJSON
+	var json Request.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -467,7 +467,7 @@ func GetArticlesByCollection(c *gin.Context) {
 }
 
 func GetArticlesByTag(c *gin.Context) {
-	var json APIs.GetArticleJSON
+	var json Request.GetArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -501,7 +501,7 @@ func GetArticlesByTag(c *gin.Context) {
 }
 
 func GetFullArticle(c *gin.Context) {
-	var json APIs.ArticleJSON
+	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -521,7 +521,7 @@ func GetFullArticle(c *gin.Context) {
 }
 
 func CreateArticleLike(c *gin.Context) {
-	var json APIs.ArticleJSON
+	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -546,7 +546,7 @@ func CreateArticleLike(c *gin.Context) {
 }
 
 func DeleteArticleLike(c *gin.Context) {
-	var json APIs.ArticleJSON
+	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -571,7 +571,7 @@ func DeleteArticleLike(c *gin.Context) {
 }
 
 func ArticleLike(c *gin.Context) {
-	var json APIs.ArticleJSON
+	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -596,7 +596,7 @@ func ArticleLike(c *gin.Context) {
 }
 
 func CheckArticleLike(c *gin.Context) {
-	var json APIs.ArticleJSON
+	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"err": err}))
 		return
@@ -621,7 +621,7 @@ func CheckArticleLike(c *gin.Context) {
 }
 
 func CreateArticleTag(c *gin.Context) {
-	var json APIs.ArticleTagJSON
+	var json Request.ArticleTagJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -651,7 +651,7 @@ func CreateArticleTag(c *gin.Context) {
 }
 
 func DeleteArticleTag(c *gin.Context) {
-	var json APIs.ArticleTagJSON
+	var json Request.ArticleTagJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

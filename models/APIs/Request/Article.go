@@ -1,4 +1,4 @@
-package APIs
+package Request
 
 type CreateArticleJSON struct {
 	Title      string `json:"title"`

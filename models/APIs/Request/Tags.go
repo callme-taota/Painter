@@ -1,4 +1,4 @@
-package APIs
+package Request
 
 type CreateTagJSON struct {
 	Name        string `json:"name"`

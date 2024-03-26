@@ -1,4 +1,4 @@
-package APIs
+package Request
 
 type CategoryJSON struct {
 	Name        string `json:"name"`

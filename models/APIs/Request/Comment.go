@@ -1,4 +1,4 @@
-package APIs
+package Request
 
 type CreateCommentJSON struct {
 	ArticleID int    `json:"articleID"`

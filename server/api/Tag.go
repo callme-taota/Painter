@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 func SuggestTags(c *gin.Context) {
@@ -57,7 +57,7 @@ func FullTagsList(c *gin.Context) {
 }
 
 func NewTag(c *gin.Context) {
-	var json APIs.CreateTagJSON
+	var json Request.CreateTagJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -77,7 +77,7 @@ func NewTag(c *gin.Context) {
 }
 
 func UpdateTagName(c *gin.Context) {
-	var json APIs.UpdateTagNameJSON
+	var json Request.UpdateTagNameJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -102,7 +102,7 @@ func UpdateTagName(c *gin.Context) {
 }
 
 func UpdateTagDesc(c *gin.Context) {
-	var json APIs.UpdateTagDescJSON
+	var json Request.UpdateTagDescJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

@@ -7,13 +7,13 @@ import (
 	"painter-server-new/cache"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 	"painter-server-new/utils"
 	"strconv"
 )
 
 func CheckLogin(c *gin.Context) {
-	var json APIs.CheckUsingSessionJSON
+	var json Request.CheckUsingSessionJSON
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(400, gin.H{"msg": "post data error", "ok": "false", "userid": ""})
 		return
@@ -71,7 +71,7 @@ func CheckLoginMid() gin.HandlerFunc {
 }
 
 func UserSignUp(c *gin.Context) {
-	var json APIs.UserSignUpJSON
+	var json Request.UserSignUpJSON
 
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"userid": ""}))
@@ -92,7 +92,7 @@ func UserSignUp(c *gin.Context) {
 }
 
 func EmailLogin(c *gin.Context) {
-	var json APIs.LoginUsingEmailJson
+	var json Request.LoginUsingEmailJson
 
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
@@ -134,7 +134,7 @@ func EmailLogin(c *gin.Context) {
 }
 
 func PhoneLogin(c *gin.Context) {
-	var json APIs.LoginUsingPhoneJson
+	var json Request.LoginUsingPhoneJson
 
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
@@ -176,7 +176,7 @@ func PhoneLogin(c *gin.Context) {
 }
 
 func UserNameLogin(c *gin.Context) {
-	var json APIs.LoginUsingUserNameJson
+	var json Request.LoginUsingUserNameJson
 
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
@@ -218,7 +218,7 @@ func UserNameLogin(c *gin.Context) {
 }
 
 func LogOut(c *gin.Context) {
-	var json APIs.LogOutJson
+	var json Request.LogOutJson
 	headSession, _ := c.Cookie("session")
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -254,7 +254,7 @@ func UserNameUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	var json APIs.UserNameUpdateJson
+	var json Request.UserNameUpdateJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -279,7 +279,7 @@ func UserEmailUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	var json APIs.UserEmailUpdateJson
+	var json Request.UserEmailUpdateJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -304,7 +304,7 @@ func UserNickNameUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	var json APIs.UserNickNameUpdateJson
+	var json Request.UserNickNameUpdateJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -329,7 +329,7 @@ func UserPhoneUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	var json APIs.UserPhoneUpdateJson
+	var json Request.UserPhoneUpdateJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -354,7 +354,7 @@ func UserHeaderFieldUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	var json APIs.UserHeaderFieldJson
+	var json Request.UserHeaderFieldJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -379,7 +379,7 @@ func UserProfileUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	var json APIs.UserProfileJson
+	var json Request.UserProfileJson
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

@@ -1,4 +1,4 @@
-package APIs
+package Request
 
 type UserSignUpJSON struct {
 	UserName    string `json:"username"`

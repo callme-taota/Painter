@@ -1,1 +1,5 @@
 package plugin
+
+func Auto() {
+
+}

@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 func CreateFollow(c *gin.Context) {
-	var json APIs.FollowJSON
+	var json Request.FollowJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -34,7 +34,7 @@ func CreateFollow(c *gin.Context) {
 }
 
 func UnFollow(c *gin.Context) {
-	var json APIs.FollowJSON
+	var json Request.FollowJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

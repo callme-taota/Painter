@@ -1,4 +1,4 @@
-package APIs
+package Request
 
 type CreateHistoryJSON struct {
 	ArticleID int `json:"articleID"`

@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/models/APIs"
+	"painter-server-new/models/APIs/Request"
 )
 
 func CreateCollection(c *gin.Context) {
-	var json APIs.CollectionJSON
+	var json Request.CollectionJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -34,7 +34,7 @@ func CreateCollection(c *gin.Context) {
 }
 
 func DeleteCollection(c *gin.Context) {
-	var json APIs.CollectionJSON
+	var json Request.CollectionJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -59,7 +59,7 @@ func DeleteCollection(c *gin.Context) {
 }
 
 func CollectionArticle(c *gin.Context) {
-	var json APIs.CollectionJSON
+	var json Request.CollectionJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -84,7 +84,7 @@ func CollectionArticle(c *gin.Context) {
 }
 
 func CheckCollectionArticle(c *gin.Context) {
-	var json APIs.CollectionJSON
+	var json Request.CollectionJSON
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

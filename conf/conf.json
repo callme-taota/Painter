@@ -3,7 +3,7 @@
       "name" : "GoServer-QuickStart",
       "version" : "1.0.1",
       "port" : "3003",
-      "model" : "debug",
+      "model" : "release",
       "author" : "Taota"
     },
     "redis" : {
@@ -19,4 +19,4 @@
       "host": "localhost",
       "database": "painter-blog-new"
     }
-  }
+}
