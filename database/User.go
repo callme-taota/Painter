@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"painter-server-new/models"
+	"painter-server-new/models/APIs/Response"
 	"painter-server-new/utils"
 	"time"
 )
@@ -179,8 +180,8 @@ func GetUserInfo(id int) (models.UserTable, error) {
 	return user, nil
 }
 
-func GetUserInfoDetail(id int) (models.FullUser, error) {
-	full := models.FullUser{}
+func GetUserInfoDetail(id int) (Response.FullUser, error) {
+	full := Response.FullUser{}
 	user := models.UserTable{}
 	res := Dbengine.First(&user, id)
 	if res.Error != nil {

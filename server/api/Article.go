@@ -500,6 +500,50 @@ func GetArticlesByTag(c *gin.Context) {
 	return
 }
 
+func GetArticlesByTime(c *gin.Context) {
+	var json Request.GetArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	Limit, Offset := json.Limit, json.Offset
+	if Limit == 0 {
+		Limit = 20
+	}
+	list, err := database.GetArticleIDsByTime(Limit, Offset)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	count, err := database.GetArticleCount()
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ArticleList, err := database.GetArticleByIntList(list)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleList": ArticleList, "ArticleCount": count}))
+	return
+}
+
+func GetArticlesCount(c *gin.Context) {
+	var json Request.GetArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	count, err := database.GetArticleCount()
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleCount": count}))
+	return
+}
+
 func GetFullArticle(c *gin.Context) {
 	var json Request.ArticleJSON
 	if err := c.ShouldBind(&json); err != nil {

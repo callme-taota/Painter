@@ -67,3 +67,29 @@ func JSONConvertToMapString(originalMap interface{}) map[string]string {
 
 	return convertedMap
 }
+
+func JSONWriter(filePath string, data map[string]interface{}) (bool, error) {
+	jsonData, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return false, err
+	}
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	if _, err := file.Write(jsonData); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// CheckJSONFileExist checks if a JSON file exists at the specified path.
+func CheckJSONFileExist(filePath string) bool {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}

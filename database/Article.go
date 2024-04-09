@@ -2,6 +2,7 @@ package database
 
 import (
 	"painter-server-new/models"
+	"painter-server-new/models/APIs/Response"
 	"painter-server-new/tolog"
 	"time"
 )
@@ -304,6 +305,31 @@ func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 	return articleIntList, nil
 }
 
+func GetArticleIDsByTime(limit, offset int) ([]int, error) {
+	var articleIDs []int
+	result := Dbengine.Model(&models.ArticleTable{}).
+		Select("article_id").
+		Order("updated_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Pluck("article_id", &articleIDs)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetArticleByTag %e", result.Error).PrintAndWriteSafe()
+		return nil, result.Error
+	}
+	return articleIDs, nil
+}
+
+func GetArticleCount() (int, error) {
+	var count int64
+	result := Dbengine.Model(&models.ArticleTable{}).Count(&count)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetArticleCount %e", result.Error).PrintAndWriteSafe()
+		return 0, result.Error
+	}
+	return int(count), nil
+}
+
 func GetArticlesCountByTag(tagID int) (int, error) {
 	var count int64
 	result := Dbengine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tagID).Count(&count)
@@ -314,8 +340,8 @@ func GetArticlesCountByTag(tagID int) (int, error) {
 	return int(count), nil
 }
 
-func GetFullArticle(articleID int) (models.FullArticle, error) {
-	var fullArticle models.FullArticle
+func GetFullArticle(articleID int) (Response.FullArticle, error) {
+	var fullArticle Response.FullArticle
 	var article models.ArticleTable
 	var articleContent models.ArticleContentTable
 	var articleTag []models.ArticleTagTable
@@ -355,7 +381,7 @@ func GetFullArticle(articleID int) (models.FullArticle, error) {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	fullArticle = models.FullArticle{
+	fullArticle = Response.FullArticle{
 		ArticleTable:        article,
 		ArticleContentTable: articleContent,
 		ArticleTagTable:     tagList,
@@ -418,8 +444,8 @@ func HasLikedArticle(articleID, userID int) (bool, error) {
 	return true, nil
 }
 
-func GetArticleByIntList(list []int) ([]models.ArticleInfo, error) {
-	var articles []models.ArticleInfo
+func GetArticleByIntList(list []int) ([]Response.ArticleInfo, error) {
+	var articles []Response.ArticleInfo
 	for _, articleID := range list {
 		var article models.ArticleTable
 		var articleTag []models.ArticleTagTable
@@ -454,7 +480,7 @@ func GetArticleByIntList(list []int) ([]models.ArticleInfo, error) {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
-		articleInfo := models.ArticleInfo{
+		articleInfo := Response.ArticleInfo{
 			ArticleTable:     article,
 			ArticleTagTable:  tagList,
 			LikesNumber:      int(likesNumber),

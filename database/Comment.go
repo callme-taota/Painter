@@ -2,6 +2,7 @@ package database
 
 import (
 	"painter-server-new/models"
+	"painter-server-new/models/APIs/Response"
 	"painter-server-new/tolog"
 )
 
@@ -60,8 +61,8 @@ func DeleteCommentLike(commentID, userID int) (bool, error) {
 	return true, nil
 }
 
-func GetCommentByArticleID(articleID, limit, offset int) ([]models.FullComment, error) {
-	var comments []models.FullComment
+func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment, error) {
+	var comments []Response.FullComment
 	res := Dbengine.Select("comment.*, user.nick_name, user.header_field, COUNT(comment_like.comment_id) AS like_count").
 		Joins("INNER JOIN user ON comment.user_id = user.id").
 		Joins("LEFT JOIN comment_like ON comment.comment_id = comment_like.comment_id").
@@ -85,8 +86,8 @@ func GetCommentLikeCount(commentID int) (int, error) {
 	return int(count), nil
 }
 
-func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([]models.FullCommentWithLike, error) {
-	var comments []models.FullCommentWithLike
+func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([]Response.FullCommentWithLike, error) {
+	var comments []Response.FullCommentWithLike
 	res := Dbengine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, MAX(cl.user_id) = ? as liked",
 		userID).
 		Joins("inner join user on comment.user_id = user.id").

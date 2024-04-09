@@ -1,68 +1,55 @@
 package conf
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"painter-server-new/tolog"
 	"painter-server-new/utils"
 )
 
-// The server struct defines the configuration options for the server.
-type server struct {
-	Port  string // Server port
-	Model string // Server model
-}
-
-// Server is a global variable to store server configuration.
-var Server server
-
-// The cacheConf struct defines the configuration options for the cache.
-type cacheConf struct {
-	Host     string // Cache host
-	Port     string // Cache port
-	Password string // Cache password
-	DB       string // Cache database
-}
-
-// CacheConf is a global variable to store cache configuration.
-var CacheConf cacheConf
-
-type mysqlConf struct {
-	User     string
-	Password string
-	Port     string
-	Database string
-	Host     string
-}
-
-var MysqlConf mysqlConf
-
 // InitConf initializes the configuration by reading from a JSON file.
 func InitConf() error {
+	if !CheckExist() {
+		CreateConf()
+		return errors.New("Create conf... ")
+	}
 	// Read configuration from the JSON file.
-	confJSON, err := utils.JSONReader("./conf/conf.json")
+	confJSON, err := ConfReader()
 	if err != nil {
-		tolog.Log().Error(fmt.Sprintf("jsonReader%e", err)).PrintAndWriteSafe()
+		tolog.Log().Warningf("Conf read %e", err).PrintAndWriteSafe()
 		return err
 	}
+	Conf2Memory(confJSON)
 
+	if CheckFirstInit() {
+		writeFirstInit()
+	}
+	PrintConfWhileStart()
+
+	return nil
+}
+
+func ConfReader() (map[string]interface{}, error) {
+	confJSON, err := utils.JSONReader(confFilePath)
+	if err != nil {
+		tolog.Log().Errorf("jsonReader%e", err).PrintAndWriteSafe()
+		return nil, err
+	}
+	return confJSON, nil
+}
+
+func Conf2Memory(data map[string]interface{}) {
 	// Process server configuration.
-	serverMap := confJSON["server"]
+	serverMap := data["Server"]
 	server := utils.JSONConvertToMapString(serverMap)
 	port := getEnv("SERVER_PORT", server["port"])
 	model := getEnv("SERVER_MODEL", server["model"])
-	name, version := server["name"], server["version"]
-	Server.Port, Server.Model = port, model
-
-	// Print server configuration information.
-	tolog.Log().Info("SendUCode-Server Conf Start").PrintAndWriteSafe()
-	tolog.Log().Infof("ServerName:%s", name).PrintAndWriteSafe()
-	tolog.Log().Infof("ServerVersion:%s", version).PrintAndWriteSafe()
-	tolog.Log().Infof("ServerPort:%s", port).PrintAndWriteSafe()
-	tolog.Log().Infof("Running on model:%s", model).PrintAndWriteSafe()
+	name, version, firstInit, author := server["name"], server["version"], server["firstInit"], server["author"]
+	Server.Port, Server.Model, Server.Name, Server.Version, Server.Author = port, model, name, version, author
+	Server.FirstInit = firstInit
 
 	// Process cache configuration.
-	cacheMap := confJSON["redis"]
+	cacheMap := data["Redis"]
 	cache := utils.JSONConvertToMapString(cacheMap)
 	cacheHost := getEnv("REDIS_HOST", cache["host"])
 	cachePort := getEnv("REDIS_PORT", cache["port"])
@@ -71,7 +58,7 @@ func InitConf() error {
 	CacheConf.Host, CacheConf.Port, CacheConf.Password, CacheConf.DB = cacheHost, cachePort, cachePassword, cacheDB
 
 	//Mysql
-	mysqlMap := confJSON["mysql"]
+	mysqlMap := data["Mysql"]
 	mysql := utils.JSONConvertToMapString(mysqlMap)
 	mysqlUser := getEnv("MYSQL_USER", mysql["user"])
 	mysqlPassword := getEnv("MYSQL_PASS", mysql["password"])
@@ -80,7 +67,14 @@ func InitConf() error {
 	mysqlDatabase := getEnv("MYSQL_DB", mysql["database"])
 	MysqlConf.User, MysqlConf.Password, MysqlConf.Host, MysqlConf.Port, MysqlConf.Database = mysqlUser, mysqlPassword, mysqlHost, mysqlPort, mysqlDatabase
 
-	return nil
+}
+
+func PrintConfWhileStart() {
+	// Print server configuration information.
+	tolog.Log().Infof("%s Conf Start", Server.Name).PrintAndWriteSafe()
+	tolog.Log().Infof("Server version: %s", Server.Version).PrintAndWriteSafe()
+	tolog.Log().Infof("Server port: %s", Server.Port).PrintAndWriteSafe()
+	tolog.Log().Infof("Running on model: %s", Server.Model).PrintAndWriteSafe()
 }
 
 // getEnv retrieves the value of an environment variable, using a default value if it doesn't exist.

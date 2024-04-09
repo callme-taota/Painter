@@ -17,6 +17,16 @@ const (
 	StatusUnknown = "unknown"
 )
 
+var (
+	// Background color codes for different log levels.
+	colorInfoBg    = "\033[48;5;27m"  // blue background
+	colorWarningBg = "\033[48;5;226m" // orange background
+	colorErrorBg   = "\033[48;5;196m" // red background
+	colorDebugBg   = "\033[48;5;45m"  // green background
+	colorNoticeBg  = "\033[48;5;165m" // purple background
+	colorReset     = "\033[0m"        // reset color
+)
+
 // Variables for managing log file and writing to file concurrently.
 var logFile *os.File
 var writeChannel chan string
@@ -212,7 +222,24 @@ func (l *ToLog) PrintLog() *ToLog {
 
 // CreateFullLog creates the full log message by combining log time, type, and context.
 func CreateFullLog(l *ToLog) {
-	fullLog := "[" + l.logTime + "] " + "[" + l.logType + "] " + l.logContext
+	var bgColor string
+
+	switch l.logType {
+	case StatusInfo:
+		bgColor = colorInfoBg
+	case StatusWarning:
+		bgColor = colorWarningBg
+	case StatusError:
+		bgColor = colorErrorBg
+	case StatusDebug:
+		bgColor = colorDebugBg
+	case StatusNotice:
+		bgColor = colorNoticeBg
+	default:
+		bgColor = ""
+	}
+
+	fullLog := "[" + l.logTime + "] " + bgColor + " " + l.logType + " " + colorReset + " " + l.logContext
 	l.FullLog = fullLog
 }
 

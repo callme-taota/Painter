@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/url"
+	conf "painter-server-new/conf"
 	"painter-server-new/tolog"
 	"strings"
 	"sync"
@@ -45,6 +48,8 @@ type ContextMapManager struct {
 	contexts map[string]map[string]Context
 }
 
+var contextMapManager *ContextMapManager
+
 func GetStatusName(t AutoCacheStatus) string {
 	switch t.Status {
 	case 0:
@@ -61,16 +66,35 @@ func GetStatusName(t AutoCacheStatus) string {
 	return ""
 }
 
+func (t AutoCacheStatus) CanStatus() bool {
+	if t.Status == 0 {
+		return true
+	}
+	return false
+}
+
 func (c *Context) StatusName() string {
 	return GetStatusName(c.Type)
 }
 
-func AutoCache(ctx Context) (any, error) {
-
-	return nil, nil
+func AutoCache(c *gin.Context) (bool, error) {
+	ok := CheckContextMapExist()
+	if !ok {
+		err := errors.New("ContextMapManager doesn't exist. ")
+		tolog.Log().Errorf("Error while AutoCache: %e", err).PrintAndWriteSafe()
+		return false, err
+	}
+	context := CreateContext(c)
+	contextMapManager.AddContext(*context)
+	return true, nil
 }
 
-func SetContext(c *gin.Context) *Context {
+func InitCacheContext() {
+	mapManager := NewContextMapManager()
+	contextMapManager = mapManager
+}
+
+func CreateContext(c *gin.Context) *Context {
 	fullRequest := c.Request.URL.String()
 
 	parsedURL, err := url.Parse(fullRequest)
@@ -113,6 +137,10 @@ func NewContextMapManager() *ContextMapManager {
 	}
 }
 
+func CheckContextMapExist() bool {
+	return contextMapManager != nil
+}
+
 func (c *ContextMapManager) AddContext(context Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -136,4 +164,123 @@ func (c *ContextMapManager) CheckContext(context Context) bool {
 		return false
 	}
 	return true
+}
+
+func (c *ContextMapManager) DeleteContext(context Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	request := context.Request
+	subRequest := context.SubRequest
+
+	if _, ok := c.contexts[request]; ok {
+		delete(c.contexts[request], subRequest)
+	}
+}
+
+func (c *ContextMapManager) ContextShouldUpdate(context Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	request := context.Request
+	subRequest := context.SubRequest
+	if ctx, ok := c.contexts[request][subRequest]; ok {
+		ctx.Type = AutoCacheStatus{KCacheStatusOutdated}
+		c.contexts[request][subRequest] = ctx
+	}
+}
+
+func (c *ContextMapManager) ContextOn(context Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	request := context.Request
+	subRequest := context.SubRequest
+	if ctx, ok := c.contexts[request][subRequest]; ok {
+		ctx.Type = AutoCacheStatus{KCacheStatusOn}
+		c.contexts[request][subRequest] = ctx
+	}
+}
+
+func (c *ContextMapManager) ContextOff(context Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	request := context.Request
+	subRequest := context.SubRequest
+	if ctx, ok := c.contexts[request][subRequest]; ok {
+		ctx.Type = AutoCacheStatus{KCacheStatusOff}
+		c.contexts[request][subRequest] = ctx
+	}
+}
+
+func (c *ContextMapManager) ContextLock(context Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	request := context.Request
+	subRequest := context.SubRequest
+	if ctx, ok := c.contexts[request][subRequest]; ok {
+		ctx.Type = AutoCacheStatus{KCacheStatusLocked}
+		c.contexts[request][subRequest] = ctx
+	}
+}
+
+func (c *ContextMapManager) ContextUnlock(context Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	request := context.Request
+	subRequest := context.SubRequest
+	if ctx, ok := c.contexts[request][subRequest]; ok {
+		ctx.Type = AutoCacheStatus{KCacheStatusOutdated}
+		c.contexts[request][subRequest] = ctx
+	}
+}
+
+func (c *Context) PutContext2Redis(m any) error {
+	key := conf.Server.Name + c.FullRequest
+	value, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	err = RedisClient.Set(key, value, 0).Err()
+	if err != nil {
+		return err
+	}
+	contextMapManager.ContextOn(*c)
+	return nil
+}
+
+func (c *Context) DelContext2Redis() error {
+	key := conf.Server.Name + c.FullRequest
+	err := RedisClient.Del(key).Err()
+	if err != nil {
+		return err
+	}
+	contextMapManager.ContextOff(*c)
+	return nil
+}
+
+func (c *Context) GetContextContentFromRedis() (string, error) {
+	key := conf.Server.Name + c.FullRequest
+	value, err := RedisClient.Get(key).Result()
+	if err != nil {
+		return "", err
+	}
+	return value, nil
+}
+
+func (c *Context) GetContextContentByJSONFromRedis() (any, error) {
+	key := conf.Server.Name + c.FullRequest
+	value, err := RedisClient.Get(key).Result()
+	if err != nil {
+		return "", err
+	}
+	var data map[string]interface{}
+	err = json.Unmarshal([]byte(value), &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

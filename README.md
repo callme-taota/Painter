@@ -181,7 +181,7 @@ The table below not contain every api. You can find full api at [here](https://g
 3. Add comment.
 4. Add more cache support.
 5. Add test.
-6. Add suggest system. 
+6. Add suggest system.
 7. Add file upload download support.
 8. Add search support.
 

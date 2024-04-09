@@ -1,22 +1,23 @@
 {
-    "server" : {
-      "name" : "GoServer-QuickStart",
-      "version" : "1.0.1",
-      "port" : "3003",
-      "model" : "release",
-      "author" : "Taota"
-    },
-    "redis" : {
+    "Mysql": {
+        "database": "painter-blog-new",
         "host": "localhost",
-        "port":"6379",
-        "DB": "0",
-        "password": ""
+        "password": "Mysqlroot",
+        "port": "3306",
+        "user": "root"
     },
-    "mysql": {
-      "user": "root",
-      "password": "Mysqlroot",
-      "port": "3306",
-      "host": "localhost",
-      "database": "painter-blog-new"
+    "Redis": {
+        "DB": "0",
+        "host": "localhost",
+        "password": "",
+        "port": "6379"
+    },
+    "Server": {
+        "author": "Taota",
+        "firstInit": "1712481799",
+        "model": "release",
+        "name": "Painter Server",
+        "port": "3003",
+        "version": "1.0.1"
     }
 }

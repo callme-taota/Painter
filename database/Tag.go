@@ -2,6 +2,7 @@ package database
 
 import (
 	"painter-server-new/models"
+	"painter-server-new/models/APIs/Response"
 	"painter-server-new/tolog"
 )
 
@@ -83,6 +84,29 @@ func GetTags(limit, offset int) ([]models.TagTable, error) {
 		return nil, result.Error
 	}
 	return tags, nil
+}
+
+func GetTagsWithCount(limit, offset int) ([]Response.TagWithCount, error) {
+	var tags []models.TagTable
+	var tagsWithCount []Response.TagWithCount
+
+	result := Dbengine.Limit(limit).Offset(offset).Find(&tags)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	for _, tag := range tags {
+		var count int64
+		Dbengine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tag.TagID).Count(&count)
+
+		tagWithCount := Response.TagWithCount{
+			TagTable:     tag,
+			ArticleCount: int(count),
+		}
+		tagsWithCount = append(tagsWithCount, tagWithCount)
+	}
+
+	return tagsWithCount, nil
 }
 
 func GetTagTotalNumber() int {

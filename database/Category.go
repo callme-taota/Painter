@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"painter-server-new/models"
+	"painter-server-new/models/APIs/Response"
 	"painter-server-new/tolog"
 )
 
@@ -116,6 +117,28 @@ func GetCategories(limit, offset int) ([]models.CategoryTable, error) {
 		return nil, result.Error
 	}
 	return category, nil
+}
+
+func GetCategoriesWithCount(limit, offset int) ([]Response.CategoryWithCount, error) {
+	var categories []models.CategoryTable
+	var categoriesWithCount []Response.CategoryWithCount
+
+	result := Dbengine.Limit(limit).Offset(offset).Find(&categories)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	for _, category := range categories {
+		var count int64
+		Dbengine.Model(&models.ArticleTable{}).Where("category_id = ?", category.CategoryID).Count(&count)
+
+		categoryWithCount := Response.CategoryWithCount{
+			CategoryTable: category,
+			ArticleCount:  int(count),
+		}
+		categoriesWithCount = append(categoriesWithCount, categoryWithCount)
+	}
+	return categoriesWithCount, nil
 }
 
 func GetCategoriesNumber() int {

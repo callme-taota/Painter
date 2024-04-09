@@ -56,6 +56,17 @@ func FullTagsList(c *gin.Context) {
 	return
 }
 
+func FullTagsListWithCount(c *gin.Context) {
+	tagNumber := database.GetTagTotalNumber()
+	tags, err := database.GetTagsWithCount(tagNumber, 0)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Tags": tags, "TagNumber": tagNumber}))
+	return
+}
+
 func NewTag(c *gin.Context) {
 	var json Request.CreateTagJSON
 	if err := c.ShouldBind(&json); err != nil {
