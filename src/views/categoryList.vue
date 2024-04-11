@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { CategoryList } from "@/apis/api_category"
-import { NCard, NButton, NIcon, NPagination } from 'naive-ui'
-import { ArrowForward } from "@vicons/ionicons5"
+import { ref, onMounted } from 'vue'
+import { GetCategoriesList } from "@/apis/api_category"
 import { useRouter } from 'vue-router'
 
 const Router = useRouter()
@@ -12,37 +10,18 @@ onMounted(async () => {
 })
 
 const categroyList = ref<CategoryListItem[]>([])
-const listLength = ref(0)
-const pageNum = ref(1)
-const pageLimit = ref(20)
-const pageCount = computed<number>(() => {
-    return Math.floor(listLength.value / pageLimit.value) + 1
-})
 
 interface CategoryListItem {
+    ArticleCount: number,
     CategoryName: string,
     Description: string,
     CategoryID: number,
 }
 
 async function getCategoryList() {
-    let limit = pageLimit.value
-    let offset = (pageNum.value - 1) * limit
-    let res = await CategoryList({ "Limit": limit, "Offset": offset })
+    let res = await GetCategoriesList({})
     let list = res.data.categories
-    let len = res.data.categoriesNumber
     categroyList.value = list
-    listLength.value = len
-}
-
-async function getCategoryWithSizeChange(size: number) {
-    pageLimit.value = size
-    await getCategoryList()
-}
-
-async function getCategoryWithNumChange(num: number) {
-    pageNum.value = num
-    await getCategoryList()
 }
 
 function toPage(id: number) {
@@ -52,20 +31,60 @@ function toPage(id: number) {
 </script>
 
 <template>
-    <n-card v-for="item in categroyList" :title="item.CategoryName" size="medium">
-        <template #header-extra>
-            <n-button text style="font-size: 24px" @click="toPage(item.CategoryID)">
-                <n-icon>
-                    <arrow-forward />
-                </n-icon>
-            </n-button>
-        </template>
-        {{ item.Description }}
-    </n-card>
-    <n-pagination v-model:page="pageNum" :page-count="pageCount" v-model:page-size="pageLimit" show-size-picker
-        :page-sizes="[10, 20, 30, 40]" :on-update:page="getCategoryWithNumChange"
-        :on-update:page-size="getCategoryWithSizeChange" />
+    <div class="page-header">
+        <h1>分类</h1>
+    </div>
+    <div class="categories-cont">
+        <div class="category-item" v-for="c in categroyList" @click="toPage(c.CategoryID)">
+            <div class="category-item-name">
+                {{ c.CategoryName }}
+            </div>
+            <div class="category-item-count">
+                {{ c.ArticleCount }}
+            </div>
+        </div>
+    </div>
 </template>
 
 <style>
+.categories-cont{
+    padding: 20px 160px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.category-item{
+    padding: 6px 10px 6px 30px;
+    background: var(--card--background);
+    height: 32px;
+    line-height: 32px;
+    margin: 10px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 2px 16px -3px rgba(0, 0, 0, .2);
+}
+
+.category-item:hover{
+    transform: scale(1.1);
+    color: var(--color-rev);
+    font-weight: bold;
+    background: var(--base-hover-background);
+}
+
+.category-item-name{
+    padding-right: 10px;
+}
+
+.category-item-count{
+    background: var(--btn-hover-grey);
+    width: 32px;
+    height: 32px;
+    text-align: center;
+    border-radius: 50%;
+}
 </style>

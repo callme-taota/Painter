@@ -125,4 +125,4 @@ function goSet() {
 .number-hover-point {
     cursor: pointer;
 }
-</style>
+</style>@/stores/user

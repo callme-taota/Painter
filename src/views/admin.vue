@@ -1,4 +1,4 @@
-<script setup lang="js">
+<script setup lang="ts">
 import { NH1, NTabs, NTabPane, NTable, NButton, NModal, NCard, NInput, NPagination, NSelect, NPopconfirm } from "naive-ui";
 import { ref, onMounted, computed } from 'vue';
 import { TagList, CreateTag, UpdateTagName, UpdateTagDesc, TagListFull } from "@/apis/api_tag";

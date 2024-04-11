@@ -168,3 +168,11 @@ export const GetSelfArticle = async (data: any): Promise<AxiosResponse> => {
     });
     return res
 }
+
+export const GetArticleList = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosGet({
+        url: "/article/get/time",
+        data: data
+    });
+    return res
+}

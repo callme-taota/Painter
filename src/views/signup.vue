@@ -101,4 +101,4 @@ async function signup() {
     display: flex;
     justify-content: space-around;
 }
-</style>
+</style>@/stores/user

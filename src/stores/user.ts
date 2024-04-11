@@ -1,16 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { LoginUserWithEmail, LoginUserWithPhone, LoginUserWithUserName, Logout, UserSelf } from '@/apis/api_user'
-
-export const useCounterStore = defineStore('counter', () => {
-  const count = ref(0)
-  const doubleCount = computed(() => count.value * 2)
-  function increment() {
-    count.value++
-  }
-
-  return { count, doubleCount, increment }
-})
 
 export const useUserStore = defineStore('user', () => {
   const userName = ref("")
@@ -76,7 +66,6 @@ export const useUserStore = defineStore('user', () => {
     let session = getData("painter-blog-session")
     let res = await Logout({ "Session": session })
     setLocalLoginStatus()
-    console.log(res)
     saveData("painter-blog-session", "")
   }
 
