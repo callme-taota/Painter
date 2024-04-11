@@ -12,7 +12,7 @@ func CreateComment(articleID, userID int, content string) (int, error) {
 		UserID:    userID,
 		ArticleID: articleID,
 	}
-	result := Dbengine.Create(&comment)
+	result := DbEngine.Create(&comment)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while CreateComment %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
@@ -23,7 +23,7 @@ func CreateComment(articleID, userID int, content string) (int, error) {
 
 func DeleteComment(userID, commentID int) (bool, error) {
 	var comment models.CommentTable
-	result := Dbengine.First(&comment, commentID)
+	result := DbEngine.First(&comment, commentID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
@@ -31,7 +31,7 @@ func DeleteComment(userID, commentID int) (bool, error) {
 	if comment.UserID != userID {
 		return false, nil
 	}
-	result = Dbengine.Delete(&comment, commentID)
+	result = DbEngine.Delete(&comment, commentID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
@@ -44,7 +44,7 @@ func CreateCommentLike(commentID, userID int) (bool, error) {
 		CommentID: commentID,
 		UserID:    userID,
 	}
-	result := Dbengine.Create(&commentLike)
+	result := DbEngine.Create(&commentLike)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while CreateCommentLike %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
@@ -53,7 +53,7 @@ func CreateCommentLike(commentID, userID int) (bool, error) {
 }
 
 func DeleteCommentLike(commentID, userID int) (bool, error) {
-	err := Dbengine.Where("comment_id = ? and user_id = ?", commentID, userID).Delete(&models.CommentLikeTable{}).Error
+	err := DbEngine.Where("comment_id = ? and user_id = ?", commentID, userID).Delete(&models.CommentLikeTable{}).Error
 	if err != nil {
 		tolog.Log().Infof("Error while DeleteArticleLike %e", err).PrintAndWriteSafe()
 		return false, err
@@ -63,7 +63,7 @@ func DeleteCommentLike(commentID, userID int) (bool, error) {
 
 func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment, error) {
 	var comments []Response.FullComment
-	res := Dbengine.Select("comment.*, user.nick_name, user.header_field, COUNT(comment_like.comment_id) AS like_count").
+	res := DbEngine.Select("comment.*, user.nick_name, user.header_field, COUNT(comment_like.comment_id) AS like_count").
 		Joins("INNER JOIN user ON comment.user_id = user.id").
 		Joins("LEFT JOIN comment_like ON comment.comment_id = comment_like.comment_id").
 		Where("article_id = ?", articleID).
@@ -79,7 +79,7 @@ func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment
 
 func GetCommentLikeCount(commentID int) (int, error) {
 	var count int64
-	res := Dbengine.Model(&models.CommentLikeTable{}).Where("comment_id = ?", commentID).Count(&count)
+	res := DbEngine.Model(&models.CommentLikeTable{}).Where("comment_id = ?", commentID).Count(&count)
 	if res.Error != nil {
 		return 0, res.Error
 	}
@@ -88,7 +88,7 @@ func GetCommentLikeCount(commentID int) (int, error) {
 
 func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([]Response.FullCommentWithLike, error) {
 	var comments []Response.FullCommentWithLike
-	res := Dbengine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, MAX(cl.user_id) = ? as liked",
+	res := DbEngine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, MAX(cl.user_id) = ? as liked",
 		userID).
 		Joins("inner join user on comment.user_id = user.id").
 		Joins("left join comment_like cl on comment.comment_id = cl.comment_id").

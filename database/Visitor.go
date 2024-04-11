@@ -7,7 +7,7 @@ import (
 )
 
 func SaveVisitorStats(v models.VisitorRecordTable) error {
-	res := Dbengine.Create(&v)
+	res := DbEngine.Create(&v)
 	if res.Error != nil {
 		tolog.Log().Warningf("Can't saving visitor status %e", res.Error).PrintAndWriteSafe()
 		return res.Error
@@ -24,7 +24,7 @@ func GetMonthlyVisitors() (int, error) {
 	endDate := startDate.AddDate(0, 1, 0)
 
 	var total int64
-	res := Dbengine.Model(&models.VisitorRecordTable{}).
+	res := DbEngine.Model(&models.VisitorRecordTable{}).
 		Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
 		Select("SUM(total)").
 		Scan(&total)
@@ -48,7 +48,7 @@ func GetPreDayVisitors() (int, error) {
 	endDate := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
 
 	var total int64
-	res := Dbengine.Model(&models.VisitorRecordTable{}).
+	res := DbEngine.Model(&models.VisitorRecordTable{}).
 		Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
 		Select("SUM(total)").
 		Scan(&total)

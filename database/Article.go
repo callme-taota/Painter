@@ -8,7 +8,7 @@ import (
 )
 
 func CreateArticle(title string, author int, summary string, categoryID int, content string, tags []int) (int, error) {
-	tx := Dbengine.Begin()
+	tx := DbEngine.Begin()
 
 	article := &models.ArticleTable{
 		Title:      title,
@@ -56,13 +56,13 @@ func CreateArticle(title string, author int, summary string, categoryID int, con
 
 func UpdateArticleContent(articleID int, content string) error {
 	var articleContent models.ArticleContentTable
-	result := Dbengine.First(&articleContent, articleID)
+	result := DbEngine.First(&articleContent, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleContent %e", result.Error).PrintAndWriteSafe()
 		return result.Error
 	}
 	articleContent.Content = content
-	result = Dbengine.Save(&articleContent)
+	result = DbEngine.Save(&articleContent)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleContent %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -77,13 +77,13 @@ func UpdateArticleContent(articleID int, content string) error {
 
 func UpdateArticleSummary(articleID int, summary string) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleSummary %e", result.Error).PrintAndWriteSafe()
 		return result.Error
 	}
 	article.Summary = summary
-	result = Dbengine.Save(&article)
+	result = DbEngine.Save(&article)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleSummary %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -98,7 +98,7 @@ func UpdateArticleSummary(articleID int, summary string) error {
 
 func UpdateArticleReadCount(articleID, count int) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleReadCount %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -114,7 +114,7 @@ func UpdateArticleReadCount(articleID, count int) error {
 
 func UpdateArticleIsTop(articleID int, isTop bool) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleIsTop %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -130,7 +130,7 @@ func UpdateArticleIsTop(articleID int, isTop bool) error {
 
 func UpdateArticleTitle(articleID int, title string) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleTitle %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -146,7 +146,7 @@ func UpdateArticleTitle(articleID int, title string) error {
 
 func UpdateArticleStatus(articleID int, status int) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleStatus %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -162,13 +162,13 @@ func UpdateArticleStatus(articleID int, status int) error {
 
 func UpdateArticleUpdateTime(articleID int) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleUpdateTime %e", result.Error).PrintAndWriteSafe()
 		return result.Error
 	}
 	article.UpdatedAt = time.Now()
-	result = Dbengine.Save(&article)
+	result = DbEngine.Save(&article)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleUpdateTime %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -177,7 +177,7 @@ func UpdateArticleUpdateTime(articleID int) error {
 }
 
 func DeleteArticle(articleID, author int) error {
-	err := Dbengine.Where("article_id = ? and author = ?", articleID, author).Delete(&models.ArticleTable{}).Error
+	err := DbEngine.Where("article_id = ? and author = ?", articleID, author).Delete(&models.ArticleTable{}).Error
 	if err != nil {
 		tolog.Log().Infof("Error while delete article %e", err).PrintAndWriteSafe()
 		return err
@@ -187,7 +187,7 @@ func DeleteArticle(articleID, author int) error {
 
 func GetArticlesByAuthor(userID, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
-	result := Dbengine.Where("author = ?", userID).Limit(limit).Offset(offset).Find(&articles)
+	result := DbEngine.Where("author = ?", userID).Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByAuthor %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -202,7 +202,7 @@ func GetArticlesByAuthor(userID, limit, offset int) ([]int, error) {
 
 func GetArticleCountByAuthor(userID int) (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.ArticleTable{}).Where("author = ?", userID).Count(&count)
+	result := DbEngine.Model(&models.ArticleTable{}).Where("author = ?", userID).Count(&count)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleCountByAuthor %e", result.Error).PrintAndWriteSafe()
 		return 0, result.Error
@@ -212,7 +212,7 @@ func GetArticleCountByAuthor(userID int) (int, error) {
 
 func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
-	result := Dbengine.Where("title like", "%"+title+"%").Limit(limit).Offset(offset).Find(&articles)
+	result := DbEngine.Where("title like", "%"+title+"%").Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByTitle %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -227,7 +227,7 @@ func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
 
 func GetArticlesByContent(content string, limit, offset int) ([]int, error) {
 	var articles []models.ArticleContentTable
-	result := Dbengine.Where("content like", "%"+content+"%").Limit(limit).Offset(offset).Find(&articles)
+	result := DbEngine.Where("content like", "%"+content+"%").Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByTitle %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -242,7 +242,7 @@ func GetArticlesByContent(content string, limit, offset int) ([]int, error) {
 
 func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
-	result := Dbengine.Where("category_id = ?", category).Limit(limit).Offset(offset).Find(&articles)
+	result := DbEngine.Where("category_id = ?", category).Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByCategory %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -257,7 +257,7 @@ func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 
 func GetArticleCountByCategory(category int) (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.ArticleTable{}).Where("category_id = ?", category).Count(&count)
+	result := DbEngine.Model(&models.ArticleTable{}).Where("category_id = ?", category).Count(&count)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleCountByCategory %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
@@ -267,7 +267,7 @@ func GetArticleCountByCategory(category int) (int, error) {
 
 func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
 	var collections []models.CollectionTable
-	result := Dbengine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&collections)
+	result := DbEngine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&collections)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByCollection %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -282,7 +282,7 @@ func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
 
 func GetCollectionCountByUser(userID int) (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.CollectionTable{}).Where("user_id = ?", userID).Count(&count)
+	result := DbEngine.Model(&models.CollectionTable{}).Where("user_id = ?", userID).Count(&count)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetCollectionCountByUser %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
@@ -292,7 +292,7 @@ func GetCollectionCountByUser(userID int) (int, error) {
 
 func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTagTable
-	result := Dbengine.Where("tag_id = ?", tagID).Limit(limit).Offset(offset).Find(&articles)
+	result := DbEngine.Where("tag_id = ?", tagID).Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleByTag %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -307,7 +307,7 @@ func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 
 func GetArticleIDsByTime(limit, offset int) ([]int, error) {
 	var articleIDs []int
-	result := Dbengine.Model(&models.ArticleTable{}).
+	result := DbEngine.Model(&models.ArticleTable{}).
 		Select("article_id").
 		Order("updated_at DESC").
 		Limit(limit).
@@ -322,7 +322,7 @@ func GetArticleIDsByTime(limit, offset int) ([]int, error) {
 
 func GetArticleCount() (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.ArticleTable{}).Count(&count)
+	result := DbEngine.Model(&models.ArticleTable{}).Count(&count)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleCount %e", result.Error).PrintAndWriteSafe()
 		return 0, result.Error
@@ -332,7 +332,7 @@ func GetArticleCount() (int, error) {
 
 func GetArticlesCountByTag(tagID int) (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tagID).Count(&count)
+	result := DbEngine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tagID).Count(&count)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while counting articles %e", result.Error).PrintAndWriteSafe()
 		return 0, result.Error
@@ -346,17 +346,17 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 	var articleContent models.ArticleContentTable
 	var articleTag []models.ArticleTagTable
 	var likesNumber, commentNumber, collectionNumber int64
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	result = Dbengine.First(&articleContent, articleID)
+	result = DbEngine.First(&articleContent, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	result = Dbengine.Find(&articleTag, articleID)
+	result = DbEngine.Find(&articleTag, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
@@ -366,17 +366,17 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 		tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	result = Dbengine.Model(&models.ArticleLikeTable{}).Where("article_id = ?", articleID).Count(&likesNumber)
+	result = DbEngine.Model(&models.ArticleLikeTable{}).Where("article_id = ?", articleID).Count(&likesNumber)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	result = Dbengine.Model(&models.CommentTable{}).Where("article_id = ?", articleID).Count(&commentNumber)
+	result = DbEngine.Model(&models.CommentTable{}).Where("article_id = ?", articleID).Count(&commentNumber)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	result = Dbengine.Model(&models.CollectionTable{}).Where("article_id = ?", articleID).Count(&collectionNumber)
+	result = DbEngine.Model(&models.CollectionTable{}).Where("article_id = ?", articleID).Count(&collectionNumber)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
@@ -398,7 +398,7 @@ func CreateArticleLike(articleID, userID int) error {
 		UserID:    userID,
 		CreatedAt: time.Now(),
 	}
-	result := Dbengine.Create(&articleLike)
+	result := DbEngine.Create(&articleLike)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while CreateArticleLike %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -407,7 +407,7 @@ func CreateArticleLike(articleID, userID int) error {
 }
 
 func DeleteArticleLike(articleID, userID int) error {
-	err := Dbengine.Where("article_id = ? and user_id = ?", articleID, userID).Delete(&models.ArticleLikeTable{}).Error
+	err := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).Delete(&models.ArticleLikeTable{}).Error
 	if err != nil {
 		tolog.Log().Infof("Error while DeleteArticleLike %e", err).PrintAndWriteSafe()
 		return err
@@ -417,7 +417,7 @@ func DeleteArticleLike(articleID, userID int) error {
 
 func ToggleArticleLike(articleID, userID int) error {
 	var existingLike models.ArticleLikeTable
-	res := Dbengine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
+	res := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
 	if res.RowsAffected > 0 {
 		err := DeleteArticleLike(articleID, userID)
 		if err != nil {
@@ -436,7 +436,7 @@ func ToggleArticleLike(articleID, userID int) error {
 
 func HasLikedArticle(articleID, userID int) (bool, error) {
 	var existingLike models.ArticleLikeTable
-	res := Dbengine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
+	res := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
 	if res.Error != nil || res.RowsAffected <= 0 {
 		tolog.Log().Infof("Error while checking existing like %e", res.Error).PrintAndWriteSafe()
 		return false, res.Error
@@ -450,12 +450,12 @@ func GetArticleByIntList(list []int) ([]Response.ArticleInfo, error) {
 		var article models.ArticleTable
 		var articleTag []models.ArticleTagTable
 		var likesNumber, commentNumber, collectionNumber int64
-		result := Dbengine.First(&article, articleID)
+		result := DbEngine.First(&article, articleID)
 		if result.Error != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
-		result = Dbengine.Where("article_id = ?", articleID).Find(&articleTag)
+		result = DbEngine.Where("article_id = ?", articleID).Find(&articleTag)
 		if result.Error != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
@@ -465,17 +465,17 @@ func GetArticleByIntList(list []int) ([]Response.ArticleInfo, error) {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
-		result = Dbengine.Model(&models.ArticleLikeTable{}).Where("article_id = ?", articleID).Count(&likesNumber)
+		result = DbEngine.Model(&models.ArticleLikeTable{}).Where("article_id = ?", articleID).Count(&likesNumber)
 		if result.Error != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
-		result = Dbengine.Model(&models.CommentTable{}).Where("article_id = ?", articleID).Count(&commentNumber)
+		result = DbEngine.Model(&models.CommentTable{}).Where("article_id = ?", articleID).Count(&commentNumber)
 		if result.Error != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
 		}
-		result = Dbengine.Model(&models.CollectionTable{}).Where("article_id = ?", articleID).Count(&collectionNumber)
+		result = DbEngine.Model(&models.CollectionTable{}).Where("article_id = ?", articleID).Count(&collectionNumber)
 		if result.Error != nil {
 			tolog.Log().Infof("Error while GetArticleByIntList %e", result.Error).PrintAndWriteSafe()
 			return nil, result.Error
@@ -497,7 +497,7 @@ func CreateArticleTag(articleID, tagID int) (bool, error) {
 		ArticleID: articleID,
 		TagID:     tagID,
 	}
-	result := Dbengine.Create(&articleTag)
+	result := DbEngine.Create(&articleTag)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while CreateArticleTag %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
@@ -506,7 +506,7 @@ func CreateArticleTag(articleID, tagID int) (bool, error) {
 }
 
 func DeleteArticleTag(articleID, tagID int) (bool, error) {
-	err := Dbengine.Where("article_id = ? and tag_id = ?", articleID, tagID).Delete(&models.ArticleTagTable{}).Error
+	err := DbEngine.Where("article_id = ? and tag_id = ?", articleID, tagID).Delete(&models.ArticleTagTable{}).Error
 	if err != nil {
 		tolog.Log().Infof("Error while DeleteArticleTag %e", err).PrintAndWriteSafe()
 		return false, err
@@ -516,7 +516,7 @@ func DeleteArticleTag(articleID, tagID int) (bool, error) {
 
 func CheckArticleAuthor(articleID, author int) (bool, error) {
 	var article models.ArticleTable
-	result := Dbengine.Where("article_id = ? and author = ?", articleID, author).First(&article)
+	result := DbEngine.Where("article_id = ? and author = ?", articleID, author).First(&article)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while CheckArticleAuthor %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error

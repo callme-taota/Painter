@@ -13,7 +13,7 @@ func CreateFollow(followerID, followingID int) error {
 		FollowTime:  time.Now(),
 	}
 
-	err := Dbengine.Create(&follow).Error
+	err := DbEngine.Create(&follow).Error
 	if err != nil {
 		tolog.Log().Infof("Error while create follow %e", err)
 		return err
@@ -22,7 +22,7 @@ func CreateFollow(followerID, followingID int) error {
 }
 
 func DeleteFollow(followerID, followingID int) error {
-	err := Dbengine.Where("follower_id = ? AND following_id = ?", followerID, followingID).Delete(&models.FollowTable{}).Error
+	err := DbEngine.Where("follower_id = ? AND following_id = ?", followerID, followingID).Delete(&models.FollowTable{}).Error
 	if err != nil {
 		tolog.Log().Infof("Error while delete follow %e", err)
 		return err
@@ -32,7 +32,7 @@ func DeleteFollow(followerID, followingID int) error {
 
 func GetFollowers(userID, limit, offset int) ([]models.FollowTable, error) {
 	var followers []models.FollowTable
-	result := Dbengine.Where("following_id = ?", userID).Limit(limit).Offset(offset).Find(&followers)
+	result := DbEngine.Where("following_id = ?", userID).Limit(limit).Offset(offset).Find(&followers)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -41,7 +41,7 @@ func GetFollowers(userID, limit, offset int) ([]models.FollowTable, error) {
 
 func GetFollowings(userID, limit, offset int) ([]models.FollowTable, error) {
 	var followings []models.FollowTable
-	result := Dbengine.Where("follower_id = ?", userID).Limit(limit).Offset(offset).Find(&followings)
+	result := DbEngine.Where("follower_id = ?", userID).Limit(limit).Offset(offset).Find(&followings)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -52,7 +52,7 @@ func GetFollowingsUsers(followings []models.FollowTable) ([]models.UserTable, er
 	var users []models.UserTable
 	for _, following := range followings {
 		var user models.UserTable
-		result := Dbengine.Where("id = ?", following.FollowingID).First(&user)
+		result := DbEngine.Where("id = ?", following.FollowingID).First(&user)
 		if result.Error != nil {
 			return nil, result.Error
 		}
@@ -63,7 +63,7 @@ func GetFollowingsUsers(followings []models.FollowTable) ([]models.UserTable, er
 
 func GetFollowerNumber(userID int) (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.FollowTable{}).Where("following_id = ?", userID).Count(&count)
+	result := DbEngine.Model(&models.FollowTable{}).Where("following_id = ?", userID).Count(&count)
 	if result.Error != nil {
 		return 0, result.Error
 	}
@@ -72,7 +72,7 @@ func GetFollowerNumber(userID int) (int, error) {
 
 func GetFollowingNumber(userID int) (int, error) {
 	var count int64
-	result := Dbengine.Model(&models.FollowTable{}).Where("follower_id = ?", userID).Count(&count)
+	result := DbEngine.Model(&models.FollowTable{}).Where("follower_id = ?", userID).Count(&count)
 	if result.Error != nil {
 		return 0, result.Error
 	}

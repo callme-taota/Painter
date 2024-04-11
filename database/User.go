@@ -18,7 +18,7 @@ func CreateUser(username, email, nickname string, phoneNum int, headerField, pas
 		HeaderField: headerField,
 		LastLogin:   time.Now(),
 	}
-	err := Dbengine.Create(&user).Error
+	err := DbEngine.Create(&user).Error
 	if err != nil {
 		return -1, err
 	}
@@ -28,7 +28,7 @@ func CreateUser(username, email, nickname string, phoneNum int, headerField, pas
 		ID:       id,
 		Password: password,
 	}
-	err = Dbengine.Create(&userpass).Error
+	err = DbEngine.Create(&userpass).Error
 	if err != nil {
 		return -2, err
 	}
@@ -37,12 +37,12 @@ func CreateUser(username, email, nickname string, phoneNum int, headerField, pas
 
 func UpdateUserName(id int, name string) error {
 	user := &models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return res.Error
 	}
 	user.UserName = name
-	res = Dbengine.Save(&user)
+	res = DbEngine.Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -51,12 +51,12 @@ func UpdateUserName(id int, name string) error {
 
 func UpdateUserEmail(id int, email string) error {
 	user := &models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return res.Error
 	}
 	user.Email = email
-	res = Dbengine.Save(&user)
+	res = DbEngine.Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -65,12 +65,12 @@ func UpdateUserEmail(id int, email string) error {
 
 func UpdateUserNickName(id int, nickname string) error {
 	user := &models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return res.Error
 	}
 	user.NickName = nickname
-	res = Dbengine.Save(&user)
+	res = DbEngine.Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -79,12 +79,12 @@ func UpdateUserNickName(id int, nickname string) error {
 
 func UpdateUserPhoneNum(id int, number int) error {
 	user := &models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return res.Error
 	}
 	user.PhoneNum = number
-	res = Dbengine.Save(&user)
+	res = DbEngine.Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -93,12 +93,12 @@ func UpdateUserPhoneNum(id int, number int) error {
 
 func UpdateUserHeaderField(id int, headerfield string) error {
 	user := &models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return res.Error
 	}
 	user.HeaderField = headerfield
-	res = Dbengine.Save(&user)
+	res = DbEngine.Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -107,7 +107,7 @@ func UpdateUserHeaderField(id int, headerfield string) error {
 
 func UpdateUserProfile(id int, username, email, nickname string, number int) error {
 	user := &models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -115,7 +115,7 @@ func UpdateUserProfile(id int, username, email, nickname string, number int) err
 	user.Email = email
 	user.NickName = nickname
 	user.PhoneNum = number
-	Dbengine.Save(&user)
+	DbEngine.Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -124,7 +124,7 @@ func UpdateUserProfile(id int, username, email, nickname string, number int) err
 
 func GetUserIdUsingPhoneNum(phone string) (int, error) {
 	user := &models.UserTable{}
-	err := Dbengine.Where("phone_num = ?", phone).First(&user).Error
+	err := DbEngine.Where("phone_num = ?", phone).First(&user).Error
 	if err != nil {
 		return -1, err
 	}
@@ -133,7 +133,7 @@ func GetUserIdUsingPhoneNum(phone string) (int, error) {
 
 func GetUserIdUsingEmail(email string) (int, error) {
 	user := &models.UserTable{}
-	err := Dbengine.Where("email = ?", email).First(&user).Error
+	err := DbEngine.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return -1, err
 	}
@@ -142,7 +142,7 @@ func GetUserIdUsingEmail(email string) (int, error) {
 
 func GetUserIDUsingUserName(username string) (int, error) {
 	user := &models.UserTable{}
-	err := Dbengine.Where("user_name = ?", username).First(&user).Error
+	err := DbEngine.Where("user_name = ?", username).First(&user).Error
 	if err != nil {
 		return -1, err
 	}
@@ -151,7 +151,7 @@ func GetUserIDUsingUserName(username string) (int, error) {
 
 func CheckUserPassword(id int, password string) (bool, error) {
 	userpass := &models.UserPassTable{}
-	res := Dbengine.Where("ID = ?", id).First(&userpass)
+	res := DbEngine.Where("ID = ?", id).First(&userpass)
 	hashPassword := userpass.Password
 	ok := utils.CheckPasswordHash(password, hashPassword)
 	if res.RowsAffected == 1 && ok == true {
@@ -162,18 +162,18 @@ func CheckUserPassword(id int, password string) (bool, error) {
 
 func ResetPassWord(id int, oldpassword, newpassword string) error {
 	userpass := &models.UserPassTable{}
-	res := Dbengine.Where(&models.UserPassTable{ID: id, Password: oldpassword}).First(&userpass)
+	res := DbEngine.Where(&models.UserPassTable{ID: id, Password: oldpassword}).First(&userpass)
 	if res.RowsAffected == 0 {
 		return errors.New(fmt.Sprintln(res.RowsAffected, res.Error))
 	}
 	userpass.Password = newpassword
-	Dbengine.Save(userpass)
+	DbEngine.Save(userpass)
 	return nil
 }
 
 func GetUserInfo(id int) (models.UserTable, error) {
 	user := models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return user, res.Error
 	}
@@ -183,17 +183,17 @@ func GetUserInfo(id int) (models.UserTable, error) {
 func GetUserInfoDetail(id int) (Response.FullUser, error) {
 	full := Response.FullUser{}
 	user := models.UserTable{}
-	res := Dbengine.First(&user, id)
+	res := DbEngine.First(&user, id)
 	if res.Error != nil {
 		return full, res.Error
 	}
 
 	var art []models.ArticleTable
-	res = Dbengine.Where("author = ?", id).Find(&art)
+	res = DbEngine.Where("author = ?", id).Find(&art)
 	articleNum := res.RowsAffected
 
 	coll := &models.CollectionTable{}
-	res = Dbengine.Where("user_id", id).Find(&coll)
+	res = DbEngine.Where("user_id", id).Find(&coll)
 	collectionNum := res.RowsAffected
 
 	followingNum, _ := GetFollowingNumber(id)

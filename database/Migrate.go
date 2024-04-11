@@ -6,69 +6,84 @@ import (
 )
 
 func Migrate() error {
-	err := Dbengine.AutoMigrate(&models.UserTable{})
+	err := DbEngine.AutoMigrate(&models.UserTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table user %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.UserPassTable{})
+	err = DbEngine.AutoMigrate(&models.UserPassTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table userpass %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.TagTable{})
+	err = DbEngine.AutoMigrate(&models.TagTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table tag %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.HistoryTable{})
+	err = DbEngine.AutoMigrate(&models.HistoryTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table history %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.FollowTable{})
+	err = DbEngine.AutoMigrate(&models.FollowTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table follow %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.CommentTable{})
+	err = DbEngine.AutoMigrate(&models.CommentTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table comment %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.CommentLikeTable{})
+	err = DbEngine.AutoMigrate(&models.CommentLikeTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table comment_like %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.CollectionTable{})
+	err = DbEngine.AutoMigrate(&models.CollectionTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table collection %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.CategoryTable{})
+	err = DbEngine.AutoMigrate(&models.CategoryTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table category %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.ArticleTable{})
+	err = DbEngine.AutoMigrate(&models.ArticleTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table article %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.ArticleContentTable{})
+	err = DbEngine.AutoMigrate(&models.ArticleContentTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table article_content %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.ArticleLikeTable{})
+	err = DbEngine.AutoMigrate(&models.ArticleLikeTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table article_like %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	err = Dbengine.AutoMigrate(&models.ArticleTagTable{})
+	err = DbEngine.AutoMigrate(&models.ArticleTagTable{})
 	if err != nil {
 		tolog.Log().Errorf("Migrate table article_tag %e:", err).PrintAndWriteSafe()
+		return err
+	}
+	err = DbEngine.AutoMigrate(&models.FileStorageTable{})
+	if err != nil {
+		tolog.Log().Errorf("Migrate table file_storage %e:", err).PrintAndWriteSafe()
+		return err
+	}
+	err = DbEngine.AutoMigrate(&models.VisitorRecordTable{})
+	if err != nil {
+		tolog.Log().Errorf("Migrate table vis_record %e:", err).PrintAndWriteSafe()
+		return err
+	}
+	err = DbEngine.AutoMigrate(&models.PainterSettingTable{})
+	if err != nil {
+		tolog.Log().Errorf("Migrate table setting %e:", err).PrintAndWriteSafe()
 		return err
 	}
 	return nil

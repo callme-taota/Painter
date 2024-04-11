@@ -13,7 +13,7 @@ func CreateHistory(userID, articleID int) (int, error) {
 		HistoryTime: time.Now(),
 	}
 
-	result := Dbengine.Create(&history)
+	result := DbEngine.Create(&history)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while create history %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
@@ -23,7 +23,7 @@ func CreateHistory(userID, articleID int) (int, error) {
 
 func GetUserHistories(userID, limit, offset int) ([]models.HistoryTable, error) {
 	var history []models.HistoryTable
-	result := Dbengine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&history)
+	result := DbEngine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&history)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while get history %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
@@ -32,14 +32,14 @@ func GetUserHistories(userID, limit, offset int) ([]models.HistoryTable, error) 
 }
 
 func UpdateHistoryTime(historyID int) error {
-	result := Dbengine.Model(&models.HistoryTable{}).Where("history_id = ?", historyID).
+	result := DbEngine.Model(&models.HistoryTable{}).Where("history_id = ?", historyID).
 		Update("history_time", time.Now())
 	return result.Error
 }
 
 func GetHistoryByUserIDAndArticleID(userID, articleID int) (models.HistoryTable, error) {
 	var history models.HistoryTable
-	result := Dbengine.Where("user_id = ? AND article_id = ?", userID, articleID).First(&history)
+	result := DbEngine.Where("user_id = ? AND article_id = ?", userID, articleID).First(&history)
 	if result.Error != nil {
 		return history, result.Error
 	}
@@ -61,7 +61,7 @@ func UpdateHistoryTimeByUserIDAndArticleID(userID, articleID int) error {
 
 func CheckHistoryExist(userID, articleID int) (bool, error) {
 	var history models.HistoryTable
-	result := Dbengine.Where("user_id = ? AND article_id = ?", userID, articleID).First(&history)
+	result := DbEngine.Where("user_id = ? AND article_id = ?", userID, articleID).First(&history)
 	if result.Error != nil {
 		return false, result.Error
 	}

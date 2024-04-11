@@ -16,7 +16,7 @@ func CreateCategory(name, description string) (int, error) {
 		CategoryName: name,
 		Description:  description,
 	}
-	err := Dbengine.Create(&category).Error
+	err := DbEngine.Create(&category).Error
 	if err != nil {
 		tolog.Log().Infof("Error while create category %e", err).PrintAndWriteSafe()
 		return -1, err
@@ -27,13 +27,13 @@ func CreateCategory(name, description string) (int, error) {
 
 func UpdateCategoryName(id int, name string) error {
 	category := &models.CategoryTable{}
-	res := Dbengine.First(&category, id)
+	res := DbEngine.First(&category, id)
 	if res.Error != nil {
 		tolog.Log().Infof("Error while update category name %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	category.CategoryName = name
-	res = Dbengine.Save(&category)
+	res = DbEngine.Save(&category)
 	if res.Error != nil {
 		tolog.Log().Infof("Error while update category name %e", res.Error).PrintAndWriteSafe()
 		return res.Error
@@ -57,13 +57,13 @@ func UpdateCategoryNameByName(oldName, newName string) error {
 
 func UpdateCategoryDesc(id int, description string) error {
 	category := &models.CategoryTable{}
-	res := Dbengine.First(&category, id)
+	res := DbEngine.First(&category, id)
 	if res.Error != nil {
 		tolog.Log().Infof("Error while update category description %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	category.Description = description
-	res = Dbengine.Save(&category)
+	res = DbEngine.Save(&category)
 	if res.Error != nil {
 		tolog.Log().Infof("Error while update category description %e", res.Error).PrintAndWriteSafe()
 		return res.Error
@@ -87,13 +87,13 @@ func UpdateCategoryDescByName(name, desc string) error {
 
 func CheckCategoryExist(name string) bool {
 	var category models.CategoryTable
-	result := Dbengine.Where("category_name = ?", name).First(&category)
+	result := DbEngine.Where("category_name = ?", name).First(&category)
 	return result.RowsAffected > 0
 }
 
 func GetCategoryID(name string) (int, error) {
 	var category models.CategoryTable
-	result := Dbengine.Where("category_name = ?", name).First(&category)
+	result := DbEngine.Where("category_name = ?", name).First(&category)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while get category id %e", result.Error)
 		return -1, result.Error
@@ -103,7 +103,7 @@ func GetCategoryID(name string) (int, error) {
 
 func GetCategory(id int) (models.CategoryTable, error) {
 	var category models.CategoryTable
-	result := Dbengine.First(&category, id)
+	result := DbEngine.First(&category, id)
 	if result.Error != nil {
 		return category, result.Error
 	}
@@ -112,7 +112,7 @@ func GetCategory(id int) (models.CategoryTable, error) {
 
 func GetCategories(limit, offset int) ([]models.CategoryTable, error) {
 	var category []models.CategoryTable
-	result := Dbengine.Limit(limit).Offset(offset).Find(&category)
+	result := DbEngine.Limit(limit).Offset(offset).Find(&category)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -123,14 +123,14 @@ func GetCategoriesWithCount(limit, offset int) ([]Response.CategoryWithCount, er
 	var categories []models.CategoryTable
 	var categoriesWithCount []Response.CategoryWithCount
 
-	result := Dbengine.Limit(limit).Offset(offset).Find(&categories)
+	result := DbEngine.Limit(limit).Offset(offset).Find(&categories)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
 	for _, category := range categories {
 		var count int64
-		Dbengine.Model(&models.ArticleTable{}).Where("category_id = ?", category.CategoryID).Count(&count)
+		DbEngine.Model(&models.ArticleTable{}).Where("category_id = ?", category.CategoryID).Count(&count)
 
 		categoryWithCount := Response.CategoryWithCount{
 			CategoryTable: category,
@@ -143,19 +143,19 @@ func GetCategoriesWithCount(limit, offset int) ([]Response.CategoryWithCount, er
 
 func GetCategoriesNumber() int {
 	var count int64
-	Dbengine.Model(&models.CategoryTable{}).Count(&count)
+	DbEngine.Model(&models.CategoryTable{}).Count(&count)
 	return int(count)
 }
 
 func UpdateArticleCategory(articleID, categoryID int) error {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while update article category %e", result.Error).PrintAndWriteSafe()
 		return result.Error
 	}
 	article.CategoryID = categoryID
-	result = Dbengine.Save(&article)
+	result = DbEngine.Save(&article)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while update article category %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -174,7 +174,7 @@ func DeleteArticleCategory(articleID int) error {
 
 func GetArticleCategoryByArticleID(articleID int) (int, error) {
 	var article models.ArticleTable
-	result := Dbengine.First(&article, articleID)
+	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleCategoryByArticleID %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
@@ -185,7 +185,7 @@ func GetArticleCategoryByArticleID(articleID int) (int, error) {
 
 func GetArticlesByCategoryID(categoryID, limit, offset int) ([]models.ArticleTable, error) {
 	var articles []models.ArticleTable
-	result := Dbengine.Limit(limit).Offset(offset).Find(&articles)
+	result := DbEngine.Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByCategoryID %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
