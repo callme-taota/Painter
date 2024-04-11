@@ -151,3 +151,39 @@ type ArticleTagTable struct {
 func (ArticleTagTable) TableName() string {
 	return "article_tag"
 }
+
+type PainterSettingTable struct {
+	ID          int    `gorm:"primaryKey;autoIncrement"`
+	Name        string `gorm:"type:varchar(255);unique"`
+	Value       string `gorm:"type:text"`
+	Description string `gorm:"type:text"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (PainterSettingTable) TableName() string {
+	return "painter_setting"
+}
+
+type FileStorageTable struct {
+	ID        int    `gorm:"primaryKey;autoIncrement"`
+	FileName  string `gorm:"type:varchar(255);unique"`
+	FilePath  string `gorm:"unique"`
+	FileSize  int64
+	FileType  string `gorm:"type:varchar(255)"`
+	CreatedAt time.Time
+}
+
+func (FileStorageTable) TableName() string {
+	return "file_storage"
+}
+
+type VisitorRecordTable struct {
+	ID    int `gorm:"primaryKey;autoIncrement"`
+	Date  string
+	Total int
+}
+
+func (VisitorRecordTable) TableName() string {
+	return "visitor_record"
+}

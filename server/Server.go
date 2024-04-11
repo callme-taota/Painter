@@ -24,6 +24,7 @@ func InitServer() error {
 	// Configure CORS settings.
 	ginServer.Use(mid.CorsMid)
 	ginServer.Use(mid.LogMid)
+	ginServer.Use(mid.VisitorRecorder())
 
 	loginGroup := ginServer.Group("")
 	loginGroup.Use(api.CheckLoginMid())
@@ -32,7 +33,9 @@ func InitServer() error {
 	// Set the global Server variable to the configured Gin server.
 	Server = ginServer
 	LinkAPI()
-	ginServer.POST("/test", TestHandler)
+	if conf.Server.Model == mid.TestMode {
+		ginServer.POST("/test", TestHandler)
+	}
 
 	// Log server initialization information.
 	tolog.Log().Info("Gin Main Server Start").PrintAndWriteSafe()
@@ -42,7 +45,7 @@ func InitServer() error {
 	// Run the Gin server on the specified port.
 	err := ginServer.Run(fmt.Sprintf(":%s", port))
 	if err != nil {
-		tolog.Log().Errorf("Gin start in error %e", err)
+		tolog.Log().Errorf("Gin start in error %e", err).PrintAndWriteSafe()
 		return err
 	}
 	return nil
@@ -59,6 +62,8 @@ func LinkAPI() {
 	LinkCollection()
 	LinkCategory()
 	LinkArticle()
+	LinkCommon()
+	LinkFile()
 }
 
 func TestHandler(c *gin.Context) {

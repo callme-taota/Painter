@@ -6,3 +6,8 @@ type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type VisitorRecord struct {
+	UA string `json:"UA"`
+	IP string `json:"IP"`
+}

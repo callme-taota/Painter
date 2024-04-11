@@ -1,10 +1,7 @@
 package server
 
 import (
-	"github.com/gin-gonic/gin"
-	"net/http"
 	api "painter-server-new/server/api"
-	"path/filepath"
 )
 
 func LinkUser() {
@@ -129,27 +126,13 @@ func LinkArticle() {
 func LinkFile() {
 	FileGroup := LoginGroup.Group("/file")
 
-	FileGroup.POST("/upload", func(c *gin.Context) {
-		file, err := c.FormFile("file")
-		if err != nil {
-			c.String(http.StatusBadRequest, "Bad request")
-			return
-		}
-
-		// 将上传的文件保存到本地
-		dst := filepath.Join("./uploads", file.Filename)
-		if err := c.SaveUploadedFile(file, dst); err != nil {
-			c.String(http.StatusInternalServerError, "Internal server error")
-			return
-		}
-
-		c.String(http.StatusOK, "File uploaded successfully")
-	})
-
+	FileGroup.GET("")
 }
 
 func LinkCommon() {
 	CommonGroup := Server.Group("/common")
 
 	CommonGroup.GET("/starttime", api.GetServerRunningTime)
+	CommonGroup.GET("/vis/preday", api.GetServerPreDayVis)
+	CommonGroup.GET("/vis/currmonth", api.GetServerCurrentMonthVis)
 }
