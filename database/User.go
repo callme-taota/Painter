@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
 	"painter-server-new/utils"
@@ -162,9 +161,16 @@ func CheckUserPassword(id int, password string) (bool, error) {
 
 func ResetPassWord(id int, oldpassword, newpassword string) error {
 	userpass := &models.UserPassTable{}
-	res := DbEngine.Where(&models.UserPassTable{ID: id, Password: oldpassword}).First(&userpass)
-	if res.RowsAffected == 0 {
-		return errors.New(fmt.Sprintln(res.RowsAffected, res.Error))
+	res := DbEngine.First(&userpass, id)
+	if res.Error != nil {
+		return res.Error
+	}
+	old, err := utils.HashPassword(oldpassword)
+	if err != nil {
+		return err
+	}
+	if userpass.Password != old {
+		return errors.New("Password not correct! ")
 	}
 	userpass.Password = newpassword
 	DbEngine.Save(userpass)
@@ -207,4 +213,13 @@ func GetUserInfoDetail(id int) (Response.FullUser, error) {
 	full.FollowerNumber = followerNum
 
 	return full, nil
+}
+
+func GetAdminFlag(id int) (bool, error) {
+	user := models.UserTable{}
+	result := DbEngine.Select("admin_flag").First(&user, id)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return user.AdminFlag == 1, nil
 }

@@ -24,12 +24,12 @@ func CreateHistory(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	id, err := database.AutoHistory(userID.(int), json.ArticleID)
+	success, err := database.AutoHistory(userID.(int), json.ArticleID)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleID": json.ArticleID, "UserID": userID, "ID": id}))
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"ArticleID": json.ArticleID, "UserID": userID, "Success": success}))
 	return
 }
 

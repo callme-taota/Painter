@@ -6,7 +6,6 @@ import (
 	"net/http"
 	conf "painter-server-new/conf"
 	"painter-server-new/models"
-	"painter-server-new/server/api"
 	"painter-server-new/server/mid"
 	"painter-server-new/tolog"
 )
@@ -14,6 +13,7 @@ import (
 // Server represents the main Gin engine.
 var Server *gin.Engine
 var LoginGroup *gin.RouterGroup
+var AdminGroup *gin.RouterGroup
 
 // InitServer initializes the main Gin server with CORS configuration.
 func InitServer() error {
@@ -25,10 +25,15 @@ func InitServer() error {
 	ginServer.Use(mid.CorsMid)
 	ginServer.Use(mid.LogMid)
 	ginServer.Use(mid.VisitorRecorder())
+	ginServer.Use(mid.BetterLogin())
 
 	loginGroup := ginServer.Group("")
-	loginGroup.Use(api.CheckLoginMid())
+	loginGroup.Use(mid.SessionCheckMid())
 	LoginGroup = loginGroup
+
+	adminGroup := ginServer.Group("")
+	adminGroup.Use(mid.CheckAdminMid())
+	AdminGroup = adminGroup
 
 	// Set the global Server variable to the configured Gin server.
 	Server = ginServer

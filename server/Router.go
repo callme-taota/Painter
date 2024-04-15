@@ -21,26 +21,28 @@ func LinkUser() {
 	userLoginGroup.POST("/update/nickname", api.UserNickNameUpdate)
 	userLoginGroup.POST("/update/phone", api.UserPhoneUpdate)
 	userLoginGroup.POST("/update/headerfield", api.UserHeaderFieldUpdate)
+	userLoginGroup.POST("/update/passwd", api.UserResetPassword)
 	userLoginGroup.POST("/update", api.UserProfileUpdate)
 }
 
 func LinkTag() {
 	TagGroup := Server.Group("/tag")
-	TagLoginGroup := LoginGroup.Group("/tag")
+	//TagLoginGroup := LoginGroup.Group("/tag")
+	TagAdminGroup := AdminGroup.Group("/tag")
 
 	TagGroup.GET("/suggest", api.SuggestTags)
 	TagGroup.GET("/list", api.TagsList)
 	TagGroup.GET("/list/full", api.FullTagsListWithCount)
-	TagLoginGroup.POST("/create", api.NewTag)
-	TagLoginGroup.POST("/update/name", api.UpdateTagName)
-	TagLoginGroup.POST("/update/desc", api.UpdateTagDesc)
+	TagAdminGroup.POST("/create", api.NewTag)
+	TagAdminGroup.POST("/update/name", api.UpdateTagName)
+	TagAdminGroup.POST("/update/desc", api.UpdateTagDesc)
 }
 
 func LinkHistory() {
 	HistoryLoginGroup := LoginGroup.Group("/history")
 
 	HistoryLoginGroup.GET("/list", api.GetHistories)
-	HistoryLoginGroup.POST("/create", api.CreateHistory)
+	//HistoryLoginGroup.POST("/create", api.CreateHistory)
 }
 
 func LinkFollow() {
@@ -68,7 +70,6 @@ func LinkComment() {
 func LinkCollection() {
 	CollectionLoginGroup := LoginGroup.Group("/collection")
 
-	CollectionLoginGroup.POST("/create", api.CreateCollection)
 	CollectionLoginGroup.POST("/delete", api.DeleteCollection)
 	CollectionLoginGroup.POST("/list", api.GetCollections)
 	CollectionLoginGroup.POST("/check", api.CheckCollectionArticle)
@@ -76,15 +77,16 @@ func LinkCollection() {
 
 func LinkCategory() {
 	CategoryGroup := Server.Group("/category")
-	CategoryLoginGroup := LoginGroup.Group("/category")
+	//CategoryLoginGroup := LoginGroup.Group("/category")
+	CategoryAdminGroup := AdminGroup.Group("/category")
 
 	CategoryGroup.GET("/list", api.GetCategories)
 	CategoryGroup.GET("/get", api.GetCategory)
 	CategoryGroup.GET("/get/fulllist", api.GetCategoryList)
 
-	CategoryLoginGroup.POST("/create", api.CreateCategory)
-	CategoryLoginGroup.POST("/update/name", api.UpdateCategoryName)
-	CategoryLoginGroup.POST("/update/desc", api.UpdateCategoryDesc)
+	CategoryAdminGroup.POST("/create", api.CreateCategory)
+	CategoryAdminGroup.POST("/update/name", api.UpdateCategoryName)
+	CategoryAdminGroup.POST("/update/desc", api.UpdateCategoryDesc)
 
 }
 
@@ -126,7 +128,8 @@ func LinkArticle() {
 func LinkFile() {
 	FileGroup := LoginGroup.Group("/file")
 
-	FileGroup.GET("")
+	FileGroup.GET("/get", api.FileGetter)
+	FileGroup.POST("/upload", api.FileUpload)
 }
 
 func LinkCommon() {

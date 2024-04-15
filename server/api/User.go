@@ -9,7 +9,6 @@ import (
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
 	"painter-server-new/utils"
-	"strconv"
 )
 
 func CheckLogin(c *gin.Context) {
@@ -38,38 +37,6 @@ func CheckLogin(c *gin.Context) {
 	return
 }
 
-func CheckLoginMid() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		session, _ := c.Cookie("session")
-		//session := c.Request.Header.Get("Session")
-		if session == "" {
-			c.JSON(http.StatusBadRequest, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{"userid": ""}))
-			c.Abort()
-			return
-		}
-		userid, err := cache.GetUserIDByUserSession(session)
-		if err != nil {
-			c.JSON(http.StatusOK, models.R(models.KErrorSessionInvalid, models.KReturnFalse, models.RDC{"userid": ""}))
-			c.Abort()
-			return
-		}
-		if userid == "" {
-			c.JSON(http.StatusOK, models.R(models.KErrorSessionInvalid, models.KReturnFalse, models.RDC{"userid": ""}))
-			c.Abort()
-			return
-		}
-		userID, err := strconv.Atoi(userid)
-		if err != nil {
-			c.JSON(http.StatusOK, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{"userid": ""}))
-			c.Abort()
-			return
-		}
-		//c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"userid": userID}))
-		c.Set("userID", userID)
-		c.Next()
-	}
-}
-
 func UserSignUp(c *gin.Context) {
 	var json Request.UserSignUpJSON
 
@@ -88,6 +55,27 @@ func UserSignUp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgOK, models.KReturnTrue, models.RDC{"userid": id}))
+	return
+}
+
+func UserResetPassword(c *gin.Context) {
+	var json Request.UserResetPasswordJSON
+
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"userid": ""}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ID", "OldPassword", "NewPassword"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err := database.ResetPassWord(json.ID, json.OldPassword, json.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"userid": ""}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgOK, models.KReturnTrue, models.RDC{}))
 	return
 }
 

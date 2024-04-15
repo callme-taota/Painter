@@ -388,6 +388,8 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 		LikesNumber:         int(likesNumber),
 		CommentNumber:       int(commentNumber),
 		CollectionNumber:    int(collectionNumber),
+		Liked:               false,
+		Collected:           false,
 	}
 	return fullArticle, nil
 }

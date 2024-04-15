@@ -25,7 +25,7 @@ func AddVisRecord2Set(record models.VisitorRecord) error {
 	}
 
 	if added == 0 {
-		tolog.Log().Info("Visitor record already exists").PrintAndWriteSafe()
+		tolog.Log().Infof("Visitor record already exists").PrintAndWriteSafe()
 	}
 
 	return nil

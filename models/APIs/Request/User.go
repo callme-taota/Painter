@@ -59,3 +59,9 @@ type UserProfileJson struct {
 	PhoneNum    int    `json:"phonenum"`
 	HeaderField string `json:"headerfield"`
 }
+
+type UserResetPasswordJSON struct {
+	ID          int    `json:"ID"`
+	OldPassword string `json:"OldPassword"`
+	NewPassword string `json:"NewPassword"`
+}

@@ -560,6 +560,15 @@ func GetFullArticle(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	isLogin, _ := c.Get("isLogin")
+	if isLogin.(bool) {
+		userID, _ := c.Get("userID")
+		isLiked, _ := database.HasLikedArticle(json.ArticleID, userID.(int))
+		isCollected, _ := database.HasCollection(json.ArticleID, userID.(int))
+		database.AutoHistory(userID.(int), json.ArticleID)
+		fullArticle.Liked = isLiked
+		fullArticle.Collected = isCollected
+	}
 	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, fullArticle))
 	return
 }

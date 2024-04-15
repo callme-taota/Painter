@@ -1,13 +1,17 @@
 package daily
 
-import "time"
+import (
+	"painter-server-new/tolog"
+	"time"
+)
 
 func InitDaily() error {
-	ticker := time.Tick(1 * time.Hour)
+	ticker := time.NewTicker(1 * time.Hour)
 	done := make(chan bool)
+	tolog.Log().Infof("Init daily schedule").PrintAndWriteSafe()
 	for {
 		select {
-		case <-ticker:
+		case <-ticker.C:
 			if time.Now().Hour() == 1 {
 				ScheduleDailyVisitorAggregation()
 			}

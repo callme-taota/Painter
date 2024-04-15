@@ -9,6 +9,8 @@ type FullArticle struct {
 	LikesNumber         int
 	CollectionNumber    int
 	CommentNumber       int
+	Liked               bool
+	Collected           bool
 }
 
 type ArticleInfo struct {
