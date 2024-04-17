@@ -36,3 +36,10 @@ func GetServerCurrentMonthVis(c *gin.Context) {
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Count": count}))
 	return
 }
+
+func SetDebugKeyInCookie(c *gin.Context) {
+	key := conf.RandomKey
+	c.SetCookie("painter-debug-key", key, 3600*24*30, "/", "", false, true)
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}

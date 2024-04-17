@@ -15,7 +15,7 @@
     "Server": {
         "author": "Taota",
         "firstInit": "1712481799",
-        "model": "release",
+        "model": "debug",
         "name": "Painter Server",
         "port": "3003",
         "version": "1.0.1"

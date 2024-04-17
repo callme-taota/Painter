@@ -48,6 +48,8 @@ type Conf struct {
 	Mysql  mysqlConf `json:"mysql"`
 }
 
+var RandomKey string
+
 func NewConf() map[string]interface{} {
 	conf := Conf{
 		Server: server{

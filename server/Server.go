@@ -26,6 +26,7 @@ func InitServer() error {
 	ginServer.Use(mid.LogMid)
 	ginServer.Use(mid.VisitorRecorder())
 	ginServer.Use(mid.BetterLogin())
+	ginServer.Use(mid.DebugModeMid())
 
 	loginGroup := ginServer.Group("")
 	loginGroup.Use(mid.SessionCheckMid())
@@ -69,6 +70,7 @@ func LinkAPI() {
 	LinkArticle()
 	LinkCommon()
 	LinkFile()
+	LinkDebug()
 }
 
 func TestHandler(c *gin.Context) {

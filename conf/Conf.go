@@ -2,6 +2,7 @@ package conf
 
 import (
 	"errors"
+	"math/rand"
 	"os"
 	"painter-server-new/tolog"
 	"painter-server-new/utils"
@@ -25,6 +26,9 @@ func InitConf() error {
 		writeFirstInit()
 	}
 	PrintConfWhileStart()
+	if Server.Model == "debug" {
+		SetRandomKey()
+	}
 
 	return nil
 }
@@ -67,6 +71,16 @@ func Conf2Memory(data map[string]interface{}) {
 	mysqlDatabase := getEnv("MYSQL_DB", mysql["database"])
 	MysqlConf.User, MysqlConf.Password, MysqlConf.Host, MysqlConf.Port, MysqlConf.Database = mysqlUser, mysqlPassword, mysqlHost, mysqlPort, mysqlDatabase
 
+}
+
+func SetRandomKey() {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123!@#$%^&*()_+-=[]{};:,./<>?'\"")
+	b := make([]rune, 10)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	tolog.Log().Warningf("You are running at debug model! This is your key to access server. Key: %s. Use /%s to make your frontend storage this key. ", string(b), string(b)).PrintAndWriteSafe()
+	RandomKey = string(b)
 }
 
 func PrintConfWhileStart() {

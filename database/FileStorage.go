@@ -6,7 +6,6 @@ import (
 )
 
 func CreateFileRecord(fileName, filePath string, fileSize int64, fileType string) error {
-	// 创建文件记录
 	fileRecord := models.FileStorageTable{
 		FileName:  fileName,
 		FilePath:  filePath,

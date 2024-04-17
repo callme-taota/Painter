@@ -1,7 +1,8 @@
 package server
 
 import (
-	api "painter-server-new/server/api"
+	"painter-server-new/conf"
+	"painter-server-new/server/api"
 )
 
 func LinkUser() {
@@ -138,4 +139,10 @@ func LinkCommon() {
 	CommonGroup.GET("/starttime", api.GetServerRunningTime)
 	CommonGroup.GET("/vis/preday", api.GetServerPreDayVis)
 	CommonGroup.GET("/vis/currmonth", api.GetServerCurrentMonthVis)
+}
+
+func LinkDebug() {
+	if conf.Server.Model == "debug" {
+		Server.GET("/"+conf.RandomKey, api.SetDebugKeyInCookie)
+	}
 }
