@@ -16,7 +16,7 @@ var Server *gin.RouterGroup
 var LoginGroup *gin.RouterGroup
 var AdminGroup *gin.RouterGroup
 
-const StaticWebRoot = "./static/webroot"
+const StaticWebRoot = "./static/webroot/dist"
 const StaticFileRoot = "./static/upload"
 
 // InitServer initializes the main Gin server with CORS configuration.
