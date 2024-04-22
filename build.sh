@@ -31,6 +31,7 @@ npm run build
 
 cd ..
 cd ..
+cd ..
 
 export CGO_ENABLED=0
-go build -o painter-server .
+go build -o painter

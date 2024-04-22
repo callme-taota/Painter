@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { NCard, NInput, NForm, NFormItem, NIcon, NButton, useMessage } from 'naive-ui';
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -16,11 +16,11 @@ const phone = ref("")
 const username = ref("")
 const password = ref("")
 const userNickName = ref("")
-function onlyAllowNumber(value: string) {
+function onlyAllowNumber(value) {
     return !value || /^\d+$/.test(value)
 }
 
-function setLoginType(value: number) {
+function setLoginType(value) {
     Router.push({ path: "/login", query: { type: value } })
 }
 

@@ -13,7 +13,7 @@ interface ResponseData {
 }
 
 const instance = axios.create({
-    baseURL: 'http://localhost:3003',
+    baseURL: 'http://localhost:3003/api',
     timeout: 5000,
     withCredentials: true,
 });
