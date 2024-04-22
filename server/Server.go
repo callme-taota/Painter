@@ -11,9 +11,13 @@ import (
 )
 
 // Server represents the main Gin engine.
-var Server *gin.Engine
+var BaseServer *gin.Engine
+var Server *gin.RouterGroup
 var LoginGroup *gin.RouterGroup
 var AdminGroup *gin.RouterGroup
+
+const StaticWebRoot = "./static/webroot"
+const StaticFileRoot = "./static/upload"
 
 // InitServer initializes the main Gin server with CORS configuration.
 func InitServer() error {
@@ -37,7 +41,9 @@ func InitServer() error {
 	AdminGroup = adminGroup
 
 	// Set the global Server variable to the configured Gin server.
-	Server = ginServer
+	apiServer := ginServer.Group("/api")
+	BaseServer = ginServer
+	Server = apiServer
 	LinkAPI()
 	if conf.Server.Model == mid.TestMode {
 		ginServer.POST("/test", TestHandler)
@@ -71,6 +77,20 @@ func LinkAPI() {
 	LinkCommon()
 	LinkFile()
 	LinkDebug()
+	StaticWeb()
+	StaticFiles()
+}
+
+func StaticWeb() {
+	if conf.Server.Model == "release" {
+		BaseServer.Static("", StaticWebRoot)
+	}
+}
+
+func StaticFiles() {
+	if conf.Server.Model == "debug" {
+		BaseServer.Static("", StaticWebRoot)
+	}
 }
 
 func TestHandler(c *gin.Context) {

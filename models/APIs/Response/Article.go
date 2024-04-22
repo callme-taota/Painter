@@ -9,6 +9,7 @@ type FullArticle struct {
 	LikesNumber         int
 	CollectionNumber    int
 	CommentNumber       int
+	CategoryName        string
 	Liked               bool
 	Collected           bool
 }

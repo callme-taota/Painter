@@ -381,6 +381,12 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
+	category, err := GetCategory(article.CategoryID)
+	if err != nil {
+		tolog.Log().Infof("Error while GetArticleByIntList %e", err).PrintAndWriteSafe()
+		return fullArticle, result.Error
+	}
+	categoryName := category.CategoryName
 	fullArticle = Response.FullArticle{
 		ArticleTable:        article,
 		ArticleContentTable: articleContent,
@@ -388,6 +394,7 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 		LikesNumber:         int(likesNumber),
 		CommentNumber:       int(commentNumber),
 		CollectionNumber:    int(collectionNumber),
+		CategoryName:        categoryName,
 		Liked:               false,
 		Collected:           false,
 	}
