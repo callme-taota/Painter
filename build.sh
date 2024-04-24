@@ -26,11 +26,15 @@ if [ "$go_version" -lt 20 ]; then
     exit 1
 fi
 
+echo "Build vue"
 npm install
 npm run build
 
 cd ..
 cd ..
+cd ..
 
+echo "Build painter"
 export CGO_ENABLED=0
-go build -o painter-server .
+go build -o painter
+echo "Build success"
