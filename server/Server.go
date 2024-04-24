@@ -8,6 +8,7 @@ import (
 	"painter-server-new/models"
 	"painter-server-new/server/mid"
 	"painter-server-new/tolog"
+	"painter-server-new/utils"
 )
 
 // Server represents the main Gin engine.
@@ -16,8 +17,11 @@ var Server *gin.RouterGroup
 var LoginGroup *gin.RouterGroup
 var AdminGroup *gin.RouterGroup
 
-const StaticWebRoot = "./static/webroot"
-const StaticFileRoot = "./static/upload"
+var dirRoot, _ = utils.GetProjectDirRoot()
+
+const StaticWebRoot = "/server/static/webroot/dist/index.html"
+const StaticWebRootAssets = "/server/static/webroot/dist/assets"
+const StaticFileRoot = "/server/static/upload"
 
 // InitServer initializes the main Gin server with CORS configuration.
 func InitServer() error {
@@ -83,13 +87,19 @@ func LinkAPI() {
 
 func StaticWeb() {
 	if conf.Server.Model == "release" {
-		BaseServer.Static("", StaticWebRoot)
+		webRootDir := http.Dir(dirRoot + StaticWebRootAssets)
+		BaseServer.StaticFS("/assets", webRootDir)
+		BaseServer.StaticFile("/", dirRoot+StaticWebRoot)
+		BaseServer.NoRoute(func(c *gin.Context) {
+			c.File(dirRoot + StaticWebRoot)
+		})
 	}
 }
 
 func StaticFiles() {
 	if conf.Server.Model == "debug" {
-		BaseServer.Static("", StaticWebRoot)
+		fileRootDir := http.Dir(dirRoot + StaticFileRoot)
+		BaseServer.StaticFS("/f", fileRootDir)
 	}
 }
 
