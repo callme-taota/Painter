@@ -19,7 +19,7 @@ var AdminGroup *gin.RouterGroup
 
 var dirRoot, _ = utils.GetProjectDirRoot()
 
-const StaticWebRoot = "/server/static/webroot/dist/*.html"
+const StaticWebRoot = "/server/static/webroot/dist/index.html"
 const StaticWebRootAssets = "/server/static/webroot/dist/assets"
 const StaticFileRoot = "/server/static/upload"
 
@@ -89,11 +89,10 @@ func StaticWeb() {
 	if conf.Server.Model == "release" {
 		webRootDir := http.Dir(dirRoot + StaticWebRootAssets)
 		BaseServer.StaticFS("/assets", webRootDir)
-		BaseServer.LoadHTMLGlob(dirRoot + StaticWebRoot)
-		BaseServer.GET("/", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "index.html", gin.H{})
+		BaseServer.StaticFile("/", dirRoot+StaticWebRoot)
+		BaseServer.NoRoute(func(c *gin.Context) {
+			c.File(dirRoot + StaticWebRoot)
 		})
-		//BaseServer.Static("/", dirRoot+StaticWebRoot)
 	}
 }
 
