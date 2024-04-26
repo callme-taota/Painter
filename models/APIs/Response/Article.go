@@ -6,6 +6,7 @@ type FullArticle struct {
 	ArticleTable        models.ArticleTable
 	ArticleTagTable     []models.TagTable
 	ArticleContentTable models.ArticleContentTable
+	User                MiniUserInfo
 	LikesNumber         int
 	CollectionNumber    int
 	CommentNumber       int

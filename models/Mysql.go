@@ -69,7 +69,7 @@ type CommentTable struct {
 	Content    string
 	UserID     int
 	ArticleID  int
-	CreateTime int `gorm:"autoUpdateTime"`
+	CreateTime time.Time `gorm:"autoUpdateTime"`
 }
 
 func (CommentTable) TableName() string {

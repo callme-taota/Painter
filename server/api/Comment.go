@@ -129,12 +129,28 @@ func GetCommentsByArticleID(c *gin.Context) {
 	if Limit == 0 {
 		Limit = 20
 	}
+	count, err := database.GetCommentCountByArticleID(json.ArticleID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	isLogin, _ := c.Get("isLogin")
+	if isLogin.(bool) {
+		userID, _ := c.Get("userID")
+		list, err := database.GetCommentsWithLikeInfoByArticleID(json.ArticleID, Limit, Offset, userID.(int))
+		if err != nil {
+			c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+			return
+		}
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Comments": list, "CommentCount": count}))
+		return
+	}
 	list, err := database.GetCommentByArticleID(json.ArticleID, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Comments": list}))
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Comments": list, "CommentCount": count}))
 	return
 }
 

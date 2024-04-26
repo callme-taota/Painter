@@ -104,9 +104,30 @@ func UpdateArticleReadCount(articleID, count int) error {
 		return result.Error
 	}
 	article.ReadCount = count
+	result = DbEngine.Save(&article)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while UpdateArticleReadCount %e", result.Error).PrintAndWriteSafe()
+		return result.Error
+	}
 	err := UpdateArticleUpdateTime(articleID)
 	if err != nil {
 		tolog.Log().Infof("Error while UpdateArticleReadCount %e", result.Error).PrintAndWriteSafe()
+		return result.Error
+	}
+	return nil
+}
+
+func ArticleReadCountAdd(articleID int) error {
+	var readCount int
+	result := DbEngine.Model(&models.ArticleTable{}).Where("article_id = ?", articleID).Pluck("read_count", &readCount)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while updating article read count: %e", result.Error).PrintAndWriteSafe()
+		return result.Error
+	}
+	readCount += 1
+	err := UpdateArticleReadCount(articleID, readCount)
+	if err != nil {
+		tolog.Log().Infof("Error while updating article read count: %e", result.Error).PrintAndWriteSafe()
 		return result.Error
 	}
 	return nil
@@ -381,16 +402,24 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
+	var miniUserInfo Response.MiniUserInfo
+	result = DbEngine.Table("user").Select("id, email, nick_name, header_field, created_at").Where("id = ?", article.Author).First(&miniUserInfo)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetFullArticle %e", result.Error).PrintAndWriteSafe()
+		return fullArticle, result.Error
+	}
 	category, err := GetCategory(article.CategoryID)
 	if err != nil {
 		tolog.Log().Infof("Error while GetArticleByIntList %e", err).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
+	err = ArticleReadCountAdd(articleID)
 	categoryName := category.CategoryName
 	fullArticle = Response.FullArticle{
 		ArticleTable:        article,
 		ArticleContentTable: articleContent,
 		ArticleTagTable:     tagList,
+		User:                miniUserInfo,
 		LikesNumber:         int(likesNumber),
 		CommentNumber:       int(commentNumber),
 		CollectionNumber:    int(collectionNumber),

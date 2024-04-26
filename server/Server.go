@@ -36,11 +36,11 @@ func InitServer() error {
 	ginServer.Use(mid.BetterLogin())
 	ginServer.Use(mid.DebugModeMid())
 
-	loginGroup := ginServer.Group("")
+	loginGroup := ginServer.Group("/api")
 	loginGroup.Use(mid.SessionCheckMid())
 	LoginGroup = loginGroup
 
-	adminGroup := ginServer.Group("")
+	adminGroup := ginServer.Group("/api")
 	adminGroup.Use(mid.CheckAdminMid())
 	AdminGroup = adminGroup
 

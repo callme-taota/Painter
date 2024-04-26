@@ -77,6 +77,15 @@ func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment
 	return comments, nil
 }
 
+func GetCommentCountByArticleID(articleID int) (int, error) {
+	var count int64
+	res := DbEngine.Model(&models.CommentTable{}).Where("article_id = ?", articleID).Count(&count)
+	if res.Error != nil {
+		return -1, res.Error
+	}
+	return int(count), nil
+}
+
 func GetCommentLikeCount(commentID int) (int, error) {
 	var count int64
 	res := DbEngine.Model(&models.CommentLikeTable{}).Where("comment_id = ?", commentID).Count(&count)
