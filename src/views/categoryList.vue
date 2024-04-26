@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { GetCategoriesList } from "@/apis/api_category"
 import { useRouter } from 'vue-router'
+import type { CategoryListItem } from '@/utils/interface';
 
 const Router = useRouter()
 
@@ -10,13 +11,6 @@ onMounted(async () => {
 })
 
 const categroyList = ref<CategoryListItem[]>([])
-
-interface CategoryListItem {
-    ArticleCount: number,
-    CategoryName: string,
-    Description: string,
-    CategoryID: number,
-}
 
 async function getCategoryList() {
     let res = await GetCategoriesList({})

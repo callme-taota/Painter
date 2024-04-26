@@ -1,191 +1,343 @@
-<script setup>
-import { GetArticle, ArticleLike, ArticleLikeCheck } from '@/apis/api_article';
-import { GetCategoryByID } from '@/apis/api_category';
-import { CollectionCheck, Collection } from '@/apis/api_collection';
-import { GetComments, CreateComment, DeleteComment, LikeComment, DisLikeComment, GetCommentsL } from '@/apis/api_comment';
+<script setup lang="ts">
+//base
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowForward, ThumbsUpSharp, ChatboxEllipsesOutline, Star } from "@vicons/ionicons5"
-import { NH1, NH5, NH6, NIcon, NTag, NDivider, NModal, NCard, NInput, NButton, NAvatar, NText } from 'naive-ui';
-import { numTimeToString } from "@/utils/timeToStr"
 import { useUserStore } from '@/stores/user';
+import { NIcon, NAvatar, NPagination, NInput, NButton, NText } from 'naive-ui';
+import { marked } from 'marked';
+//icons
+import { AccessTimeOutlined, LabelOutlined } from '@vicons/material';
+import { FireOutlined } from '@vicons/antd'
+import { Comment48Regular, Star20Filled, Star20Regular } from '@vicons/fluent'
+import { ThumbsUp, ThumbsUpFilled } from '@vicons/carbon';
+//api
+import { GetArticle, ArticleLike } from '@/apis/api_article';
+import { Collection } from '@/apis/api_collection';
+import { GetComments, CreateComment, DeleteComment, LikeComment, DisLikeComment, GetCommentsL } from '@/apis/api_comment';
+//fn
+import { dateToDescription } from "@/utils/timeToStr"
+import type { FullArticleItem, CommentItem } from '@/utils/interface'
 
+//store & route
 const Route = useRoute()
 const Router = useRouter()
 const UserStore = useUserStore()
 
-const articleID = ref()
-const fullArticle = ref({
+//refs
+const articleID = ref<number>()
+const fullArticle = ref<FullArticleItem>({
     ArticleTable: {
-        "Title": "",
+        ArticleID: 0,
+        Title: "",
+        Author: 0,
+        Summary: "",
+        ReadCount: 0,
+        IsTop: false,
+        Status: 0, //gorm:"comment:0 草稿，1 发布，2 隐藏，3 限制，4 封禁'"
+        CategoryID: 0,
+        CreatedAt: "",
+        UpdatedAt: "",
     },
+    ArticleTagTable: [],
     ArticleContentTable: {
-        "Content": "",
+        ArticleID: 0,
+        Content: ''
     },
-    LikesNumber: 0
+    LikesNumber: 0,
+    CollectionNumber: 0,
+    CommentNumber: 0,
+    CategoryName: '',
+    Liked: false,
+    Collected: false,
+    User: {
+        ID: 0,
+        Email: "",
+        NickName: "",
+        HeaderField: "",
+        CreatedAt: "",
+    }
 })
-const categoryName = ref("")
-const updateTime = ref("")
-const commentBox = ref(false)
-const commentInput = ref("")
-const comments = ref([])
+const renderedMarkdown = ref("")
 
-onMounted(async () => {
-    articleID.value = Route.query.id
-    getArticle()
+const pageLimit = ref(10)
+const pageNum = ref(1)
+const listTotal = ref(0)
+const pageTotal = computed<number>(() => {
+    return Math.floor(listTotal.value / pageLimit.value) + 1
 })
+
+const commentInput = ref("")
+const comments = ref<CommentItem[]>([])
+
+const articleComment = ref()
+
+//hook
+onMounted(async () => {
+    articleID.value = parseInt(Route.query.id as string)
+    await getArticle()
+    await getComment()
+})
+
+//function
+const getArticle = async () => {
+    let res = await GetArticle({ "ArticleID": articleID.value })
+    fullArticle.value = res.data
+    await renderMarkdown()
+}
+
+const getComment = async () => {
+    let limit = pageLimit.value
+    let offset = (pageNum.value - 1) * limit
+    let res = await GetComments({ "ArticleID": articleID.value, "Limit": limit, "Offset": offset })
+    comments.value = res.data.Comments
+    listTotal.value = res.data.CommentCount
+}
+
+async function getWithSizeChange(size: number) {
+    pageLimit.value = size
+    await getComment()
+}
+
+async function getWithNumChange(num: number) {
+    pageNum.value = num
+    await getComment()
+}
 
 async function likeArticle() {
     let f = fullArticle.value
-    let res = await ArticleLikeCheck({ ArticleID: parseInt(articleID.value) })
-    if (res.data.IsLiked) {
+    if (f.Liked) {
         f.LikesNumber -= 1
     } else {
         f.LikesNumber += 1
     }
-    await ArticleLike({ ArticleID: parseInt(articleID.value) })
+    f.Liked = !f.Liked
+    await ArticleLike({ ArticleID: articleID.value })
 }
 
 async function collectArticle() {
     let f = fullArticle.value
-    let res = await CollectionCheck({ ArticleID: parseInt(articleID.value) })
-    if (res.data.IsCollected) {
+    if (f.Collected) {
         f.CollectionNumber -= 1
     } else {
         f.CollectionNumber += 1
     }
-    await Collection({ ArticleID: parseInt(articleID.value) })
+    f.Collected = !f.Collected
+    await Collection({ ArticleID: articleID.value })
 }
 
-async function getArticle() {
-    let res = await GetArticle({ "ArticleID": articleID.value })
-    fullArticle.value = res.data
-    let categoryID = res.data.ArticleTable.CategoryID
-    let cate_res = await GetCategoryByID({ "CategoryID": categoryID })
-    categoryName.value = cate_res.data.CategoryName
-    let time = new Date(res.data.ArticleTable.CreatedAt)
-    updateTime.value = time.getFullYear() + "-" + time.getMonth() + "-" + time.getDate()
-    console.log(res, cate_res, time)
+const scrollToComment = () => {
+    window.scrollTo(0, articleComment.value.offsetTop - 10)
 }
 
-async function openComment() {
-    if (UserStore.loginStatus) {
-        let res = await GetCommentsL({ "ArticleID": articleID.value, "Limit": 5 })
-        commentBox.value = true
-        comments.value = res.data.Comments
-    } else {
-        let res = await GetComments({ "ArticleID": articleID.value, "Limit": 5 })
-        commentBox.value = true
-        comments.value = res.data.Comments
+async function doLikeComment(c: CommentItem) {
+    if (c.Liked == true) {
+        await DisLikeComment({ "CommentID": c.CommentID })
+    } else if (c.Liked == false) {
+        await LikeComment({ "CommentID": c.CommentID })
     }
+    getComment()
 }
 
 async function doComment() {
-    let res = await CreateComment({ "ArticleID": parseInt(articleID.value), "Content": commentInput.value })
+    if (commentInput.value == "") return
+    await CreateComment({ "ArticleID": articleID.value, "Content": commentInput.value })
     commentInput.value = ""
-    openComment()
+    getComment()
 }
 
-async function doLikeComment(c) {
-    if (c.Liked == true) {
-        let res = await DisLikeComment({ "CommentID": parseInt(c.CommentID) })
-    } else if (c.Liked == false) {
-        let res = await LikeComment({ "CommentID": parseInt(c.CommentID) })
-    } else {
+const renderMarkdown = async () => {
+    const content = fullArticle.value.ArticleContentTable.Content;
+    const markedContent = await marked(content);
+    renderedMarkdown.value = markedContent;
+}
 
-    }
-    openComment()
+function toCategoryPage() {
+    let id = fullArticle.value.ArticleTable.CategoryID
+    Router.push({ path: '/articleList', query: { type: 1, id: id } })
 }
 
 </script>
-
 <template>
-    <n-h1>{{ fullArticle.ArticleTable.Title }}</n-h1>
-    <div>
-        <span v-for="tag in fullArticle.ArticleTagTable">
-            <n-tag type="info">
-                {{ tag.TagName }}
-            </n-tag>
-            <span>&nbsp;</span>
-            <span>&nbsp;</span>
-        </span>
-    </div>
-    <br>
-    <div class="article-flex">
-        <n-h6 prefix="bar" align-text>
-            类别：{{ categoryName }}
-        </n-h6>
-        <span class="article-card-numbers" @click="likeArticle">
-            <n-icon size="16">
-                <thumbs-up-sharp />
-            </n-icon>
-            {{ fullArticle.LikesNumber }}
-        </span>
-        <span class="article-card-numbers" @click="openComment">
-            <n-icon size="16">
-                <chatbox-ellipses-outline />
-            </n-icon>
-            {{ fullArticle.CommentNumber }}
-        </span>
-        <span class="article-card-numbers" @click="collectArticle">
-            <n-icon size="16">
-                <star />
-            </n-icon>
-            {{ fullArticle.CollectionNumber }}
-        </span>
-    </div>
-    <div>更新于 {{ updateTime }}</div>
-    <n-divider />
-    <div>
-        {{ fullArticle.ArticleContentTable.Content }}
-    </div>
-    <n-modal v-model:show="commentBox">
-        <n-card style="width: 1000px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="评论"
-            :bordered="false" size="huge" role="dialog" aria-modal="true">
+    <div class="article-cont">
+        <div class="article-title">{{ fullArticle.ArticleTable.Title }}</div>
+        <div class="article-info-row">
+            <div class="article-info-item article-info-user">
+                <n-avatar round :size="20" :src="fullArticle.User.HeaderField"></n-avatar>
+                <span>&nbsp;</span>
+                {{ fullArticle.User.NickName }}
+            </div>
+            <div class="article-info-item">
+                <n-icon size="16">
+                    <AccessTimeOutlined></AccessTimeOutlined>
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ dateToDescription(fullArticle.ArticleTable.CreatedAt) }}
+            </div>
+            <div @click="toCategoryPage" class="article-info-item article-info-cursor">
+                <n-icon size="16">
+                    <LabelOutlined></LabelOutlined>
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ fullArticle.CategoryName }}
+            </div>
+            <div class="article-info-item">
+                <n-icon size="16">
+                    <FireOutlined></FireOutlined>
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ fullArticle.ArticleTable.ReadCount }}
+            </div>
+            <div class="article-info-item article-info-cursor" @click="scrollToComment">
+                <n-icon size="16">
+                    <Comment48Regular></Comment48Regular>
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ fullArticle.CommentNumber }}
+            </div>
+            <div class="article-info-item article-info-cursor" @click="likeArticle">
+                <n-icon size="16">
+                    <ThumbsUpFilled v-if="fullArticle.Liked"></ThumbsUpFilled>
+                    <ThumbsUp v-else></ThumbsUp>
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ fullArticle.LikesNumber }}
+            </div>
+            <div class="article-info-item article-info-cursor" @click="collectArticle">
+                <n-icon size="16">
+                    <Star20Filled v-if="fullArticle.Collected"></Star20Filled>
+                    <Star20Regular v-else></Star20Regular>
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ fullArticle.CollectionNumber }}
+            </div>
+        </div>
+        <br />
+
+        <div class="article-content" v-html="renderedMarkdown"></div>
+        <div class="article-comment" ref="articleComment" v-if="comments.length != 0">
+            <div v-for="c in comments" class="comment-cont">
+                <n-avatar style="margin-top:4px;" round size="medium" :src="c.HeaderField"></n-avatar>
+                <div style="width: 10px;"></div>
+                <div>
+                    <div style="margin-bottom: 2px;">
+                        {{ c.NickName }}
+                        <n-text code>{{ dateToDescription(c.CreateTime) }}</n-text> &nbsp;
+                    </div>
+                    <n-text>
+                        {{ c.Content }}
+                    </n-text>
+                    <br>
+                    <div @click="doLikeComment(c)" class="article-info-cursor article-comment-like">
+                        <n-icon size="12">
+                            <ThumbsUpFilled v-if="c.Liked"></ThumbsUpFilled>
+                            <ThumbsUp v-else></ThumbsUp>
+                        </n-icon>
+                        <div>
+                            {{ c.LikeCount }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <n-pagination v-model:page="pageNum" :page-count="pageTotal" v-model:page-size="pageLimit" show-size-picker
+                :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
+                :on-update:page-size="getWithSizeChange" />
+        </div>
+
+        <div class="article-comment-input">
             <div class="comment-input-area">
                 <n-input type="textarea" placeholder="请输入评论" size="small" :autosize="{ minRows: 2 }" maxlength="100"
                     show-count v-model:value="commentInput"></n-input>
                 <div style="width: 20px;"></div>
-                <n-button @click="doComment">发布</n-button>
+                <n-button @click="doComment" size="medium">发布</n-button>
             </div>
-            <n-divider />
-            <div>
-                <div v-for="c in comments" class="comment-cont">
-                    <n-avatar round size="medium" :src="c.HeaderField"></n-avatar>
-                    <div style="width: 10px;"></div>
-                    <div>
-                        <n-h5 style="margin-bottom: 2px;">{{ c.NickName }}</n-h5>
-                        <n-text>
-                            {{ c.Content }}
-                        </n-text>
-                        <br>
-                        <n-text code>{{ numTimeToString(c.CreateTime) }}</n-text> &nbsp;
-                        <span @click="doLikeComment(c)">
-                            <n-icon size="16">
-                                <thumbs-up-sharp />
-                            </n-icon>
-                            {{ c.LikeCount }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </n-card>
-    </n-modal>
+        </div>
+    </div>
 </template>
-
-<style scoped>
-.article-flex {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+<style>
+.article-cont {
+    padding: 10px 120px;
 }
 
-.article-card-numbers {
-    width: 40px;
-    line-height: 16px;
-    font-size: 16px;
+.article-title {
+    font-weight: bolder;
+    font-size: 50px;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.article-info-row {
     display: flex;
-    justify-content: space-around;
+    flex-direction: row;
+    align-items: center;
+    line-height: 34px;
+    height: 34px;
+}
+
+.article-info-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 30px;
+    border-radius: 6px;
+    transition: 0.3s;
+    padding: 0px 12px;
+    user-select: none;
+}
+
+.article-info-cursor {
+    cursor: pointer;
+}
+
+.article-info-item:hover {
+    background: var(--layout--bottom-background);
+}
+
+.article-info-user {
+    cursor: pointer;
+    font-size: large;
+    font-weight: bold;
+}
+
+.article-content {
+    background: var(--article--background);
+    padding: 2px 20px;
+    border-radius: 20px;
+}
+
+.article-comment {
+    margin-top: 20px;
+    background: var(--article--background);
+    padding: 2px 20px 20px 20px;
+    border-radius: 20px;
+}
+
+.article-comment-input {
+    margin-top: 20px;
+    background: var(--article--background);
+    padding: 20px;
+    border-radius: 20px;
+
+}
+
+.comment-cont {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin: 10px 0;
+}
+
+.article-comment-line {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.article-comment-like {
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .comment-input-area {
@@ -193,12 +345,4 @@ async function doLikeComment(c) {
     flex-direction: row;
     align-items: center;
 }
-
-.comment-cont {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    margin-top: 0px;
-    margin-bottom: 10px;
-}
-</style>@/stores/user
+</style>

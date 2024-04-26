@@ -20,8 +20,53 @@ export interface ArticleItem {
     UpdatedAt: string,
 }
 
+export interface ArticleContentItem {
+    ArticleID: number,
+    Content: string,
+}
+
 export interface ArticleTagItem {
     TagID: number,
     TagName: string,
     Description: string,
+}
+
+export interface CategoryListItem {
+    ArticleCount: number,
+    CategoryName: string,
+    Description: string,
+    CategoryID: number,
+}
+
+export interface MiniUser {
+    ID: number,
+    Email: string,
+    NickName: string,
+    HeaderField: string,
+    CreatedAt: string,
+}
+
+export interface FullArticleItem {
+    ArticleTable: ArticleItem,
+    ArticleTagTable: ArticleTagItem[],
+    ArticleContentTable: ArticleContentItem,
+    User: MiniUser,
+    LikesNumber: number,
+    CollectionNumber: number,
+    CommentNumber: number,
+    CategoryName: string,
+    Liked: boolean,
+    Collected: boolean,
+}
+
+export interface CommentItem {
+    CommentID: number,
+    Content: number,
+    UserID: number,
+    ArticleID: number,
+    CreateTime: string,
+    NickName: string
+    HeaderField: string
+    LikeCount: number
+    Liked: boolean
 }
