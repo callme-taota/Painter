@@ -78,3 +78,12 @@ func GetFollowingNumber(userID int) (int, error) {
 	}
 	return int(count), nil
 }
+
+func CheckFollow(a, b int) (bool, error) {
+	var count int64
+	result := DbEngine.Model(&models.FollowTable{}).Where("follower_id = ? AND following_id = ?", b, a).Count(&count)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return count > 0, nil
+}

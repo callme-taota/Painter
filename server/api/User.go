@@ -406,16 +406,46 @@ func GetSelfData(c *gin.Context) {
 	return
 }
 
-func GetUserData(c *gin.Context) {
+func GetUserSelfData(c *gin.Context) {
 	userid, ok := c.Get("userID")
 	if !ok {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	user, err := database.GetUserInfoDetail(userid.(int))
+	user, err := database.GetUserSelfInfo(userid.(int))
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
+	}
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, user))
+	return
+}
+
+func GetUserFullData(c *gin.Context) {
+	var json Request.UserIDJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	user, err := database.GetUserFullInfo(json.ID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	isLogin, _ := c.Get("isLogin")
+	if isLogin.(bool) {
+		userID, _ := c.Get("userID")
+		following, err := database.CheckFollow(user.UserInfo.ID, userID.(int))
+		if err != nil {
+			c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+			return
+		}
+		user.Following = following
 	}
 	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, user))
 	return

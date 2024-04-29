@@ -68,6 +68,7 @@ func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment
 		Joins("LEFT JOIN comment_like ON comment.comment_id = comment_like.comment_id").
 		Where("article_id = ?", articleID).
 		Group("comment.comment_id").
+		Order("comment.create_time DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&comments)
@@ -97,12 +98,13 @@ func GetCommentLikeCount(commentID int) (int, error) {
 
 func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([]Response.FullCommentWithLike, error) {
 	var comments []Response.FullCommentWithLike
-	res := DbEngine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, MAX(cl.user_id) = ? as liked",
-		userID).
+	res := DbEngine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, MAX(cl.user_id) = ? as liked, comment.user_id = ? as is_self",
+		userID, userID).
 		Joins("inner join user on comment.user_id = user.id").
 		Joins("left join comment_like cl on comment.comment_id = cl.comment_id").
 		Where("article_id = ?", articleID).
 		Group("comment.comment_id").
+		Order("comment.create_time DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&comments)

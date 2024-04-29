@@ -55,8 +55,8 @@ func (HistoryTable) TableName() string {
 
 type FollowTable struct {
 	FollowID    int       `gorm:"primaryKey;autoIncrement"`
-	FollowerID  int       `gorm:"uniqueIndex:fl;not null"`
-	FollowingID int       `gorm:"uniqueIndex:fl;not null"`
+	FollowerID  int       `gorm:"uniqueIndex:fl;not null"` // 关注的
+	FollowingID int       `gorm:"uniqueIndex:fl;not null"` // 被关注的
 	FollowTime  time.Time `gorm:"autoCreateTime"`
 }
 

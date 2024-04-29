@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type FullUser struct {
+type SelfFullUser struct {
 	ArticleNumber    int
 	ArticleList      []models.ArticleTable
 	CollectionNumber int
@@ -20,4 +20,23 @@ type MiniUserInfo struct {
 	NickName    string
 	HeaderField string
 	CreatedAt   time.Time
+}
+
+type FullUser struct {
+	ArticleNumber    int
+	ArticleList      []ArticleInfo
+	CollectionNumber int
+	FollowingNumber  int
+	FollowerNumber   int
+	Following        bool
+	UserInfo         MiniUserFullInfo
+}
+
+type MiniUserFullInfo struct {
+	ID          int
+	Email       string
+	NickName    string
+	HeaderField string
+	CreatedAt   time.Time
+	LastLogin   time.Time
 }

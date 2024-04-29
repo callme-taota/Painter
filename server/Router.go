@@ -15,7 +15,7 @@ func LinkUser() {
 	userGroup.POST("/login/uname", api.UserNameLogin)
 	userGroup.POST("/login/check", api.CheckLogin)
 	userLoginGroup.POST("/self", api.GetSelfData)
-	userLoginGroup.POST("/self/full", api.GetUserData)
+	userLoginGroup.POST("/self/full", api.GetUserSelfData)
 	userLoginGroup.POST("/logout", api.LogOut)
 	userLoginGroup.POST("/update/name", api.UserNameUpdate)
 	userLoginGroup.POST("/update/email", api.UserEmailUpdate)
@@ -24,6 +24,8 @@ func LinkUser() {
 	userLoginGroup.POST("/update/headerfield", api.UserHeaderFieldUpdate)
 	userLoginGroup.POST("/update/passwd", api.UserResetPassword)
 	userLoginGroup.POST("/update", api.UserProfileUpdate)
+
+	userGroup.GET("/info", api.GetUserFullData)
 }
 
 func LinkTag() {

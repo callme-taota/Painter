@@ -15,4 +15,5 @@ type FullCommentWithLike struct {
 	HeaderField string
 	LikeCount   int
 	Liked       bool
+	IsSelf      bool
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
+	"painter-server-new/tolog"
 	"painter-server-new/utils"
 	"time"
 )
@@ -186,8 +187,8 @@ func GetUserInfo(id int) (models.UserTable, error) {
 	return user, nil
 }
 
-func GetUserInfoDetail(id int) (Response.FullUser, error) {
-	full := Response.FullUser{}
+func GetUserSelfInfo(id int) (Response.SelfFullUser, error) {
+	full := Response.SelfFullUser{}
 	user := models.UserTable{}
 	res := DbEngine.First(&user, id)
 	if res.Error != nil {
@@ -215,6 +216,50 @@ func GetUserInfoDetail(id int) (Response.FullUser, error) {
 	return full, nil
 }
 
+func GetUserFullInfo(id int) (Response.FullUser, error) {
+	full := Response.FullUser{}
+
+	var user Response.MiniUserFullInfo
+	result := DbEngine.Table("user").Select("id, email, nick_name, header_field, created_at, last_login").Where("id = ?", id).First(&user)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		return full, result.Error
+	}
+
+	articleNum, err := GetArticleCountByAuthor(id)
+	if err != nil {
+		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		return full, result.Error
+	}
+	list, err := GetArticlesByAuthor(id, articleNum, 0)
+	if err != nil {
+		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		return full, result.Error
+	}
+	art, err := GetArticleByIntList(list)
+	if err != nil {
+		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		return full, result.Error
+	}
+
+	coll := &models.CollectionTable{}
+	result = DbEngine.Where("user_id", id).Find(&coll)
+	collectionNum := result.RowsAffected
+
+	followingNum, _ := GetFollowingNumber(id)
+	followerNum, _ := GetFollowerNumber(id)
+
+	full.UserInfo = user
+	full.ArticleList = art
+	full.ArticleNumber = articleNum
+	full.CollectionNumber = int(collectionNum)
+	full.FollowingNumber = followingNum
+	full.FollowerNumber = followerNum
+	full.Following = false
+
+	return full, nil
+}
+
 func GetAdminFlag(id int) (bool, error) {
 	user := models.UserTable{}
 	result := DbEngine.Select("admin_flag").First(&user, id)
@@ -222,4 +267,20 @@ func GetAdminFlag(id int) (bool, error) {
 		return false, result.Error
 	}
 	return user.AdminFlag == 1, nil
+}
+
+func UpdateUserLoginTime(id int) (bool, error) {
+	user := models.UserTable{}
+	result := DbEngine.First(&user, id)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
+		return false, result.Error
+	}
+	user.LastLogin = time.Now()
+	result = DbEngine.Save(&user)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
+		return false, result.Error
+	}
+	return true, nil
 }

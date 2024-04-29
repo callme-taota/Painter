@@ -6,6 +6,7 @@ import (
 	"painter-server-new/cache"
 	"painter-server-new/database"
 	"painter-server-new/models"
+	"painter-server-new/tolog"
 	"strconv"
 )
 
@@ -34,6 +35,12 @@ func SessionCheckMid() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		go func() {
+			_, err := database.UpdateUserLoginTime(userID)
+			if err != nil {
+				tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+			}
+		}()
 		c.Set("userID", userID)
 		c.Next()
 	}
@@ -70,6 +77,12 @@ func CheckAdminMid() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		go func() {
+			_, err := database.UpdateUserLoginTime(userID)
+			if err != nil {
+				tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+			}
+		}()
 		c.Set("userID", userID)
 		c.Set("adminFlag", adminFlag)
 		c.Next()
@@ -97,6 +110,12 @@ func BetterLogin() gin.HandlerFunc {
 			c.Set("isLogin", false)
 			c.Next()
 		}
+		go func() {
+			_, err := database.UpdateUserLoginTime(userID)
+			if err != nil {
+				tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+			}
+		}()
 		c.Set("isLogin", true)
 		c.Set("userID", userID)
 		c.Next()
