@@ -39,3 +39,13 @@ export function dateToDescription(d: string): string {
         return `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}`;
     }
 }
+
+export function dateDiff(d :string):string {
+    let day = new Date(d)
+    let now = new Date()
+    let diff = Math.abs(now.getTime() - day.getTime())
+
+    const oneDay = 86400000; // 24 * 60 * 60 * 1000
+    
+    return `${Math.floor(diff / oneDay)}天前`;
+}

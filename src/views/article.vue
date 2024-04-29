@@ -2,18 +2,17 @@
 //base
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/user';
 import { NIcon, NAvatar, NPagination, NInput, NButton, NText } from 'naive-ui';
 import { marked } from 'marked';
 //icons
 import { AccessTimeOutlined, LabelOutlined } from '@vicons/material';
-import { FireOutlined } from '@vicons/antd'
+import { FireOutlined, DeleteOutlined } from '@vicons/antd'
 import { Comment48Regular, Star20Filled, Star20Regular } from '@vicons/fluent'
-import { ThumbsUp, ThumbsUpFilled } from '@vicons/carbon';
+import { ThumbsUp, ThumbsUpFilled, Hashtag } from '@vicons/carbon';
 //api
 import { GetArticle, ArticleLike } from '@/apis/api_article';
 import { Collection } from '@/apis/api_collection';
-import { GetComments, CreateComment, DeleteComment, LikeComment, DisLikeComment, GetCommentsL } from '@/apis/api_comment';
+import { GetComments, CreateComment, DeleteComment, LikeComment, DisLikeComment } from '@/apis/api_comment';
 //fn
 import { dateToDescription } from "@/utils/timeToStr"
 import type { FullArticleItem, CommentItem } from '@/utils/interface'
@@ -21,7 +20,6 @@ import type { FullArticleItem, CommentItem } from '@/utils/interface'
 //store & route
 const Route = useRoute()
 const Router = useRouter()
-const UserStore = useUserStore()
 
 //refs
 const articleID = ref<number>()
@@ -55,6 +53,7 @@ const fullArticle = ref<FullArticleItem>({
         NickName: "",
         HeaderField: "",
         CreatedAt: "",
+        LastLogin: ''
     }
 })
 const renderedMarkdown = ref("")
@@ -93,17 +92,17 @@ const getComment = async () => {
     listTotal.value = res.data.CommentCount
 }
 
-async function getWithSizeChange(size: number) {
+const getWithSizeChange = async (size: number) => {
     pageLimit.value = size
     await getComment()
 }
 
-async function getWithNumChange(num: number) {
+const getWithNumChange = async (num: number) => {
     pageNum.value = num
     await getComment()
 }
 
-async function likeArticle() {
+const likeArticle = async () => {
     let f = fullArticle.value
     if (f.Liked) {
         f.LikesNumber -= 1
@@ -114,7 +113,7 @@ async function likeArticle() {
     await ArticleLike({ ArticleID: articleID.value })
 }
 
-async function collectArticle() {
+const collectArticle = async () => {
     let f = fullArticle.value
     if (f.Collected) {
         f.CollectionNumber -= 1
@@ -129,7 +128,7 @@ const scrollToComment = () => {
     window.scrollTo(0, articleComment.value.offsetTop - 10)
 }
 
-async function doLikeComment(c: CommentItem) {
+const doLikeComment = async (c: CommentItem) => {
     if (c.Liked == true) {
         await DisLikeComment({ "CommentID": c.CommentID })
     } else if (c.Liked == false) {
@@ -138,10 +137,16 @@ async function doLikeComment(c: CommentItem) {
     getComment()
 }
 
-async function doComment() {
+const doComment = async () => {
     if (commentInput.value == "") return
     await CreateComment({ "ArticleID": articleID.value, "Content": commentInput.value })
     commentInput.value = ""
+    getComment()
+}
+
+const delComment = async (c: CommentItem) => {
+    if (!c.IsSelf) return
+    await DeleteComment({ "CommentID": c.CommentID })
     getComment()
 }
 
@@ -151,9 +156,17 @@ const renderMarkdown = async () => {
     renderedMarkdown.value = markedContent;
 }
 
-function toCategoryPage() {
+const toCategoryPage = () => {
     let id = fullArticle.value.ArticleTable.CategoryID
     Router.push({ path: '/articleList', query: { type: 1, id: id } })
+}
+
+const toTagPage = (id: number) => {
+    Router.push({ path: '/articleList', query: { type: 2, id: id } })
+}
+
+const toUserPage = (id: number) => {
+    Router.push({ path: '/user', query: { id: id } })
 }
 
 </script>
@@ -161,7 +174,7 @@ function toCategoryPage() {
     <div class="article-cont">
         <div class="article-title">{{ fullArticle.ArticleTable.Title }}</div>
         <div class="article-info-row">
-            <div class="article-info-item article-info-user">
+            <div class="article-info-item article-info-user" @click="toUserPage(fullArticle.ArticleTable.Author)">
                 <n-avatar round :size="20" :src="fullArticle.User.HeaderField"></n-avatar>
                 <span>&nbsp;</span>
                 {{ fullArticle.User.NickName }}
@@ -211,29 +224,50 @@ function toCategoryPage() {
                 {{ fullArticle.CollectionNumber }}
             </div>
         </div>
-        <br />
+        <div class="article-info-row">
+            <div class="article-tag-cont" v-for="t in fullArticle.ArticleTagTable" @click="toTagPage(t.TagID)">
+                <n-icon>
+                    <Hashtag />
+                </n-icon>
+                <span>&nbsp;</span>
+                {{ t.TagName }}
+            </div>
+        </div>
 
         <div class="article-content" v-html="renderedMarkdown"></div>
         <div class="article-comment" ref="articleComment" v-if="comments.length != 0">
+            <div class="article-comment-title">
+                评论（{{ listTotal }}）
+            </div>
             <div v-for="c in comments" class="comment-cont">
-                <n-avatar style="margin-top:4px;" round size="medium" :src="c.HeaderField"></n-avatar>
-                <div style="width: 10px;"></div>
+                <n-avatar style="margin-top:4px;" class="article-info-cursor" round size="medium" :src="c.HeaderField"
+                    @click="toUserPage(c.UserID)"></n-avatar>
+                <div style="width: 12px;"></div>
                 <div>
-                    <div style="margin-bottom: 2px;">
-                        {{ c.NickName }}
-                        <n-text code>{{ dateToDescription(c.CreateTime) }}</n-text> &nbsp;
+                    <div>
+                        <span class="article-comment-name article-info-cursor" @click="toUserPage(c.UserID)">
+                            {{ c.NickName }}
+                        </span>
                     </div>
-                    <n-text>
+                    <div class="article-comment-content">
                         {{ c.Content }}
-                    </n-text>
-                    <br>
-                    <div @click="doLikeComment(c)" class="article-info-cursor article-comment-like">
-                        <n-icon size="12">
-                            <ThumbsUpFilled v-if="c.Liked"></ThumbsUpFilled>
-                            <ThumbsUp v-else></ThumbsUp>
-                        </n-icon>
-                        <div>
-                            {{ c.LikeCount }}
+                    </div>
+                    <div style="display: flex;">
+                        <n-text code>{{ dateToDescription(c.CreateTime) }}</n-text> &nbsp;
+                        <div @click="doLikeComment(c)" class="article-info-cursor article-comment-like">
+                            <n-icon size="14">
+                                <ThumbsUpFilled v-if="c.Liked"></ThumbsUpFilled>
+                                <ThumbsUp v-else></ThumbsUp>
+                            </n-icon>
+                            <div>
+                                {{ c.LikeCount }}
+                            </div>
+                        </div>
+                        <div style="width: 6px;"></div>
+                        <div @click="delComment(c)" class="article-info-cursor article-comment-like">
+                            <n-icon size="14">
+                                <DeleteOutlined />
+                            </n-icon>
                         </div>
                     </div>
                 </div>
@@ -289,6 +323,10 @@ function toCategoryPage() {
     cursor: pointer;
 }
 
+.article-info-cursor:hover {
+    color: var(--highlight-color);
+}
+
 .article-info-item:hover {
     background: var(--layout--bottom-background);
 }
@@ -297,6 +335,22 @@ function toCategoryPage() {
     cursor: pointer;
     font-size: large;
     font-weight: bold;
+}
+
+.article-tag-cont {
+    margin: 0 8px;
+    font-size: normal;
+    font-weight: light;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 8px;
+    transition: 0.3s;
+}
+
+.article-tag-cont:hover {
+    cursor: pointer;
+    color: var(--highlight-color);
 }
 
 .article-content {
@@ -308,8 +362,22 @@ function toCategoryPage() {
 .article-comment {
     margin-top: 20px;
     background: var(--article--background);
-    padding: 2px 20px 20px 20px;
+    padding: 10px 20px 20px 30px;
     border-radius: 20px;
+}
+
+.article-comment-content {
+    margin: 6px 0 10px 0;
+}
+
+.article-comment-title {
+    font-weight: bold;
+    font-size: large;
+    margin-top: 10px;
+}
+
+.article-comment-name {
+    font-weight: bold;
 }
 
 .article-comment-input {
@@ -317,7 +385,6 @@ function toCategoryPage() {
     background: var(--article--background);
     padding: 20px;
     border-radius: 20px;
-
 }
 
 .comment-cont {

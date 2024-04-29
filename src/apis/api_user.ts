@@ -1,5 +1,5 @@
 import { type AxiosResponse } from 'axios';
-import { AxiosPost } from './axios';
+import { AxiosGet, AxiosPost } from './axios';
 
 interface MyResponse<T = any> extends AxiosResponse {
     ok: boolean;
@@ -113,6 +113,14 @@ export const UserSelf = async (): Promise<AxiosResponse> => {
 export const UserFull = async (): Promise<AxiosResponse> => {
     const res = await AxiosPost({
         url:"/user/self/full",
+    });
+    return res
+}
+
+export const UserInfo = async (data: any): Promise<AxiosResponse> => {
+    const res = await AxiosGet({
+        url:"/user/info",
+        data: data
     });
     return res
 }

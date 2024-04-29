@@ -3,7 +3,7 @@ import { AxiosGet, AxiosPost } from "./axios";
 
 export const CreateFollow = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
-        url:"/follow/create",
+        url:"/follow/follow",
         data: data
     });
     return res
@@ -11,7 +11,7 @@ export const CreateFollow = async (data: any): Promise<AxiosResponse> => {
 
 export const DeleteFollow = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
-        url:"/follow/delete",
+        url:"/follow/unfollow",
         data: data
     });
     return res

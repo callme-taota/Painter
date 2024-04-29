@@ -44,6 +44,17 @@ export interface MiniUser {
     NickName: string,
     HeaderField: string,
     CreatedAt: string,
+    LastLogin: string,
+}
+
+export interface FullUserItem {
+    ArticleNumber: number,
+    ArticleList: FullArticleItem[],
+    CollectionNumber: number,
+    FollowingNumber: number,
+    FollowerNumber: number,
+    UserInfo: MiniUser
+    Following: boolean
 }
 
 export interface FullArticleItem {
@@ -69,4 +80,5 @@ export interface CommentItem {
     HeaderField: string
     LikeCount: number
     Liked: boolean
+    IsSelf: boolean
 }
