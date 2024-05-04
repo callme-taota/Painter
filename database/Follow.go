@@ -2,6 +2,7 @@ package database
 
 import (
 	"painter-server-new/models"
+	"painter-server-new/models/APIs/Response"
 	"painter-server-new/tolog"
 	"time"
 )
@@ -30,6 +31,7 @@ func DeleteFollow(followerID, followingID int) error {
 	return nil
 }
 
+// GetFollowers means if a follow b, A is b's follower(fans).
 func GetFollowers(userID, limit, offset int) ([]models.FollowTable, error) {
 	var followers []models.FollowTable
 	result := DbEngine.Where("following_id = ?", userID).Limit(limit).Offset(offset).Find(&followers)
@@ -39,6 +41,24 @@ func GetFollowers(userID, limit, offset int) ([]models.FollowTable, error) {
 	return followers, nil
 }
 
+func GetFollowerUsers(followings []models.FollowTable) ([]Response.FollowUserInfo, error) {
+	var users []Response.FollowUserInfo
+	for _, following := range followings {
+		var user Response.FollowUserInfo
+		result := DbEngine.Model(&models.UserTable{}).
+			Select("id, email, nick_name, header_field, created_at, last_login").
+			Where("id = ?", following.FollowingID).
+			First(&user)
+		if result.Error != nil {
+			return nil, result.Error
+		}
+		user.Following, _ = CheckFollow(following.FollowerID, following.FollowingID)
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+// GetFollowings means if a follow b, b is a's followed people
 func GetFollowings(userID, limit, offset int) ([]models.FollowTable, error) {
 	var followings []models.FollowTable
 	result := DbEngine.Where("follower_id = ?", userID).Limit(limit).Offset(offset).Find(&followings)
@@ -48,14 +68,18 @@ func GetFollowings(userID, limit, offset int) ([]models.FollowTable, error) {
 	return followings, nil
 }
 
-func GetFollowingsUsers(followings []models.FollowTable) ([]models.UserTable, error) {
-	var users []models.UserTable
+func GetFollowingsUsers(followings []models.FollowTable) ([]Response.FollowUserInfo, error) {
+	var users []Response.FollowUserInfo
 	for _, following := range followings {
-		var user models.UserTable
-		result := DbEngine.Where("id = ?", following.FollowingID).First(&user)
+		var user Response.FollowUserInfo
+		result := DbEngine.Model(&models.UserTable{}).
+			Select("id, email, nick_name, header_field, created_at, last_login").
+			Where("id = ?", following.FollowerID).
+			First(&user)
 		if result.Error != nil {
 			return nil, result.Error
 		}
+		user.Following, _ = CheckFollow(following.FollowingID, following.FollowerID)
 		users = append(users, user)
 	}
 	return users, nil
@@ -79,6 +103,7 @@ func GetFollowingNumber(userID int) (int, error) {
 	return int(count), nil
 }
 
+// CheckFollow check if b follow a
 func CheckFollow(a, b int) (bool, error) {
 	var count int64
 	result := DbEngine.Model(&models.FollowTable{}).Where("follower_id = ? AND following_id = ?", b, a).Count(&count)

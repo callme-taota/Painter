@@ -372,7 +372,7 @@ func UserProfileUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	ok = models.ShouldCheckJSON(json, []string{"Name", "Email", "NickName", "PhoneNum", "HeaderField"})
+	ok = models.ShouldCheckJSON(json, []string{"Name", "Email", "NickName", "PhoneNum"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
@@ -382,12 +382,12 @@ func UserProfileUpdate(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	err = database.UpdateUserHeaderField(userid.(int), json.HeaderField)
-	if err != nil {
-		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"name": json.Name, "email": json.Email, "nickname": json.NickName, "phonenum": json.PhoneNum, "headerField": json.HeaderField}))
+	//err = database.UpdateUserHeaderField(userid.(int), json.HeaderField)
+	//if err != nil {
+	//	c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+	//	return
+	//}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"name": json.Name, "email": json.Email, "nickname": json.NickName, "phonenum": json.PhoneNum}))
 	return
 }
 

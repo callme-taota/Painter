@@ -199,6 +199,11 @@ func GetUserSelfInfo(id int) (Response.SelfFullUser, error) {
 	res = DbEngine.Where("author = ?", id).Find(&art)
 	articleNum := res.RowsAffected
 
+	var totalCount int
+	for _, a := range art {
+		totalCount += a.ReadCount
+	}
+
 	coll := &models.CollectionTable{}
 	res = DbEngine.Where("user_id", id).Find(&coll)
 	collectionNum := res.RowsAffected
@@ -212,6 +217,7 @@ func GetUserSelfInfo(id int) (Response.SelfFullUser, error) {
 	full.CollectionNumber = int(collectionNum)
 	full.FollowingNumber = followingNum
 	full.FollowerNumber = followerNum
+	full.TotalCount = totalCount
 
 	return full, nil
 }
@@ -242,9 +248,7 @@ func GetUserFullInfo(id int) (Response.FullUser, error) {
 		return full, result.Error
 	}
 
-	coll := &models.CollectionTable{}
-	result = DbEngine.Where("user_id", id).Find(&coll)
-	collectionNum := result.RowsAffected
+	collectionNum, _ := GetCollectionCountByUser(id)
 
 	followingNum, _ := GetFollowingNumber(id)
 	followerNum, _ := GetFollowerNumber(id)

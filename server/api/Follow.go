@@ -79,7 +79,7 @@ func GetFollowers(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	followList, err := database.GetFollowingsUsers(followers)
+	followList, err := database.GetFollowerUsers(followers)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

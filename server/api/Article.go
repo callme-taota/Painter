@@ -452,7 +452,7 @@ func GetArticlesByCollection(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	total, err := database.GetCollectionCountByUser(json.CategoryID)
+	total, err := database.GetCollectionCountByUser(json.UserID)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

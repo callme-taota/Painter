@@ -288,7 +288,6 @@ func GetArticleCountByCategory(category int) (int, error) {
 func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
 	var collections []models.CollectionTable
 	result := DbEngine.Where("user_id = ?", userID).Limit(limit).Offset(offset).
-		Order("updated_at DESC").
 		Find(&collections)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByCollection %e", result.Error).PrintAndWriteSafe()

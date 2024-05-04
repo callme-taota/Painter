@@ -11,6 +11,7 @@ type SelfFullUser struct {
 	CollectionNumber int
 	FollowingNumber  int
 	FollowerNumber   int
+	TotalCount       int
 	UserInfo         models.UserTable
 }
 
@@ -37,6 +38,16 @@ type MiniUserFullInfo struct {
 	Email       string
 	NickName    string
 	HeaderField string
+	CreatedAt   time.Time
+	LastLogin   time.Time
+}
+
+type FollowUserInfo struct {
+	ID          int
+	Email       string
+	NickName    string
+	HeaderField string
+	Following   bool
 	CreatedAt   time.Time
 	LastLogin   time.Time
 }

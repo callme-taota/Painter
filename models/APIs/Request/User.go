@@ -53,11 +53,10 @@ type UserHeaderFieldJson struct {
 }
 
 type UserProfileJson struct {
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	NickName    string `json:"nickname"`
-	PhoneNum    int    `json:"phonenum"`
-	HeaderField string `json:"headerfield"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	NickName string `json:"nickname"`
+	PhoneNum int    `json:"phonenum"`
 }
 
 type UserResetPasswordJSON struct {
