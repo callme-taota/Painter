@@ -2,10 +2,13 @@
 import { ref, onMounted, onUnmounted, Transition } from 'vue';
 import { NIcon } from 'naive-ui'
 import { Search, LogoGithub, Sunny, Moon, SyncOutline } from '@vicons/ionicons5'
+import { ArticleOutlined } from '@vicons/material'
 import { useThemeStore } from '@/stores/theme'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { useSearchStore } from '@/stores/search'
 
+const SearchStore = useSearchStore()
 const isScrolled = ref(false)
 const themeChanger = ref(false)
 const themeStore = useThemeStore()
@@ -63,6 +66,10 @@ const goTags = () => {
     Router.push("/tag")
 }
 
+const showSearch = () => {
+    SearchStore.onShow()
+}
+
 </script>
 <template>
     <Transition>
@@ -75,7 +82,7 @@ const goTags = () => {
 
             </div>
             <div class="layout-header-right">
-                <div class="layout-header-right-icon-cont">
+                <div class="layout-header-right-icon-cont" @click="showSearch">
                     <n-icon size="20">
                         <search />
                     </n-icon>
@@ -102,6 +109,11 @@ const goTags = () => {
                 </div>
                 <div class="layout-header-right-text-cont" @click="goHome">
                     主页
+                </div>
+                <div class="layout-header-right-icon-cont latout-header-right-icon-afterhide" @click="goArticleList">
+                    <n-icon size="20">
+                        <ArticleOutlined />
+                    </n-icon>
                 </div>
             </div>
             <Transition name="fade-slide">
@@ -253,5 +265,19 @@ const goTags = () => {
 
 .layout-header-theme-changer-item:hover {
     background-color: var(--btn-hover-grey);
+}
+
+.latout-header-right-icon-afterhide {
+    display: none;
+}
+
+@media (max-width: 1200px) {
+    .layout-header-right-text-cont {
+        display: none;
+    }
+
+    .latout-header-right-icon-afterhide {
+        display: flex;
+    }
 }
 </style>

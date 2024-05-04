@@ -92,7 +92,15 @@ const goBack = () => {
 <style>
 .article-list-cont {
     padding: 10px 120px;
+    transition: 0.3s;
 }
+
+@media (max-width: 1000px) {
+    .article-list-cont {
+        padding: 10px 80px;
+    }
+}
+
 
 .article-list-flex {
     display: flex;

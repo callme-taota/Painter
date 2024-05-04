@@ -38,6 +38,17 @@ export interface CategoryListItem {
     CategoryID: number,
 }
 
+export interface UserItem {
+    ID: number,
+    Email: string,
+    NickName: string,
+    HeaderField: string,
+    CreatedAt: string,
+    LastLogin: string,
+    UserName: string,
+    PhoneNum: number
+}
+
 export interface MiniUser {
     ID: number,
     Email: string,
@@ -47,19 +58,41 @@ export interface MiniUser {
     LastLogin: string,
 }
 
+export interface FollowUser {
+    ID: number,
+    Email: string,
+    NickName: string,
+    HeaderField: string,
+    CreatedAt: string,
+    LastLogin: string,
+    Following: boolean,
+}
+
 export interface FullUserItem {
     ArticleNumber: number,
-    ArticleList: FullArticleItem[],
+    ArticleList: ArticleInfoItem[],
     CollectionNumber: number,
     FollowingNumber: number,
     FollowerNumber: number,
     UserInfo: MiniUser
     Following: boolean
+    TotalCount: number
+}
+
+export interface SelfItem {
+    ArticleNumber: number,
+    ArticleList: ArticleItem[],
+    CollectionNumber: number,
+    FollowingNumber: number,
+    FollowerNumber: number,
+    UserInfo: UserItem
+    Following: boolean
+    TotalCount: number
 }
 
 export interface FullArticleItem {
     ArticleTable: ArticleItem,
-    ArticleTagTable: ArticleTagItem[],
+    ArticleTagTable: ArticleInfoItem[],
     ArticleContentTable: ArticleContentItem,
     User: MiniUser,
     LikesNumber: number,

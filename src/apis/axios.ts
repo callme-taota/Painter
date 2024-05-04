@@ -6,10 +6,17 @@ interface RequestParams {
     config?: AxiosRequestConfig;
 }
 
-interface ResponseData {
+export interface ResponseData {
     code: number;
-    message: string;
     data: any;
+    ok: boolean;
+    msg: string;
+}
+
+export interface MyResponse<T = any> extends AxiosResponse {
+    ok: boolean;
+    msg: string;
+    data: T;
 }
 
 const instance = axios.create({
@@ -18,7 +25,7 @@ const instance = axios.create({
     withCredentials: true,
 });
 
-export const AxiosPost = async ({ url, data, config }: RequestParams): Promise<AxiosResponse<ResponseData>> => {
+export const AxiosPost = async ({ url, data, config }: RequestParams): Promise<MyResponse<ResponseData>> => {
     try {
         const response = await instance.post(url, data, config);
         return response.data;
@@ -28,7 +35,7 @@ export const AxiosPost = async ({ url, data, config }: RequestParams): Promise<A
     }
 };
 
-export const AxiosGet = async ({ url, data, config }: RequestParams): Promise<AxiosResponse<ResponseData>> => {
+export const AxiosGet = async ({ url, data, config }: RequestParams): Promise<MyResponse<ResponseData>> => {
     try {
         const response = await instance.get(url, { params: data, ...config });
         return response.data;

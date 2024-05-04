@@ -2,7 +2,7 @@
 import Layout from './layout/layout.vue'
 import {useThemeStore} from './stores/theme'
 import { storeToRefs } from 'pinia'
-import { NConfigProvider, type GlobalThemeOverrides, darkTheme } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, type GlobalThemeOverrides, darkTheme } from 'naive-ui'
 
 const themeStore = useThemeStore()
 
@@ -36,7 +36,9 @@ const darkThemeOverrides: GlobalThemeOverrides = {
 
 <template>
   <n-config-provider  :theme="nDark" :theme-overrides="nDark === null ? lightThemeOverrides : darkThemeOverrides">
-    <layout></layout>
+    <n-message-provider>
+      <layout></layout>
+    </n-message-provider>
   </n-config-provider>
 </template>
 

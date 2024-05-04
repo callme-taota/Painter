@@ -3,7 +3,7 @@ import { NCard, NInput, NForm, NFormItem, NIcon, NButton, useMessage } from 'nai
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Mail, PhonePortraitOutline, PersonOutline, CreateOutline } from '@vicons/ionicons5';
-import { useUserStore } from '@/stores/counter';
+import { useUserStore } from '@/stores/user';
 import { CreateUser } from '@/apis/api_user';
 
 const Route = useRoute()

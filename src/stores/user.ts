@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { LoginUserWithEmail, LoginUserWithPhone, LoginUserWithUserName, Logout, UserSelf } from '@/apis/api_user'
+import type { MyResponse } from '@/apis/axios'
 
 export const useUserStore = defineStore('user', () => {
   const userName = ref("")
@@ -13,15 +14,22 @@ export const useUserStore = defineStore('user', () => {
     let status = loginStatus.value
     saveData("painter-blog-login-status", status)
   }
-  function getLocalLoginStatus() {
+  async function getLocalLoginStatus() {
     let status = getData("painter-blog-login-status")
+    if (status == true) {
+      await loadSelfData()
+    }
     loginStatus.value = status
+    return status
   }
-  async function loadSelfData() {
+  async function loadSelfData(): Promise<MyResponse>{
     let res = await UserSelf()
-    userName.value = res.data.UserName
-    userNickName.value = res.data.NickName
-    userHeaderField.value = res.data.Headerfield
+    if (res.ok) {
+      userName.value = res.data.UserName
+      userNickName.value = res.data.NickName
+      userHeaderField.value = res.data.HeaderField
+    }
+    return res
   }
   async function loginWithEmail(email: string, password: string) {
     let res = await LoginUserWithEmail({ "Email": email, "Password": password })
@@ -69,7 +77,7 @@ export const useUserStore = defineStore('user', () => {
     saveData("painter-blog-session", "")
   }
 
-  return { userName, userNickName, userHeaderField, loginStatus, loginWithEmail, loginWithPhone, loginWithUName, logout, clear }
+  return { userName, userNickName, userHeaderField, loginStatus, loginWithEmail, loginWithPhone, loginWithUName, logout, clear, getLocalLoginStatus, loadSelfData }
 })
 
 function saveData(key: string, value: any) {

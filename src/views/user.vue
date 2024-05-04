@@ -2,21 +2,23 @@
 //base
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { NIcon, NAvatar, NPagination, NButton } from 'naive-ui';
+import { NIcon, NAvatar, NPagination, NButton, NEmpty } from 'naive-ui';
+import ArticleCard from '@/components/article_card.vue'
 //icons
 
 //api
 import { UserInfo } from "@/apis/api_user"
 import { CreateFollow, DeleteFollow } from '@/apis/api_follow';
+import { GetArticleByAuthor } from '@/apis/api_article';
 //fn
 import { dateDiff } from "@/utils/timeToStr"
-import type { FullUserItem } from '@/utils/interface'
+import type { FullUserItem, ArticleInfoItem } from '@/utils/interface'
 //store & route
 const Route = useRoute()
 const Router = useRouter()
 
 //refs
-const userID = ref(0)
+const userID = ref<number>(0)
 const userInfo = ref<FullUserItem>({
     ArticleNumber: 0,
     ArticleList: [],
@@ -31,7 +33,8 @@ const userInfo = ref<FullUserItem>({
         CreatedAt: '',
         LastLogin: ''
     },
-    Following: false
+    Following: false,
+    TotalCount: 0
 })
 
 //fn
@@ -44,11 +47,27 @@ onMounted(async () => {
 const doFollow = async () => {
     let flag = userInfo.value.Following
     if (flag) {
-        await DeleteFollow({"FollowingID":userID.value})
+        await DeleteFollow({ "FollowingID": userID.value })
     } else {
-        await CreateFollow({"FollowingID":userID.value})
+        await CreateFollow({ "FollowingID": userID.value })
     }
     userInfo.value.Following = !userInfo.value.Following
+}
+
+const goArticleList = (id: number) => {
+    Router.push({ path: "/articlelist", query: { type: 3, id: id } })
+}
+
+const goFollowing = (id: number) => {
+    Router.push({ path: "/follow", query: { type: 1, id: id } })
+}
+
+const goFollower = (id: number) => {
+    Router.push({ path: "/follow", query: { type: 2, id: id } })
+}
+
+const goCollections = (id: number) => {
+    Router.push({ path: "/articlelist", query: { type: 4,  id: id } })
 }
 
 </script>
@@ -65,7 +84,7 @@ const doFollow = async () => {
                 上次登录 {{ dateDiff(userInfo.UserInfo.LastLogin) }}
             </div>
             <div style="display: flex; justify-content: space-between; width: 80%;">
-                <div class="user-info-item user-cursor">
+                <div class="user-info-item user-cursor" @click="goFollowing(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.FollowingNumber }}
                     </div>
@@ -73,7 +92,7 @@ const doFollow = async () => {
                         关注
                     </div>
                 </div>
-                <div class="user-info-item user-cursor">
+                <div class="user-info-item user-cursor"  @click="goFollower(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.FollowerNumber }}
                     </div>
@@ -81,7 +100,7 @@ const doFollow = async () => {
                         粉丝
                     </div>
                 </div>
-                <div class="user-info-item user-cursor">
+                <div class="user-info-item user-cursor" @click="goCollections(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.CollectionNumber }}
                     </div>
@@ -89,7 +108,7 @@ const doFollow = async () => {
                         收藏
                     </div>
                 </div>
-                <div class="user-info-item user-cursor">
+                <div class="user-info-item user-cursor" @click="goArticleList(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.ArticleNumber }}
                     </div>
@@ -102,94 +121,18 @@ const doFollow = async () => {
                 {{ userInfo.Following ? '已关注' : '关注' }}
             </div>
         </div>
+        <div class="user-article-list" :class="{ 'user-article-list-none': userInfo.ArticleList.length == 0 }">
+            <div class="article-list-flex">
+                <ArticleCard v-for="item in userInfo.ArticleList" :article="item"></ArticleCard>
+            </div>
+            <n-empty description="啥文章也没有诶" v-if="userInfo.ArticleList.length == 0">
+                <template #extra>
+                    <n-button>
+                        看看别的
+                    </n-button>
+                </template>
+            </n-empty>
+        </div>
     </div>
 </template>
-<style>
-.user-cont {
-    padding: 10px 120px;
-}
-
-.user-info-cont {
-    padding: 30px;
-    border-radius: 14px;
-    background: var(--card--background);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.user-info-head-cont {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.user-nick {
-    font-size: x-large;
-    font-weight: bolder;
-    margin-top: -20px;
-    z-index: 1;
-    padding: 2px 50px;
-    user-select: none;
-    backdrop-filter: blur(2px);
-}
-
-.user-info-item {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-top: 6px;
-    user-select: none;
-}
-
-.user-info-item-number {
-    font-size: large;
-    font-weight: bolder;
-}
-
-.user-info-item-name {
-    font-size: small;
-    font-weight: 300;
-}
-
-.user-cursor {
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.user-cursor:hover {
-    color: var(--highlight-color);
-}
-
-.user-follow-btn {
-    position: absolute;
-    right: 16px;
-    top: 16px;
-    width: 60px;
-    height: 30px;
-    border-radius: 8px;
-    transition: 0.3s;
-    text-align: center;
-    font-weight: bold;
-    line-height: 30px;
-    user-select: none;
-    color: var(--color-rev);
-    background: var(--base-hover-background);
-    border: 1px solid rgba(0, 0, 0, 0);
-    cursor: pointer;
-}
-
-.user-follow-btn-on {
-    border: 1px solid var(--border-color);
-    color: var(--color);
-    background: var(--layout--bottom-background);
-}
-
-.user-follow-btn:hover {
-    background: var(--highlight-color);
-}
-</style>
+<style></style>

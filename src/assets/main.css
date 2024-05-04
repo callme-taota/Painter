@@ -64,6 +64,7 @@ a:visited {
   --layout--bottom-background: #dcdcdc30;
   --card--background: #ffffff;
   --article--background: rgba(255, 255, 255, 0.6);
+  --add-btn-background: rgba(0, 0, 0, 0.05);
 }
 
 [theme="dark"] {
@@ -81,6 +82,7 @@ a:visited {
   --layout--bottom-background: #dcdcdc30;
   --card--background: #333;
   --article--background:rgba(0, 0, 0, 0.05);
+  --add-btn-background: rgba(0, 0, 0, 0.14);
 }
 
 .page-header{

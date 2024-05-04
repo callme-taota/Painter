@@ -1,10 +1,5 @@
 import { type AxiosResponse } from 'axios';
-import { AxiosGet, AxiosPost } from './axios';
-
-interface MyResponse<T = any> extends AxiosResponse {
-    ok: boolean;
-    msg: string;
-}
+import { AxiosGet, AxiosPost, type MyResponse } from './axios';
 
 export const CreateUser = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
@@ -103,15 +98,15 @@ export const UserUpdate = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const UserSelf = async (): Promise<AxiosResponse> => {
-    const res = await AxiosPost({
+export const UserSelf = async (): Promise<MyResponse> => {
+    const res = await AxiosGet({
         url:"/user/self",
     });
     return res
 }
 
-export const UserFull = async (): Promise<AxiosResponse> => {
-    const res = await AxiosPost({
+export const UserSelfFull = async (): Promise<AxiosResponse> => {
+    const res = await AxiosGet({
         url:"/user/self/full",
     });
     return res
