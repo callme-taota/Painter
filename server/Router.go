@@ -111,10 +111,11 @@ func LinkArticle() {
 	ArticleLoginGroup.POST("/create", api.CreateArticle)
 	ArticleLoginGroup.POST("/update/content", api.UpdateArticleContent)
 	ArticleLoginGroup.POST("/update/summary", api.UpdateArticleSummary)
-	ArticleLoginGroup.POST("/update/readcount", api.UpdateArticleReadCount)
+	ArticleLoginGroup.POST("/update/category", api.UpdateArticleCategory)
+	//ArticleLoginGroup.POST("/update/readcount", api.UpdateArticleReadCount)
 	ArticleLoginGroup.POST("/update/title", api.UpdateArticleTitle)
 	ArticleLoginGroup.POST("/update/status", api.UpdateArticleStatus)
-	ArticleLoginGroup.POST("/update/istop", api.UpdateArticleIsTop)
+	//ArticleLoginGroup.POST("/update/istop", api.UpdateArticleIsTop)
 	ArticleLoginGroup.POST("/delete", api.DeleteArticle)
 
 	ArticleLoginGroup.POST("/like/create", api.CreateArticleLike)
@@ -125,6 +126,7 @@ func LinkArticle() {
 	ArticleLoginGroup.POST("/collection", api.CollectionArticle)
 
 	ArticleLoginGroup.POST("/tag/create", api.CreateArticleTag)
+	ArticleLoginGroup.POST("/tag/update", api.UpdateArticleTag)
 	ArticleLoginGroup.POST("/tag/delete", api.DeleteArticleTag)
 }
 

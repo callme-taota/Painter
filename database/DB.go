@@ -22,6 +22,7 @@ func InitDB() error {
 		tolog.Log().Errorf("Migrate user table error %e:", err).PrintAndWriteSafe()
 		return err
 	}
+	tolog.Log().Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	return nil
 }
 

@@ -9,13 +9,14 @@ type CreateArticleJSON struct {
 }
 
 type UpdateArticleJSON struct {
-	ArticleID int    `json:"articleID"`
-	Content   string `json:"content"`
-	Summary   string `json:"summary"`
-	ReadCount int    `json:"readCount"`
-	Title     string `json:"title"`
-	Status    int    `json:"status"`
-	IsTop     bool   `json:"isTop"`
+	ArticleID  int    `json:"articleID"`
+	Content    string `json:"content"`
+	Summary    string `json:"summary"`
+	ReadCount  int    `json:"readCount"`
+	Title      string `json:"title"`
+	Status     int    `json:"status"`
+	IsTop      bool   `json:"isTop"`
+	CategoryID int    `json:"categoryID"`
 }
 
 type ArticleJSON struct {
@@ -36,4 +37,9 @@ type GetArticleJSON struct {
 type ArticleTagJSON struct {
 	ArticleID int `json:"articleID"`
 	TagID     int `json:"tagID"`
+}
+
+type ArticleTagListJSON struct {
+	ArticleID int   `json:"articleID"`
+	TagList   []int `json:"tagList"`
 }

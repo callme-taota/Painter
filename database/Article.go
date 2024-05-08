@@ -62,7 +62,7 @@ func UpdateArticleContent(articleID int, content string) error {
 		return result.Error
 	}
 	articleContent.Content = content
-	result = DbEngine.Save(&articleContent)
+	result = DbEngine.Where("article_id = ?", articleID).Save(&articleContent)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateArticleContent %e", result.Error).PrintAndWriteSafe()
 		return result.Error
@@ -552,6 +552,71 @@ func DeleteArticleTag(articleID, tagID int) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func UpdateArticleTags(articleID int, tagIDs []int) error {
+	// 查询当前文章已有的标签列表
+	var existingTagIDs []int
+	err := DbEngine.Model(&models.ArticleTagTable{}).Where("article_id = ?", articleID).Pluck("tag_id", &existingTagIDs).Error
+	if err != nil {
+		tolog.Log().Infof("Error while querying existing tags for article %d: %e", articleID, err).PrintAndWriteSafe()
+		return err
+	}
+
+	// 找出需要删除的标签
+	var tagsToDelete []int
+	for _, existingTagID := range existingTagIDs {
+		found := false
+		for _, tagID := range tagIDs {
+			if existingTagID == tagID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			tagsToDelete = append(tagsToDelete, existingTagID)
+		}
+	}
+
+	// 找出需要新增的标签
+	var tagsToAdd []int
+	for _, tagID := range tagIDs {
+		found := false
+		for _, existingTagID := range existingTagIDs {
+			if tagID == existingTagID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			tagsToAdd = append(tagsToAdd, tagID)
+		}
+	}
+	tolog.Log().Infoln(tagIDs, existingTagIDs, tagsToAdd, tagsToDelete).PrintAndWriteSafe()
+
+	// 删除需要删除的标签记录
+	if len(tagsToDelete) > 0 {
+		err = DbEngine.Where("article_id = ? and tag_id in (?)", articleID, tagsToDelete).Delete(&models.ArticleTagTable{}).Error
+		if err != nil {
+			tolog.Log().Infof("Error while deleting tags for article %d: %e", articleID, err).PrintAndWriteSafe()
+			return err
+		}
+	}
+
+	// 新增需要新增的标签记录
+	for _, tagID := range tagsToAdd {
+		articleTag := &models.ArticleTagTable{
+			ArticleID: articleID,
+			TagID:     tagID,
+		}
+		err = DbEngine.Create(&articleTag).Error
+		if err != nil {
+			tolog.Log().Infof("Error while creating tag for article %d: %e", articleID, err).PrintAndWriteSafe()
+			return err
+		}
+	}
+
+	return nil
 }
 
 func CheckArticleAuthor(articleID, author int) (bool, error) {

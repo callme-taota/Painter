@@ -83,6 +83,47 @@ func UpdateArticleContent(c *gin.Context) {
 	return
 }
 
+// UpdateArticleCategory updates the content of an existing article.
+func UpdateArticleCategory(c *gin.Context) {
+	var json Request.UpdateArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		// Bad request
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Check for required fields
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "CategoryID"})
+	if ok != true {
+		// Missing required fields
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Get userID from context
+	userID, flag := c.Get("userID")
+	if flag == false {
+		// Error getting userID
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Check if user is the author of the article
+	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	if flag == false || err != nil {
+		// Permission denied
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Update article content in database
+	err = database.UpdateArticleCategory(json.ArticleID, json.CategoryID)
+	if err != nil {
+		// Error updating article content
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Return success response
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
 // UpdateArticleSummary updates the summary of an existing article.
 func UpdateArticleSummary(c *gin.Context) {
 	var json Request.UpdateArticleJSON
@@ -696,6 +737,36 @@ func CreateArticleTag(c *gin.Context) {
 	}
 	ok, err = database.CreateArticleTag(json.ArticleID, json.TagID)
 	if err != nil || ok != true {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func UpdateArticleTag(c *gin.Context) {
+	var json Request.ArticleTagListJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "TagList"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	if flag == false || err != nil {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err = database.UpdateArticleTags(json.ArticleID, json.TagList)
+	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}

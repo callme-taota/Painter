@@ -116,6 +116,6 @@ func GetCategoryList(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgOK, models.KReturnTrue, models.RDC{"categoriesNumber": categoriesNumber, "categories": categories}))
+	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"categoriesNumber": categoriesNumber, "categories": categories}))
 	return
 }
