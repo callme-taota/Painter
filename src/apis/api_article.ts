@@ -1,7 +1,6 @@
-import { type AxiosResponse } from 'axios';
-import { AxiosPost, AxiosGet } from './axios';
+import { AxiosPost, AxiosGet, type MyResponse } from './axios';
 
-export const GetArticleByAuthor = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleByAuthor = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get/author",
         data: data
@@ -9,7 +8,7 @@ export const GetArticleByAuthor = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const GetArticleByTitle = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleByTitle = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/get/title",
         data: data
@@ -17,7 +16,7 @@ export const GetArticleByTitle = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const GetArticleByCollection = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleByCollection = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get/collection",
         data: data
@@ -25,7 +24,7 @@ export const GetArticleByCollection = async (data: any): Promise<AxiosResponse> 
     return res
 }
 
-export const GetArticleByContent = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleByContent = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/get/content",
         data: data
@@ -33,7 +32,7 @@ export const GetArticleByContent = async (data: any): Promise<AxiosResponse> => 
     return res
 }
 
-export const GetArticleByCategory = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleByCategory = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get/category",
         data: data
@@ -41,7 +40,7 @@ export const GetArticleByCategory = async (data: any): Promise<AxiosResponse> =>
     return res
 }
 
-export const GetArticleByTag = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleByTag = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get/tag",
         data: data
@@ -49,7 +48,7 @@ export const GetArticleByTag = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const GetArticle = async (data: any): Promise<AxiosResponse> => {
+export const GetArticle = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get",
         data: data
@@ -57,7 +56,7 @@ export const GetArticle = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const CreateArticle = async (data: any): Promise<AxiosResponse> => {
+export const CreateArticle = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/create",
         data: data
@@ -65,7 +64,7 @@ export const CreateArticle = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleUpdateContent = async (data: any): Promise<AxiosResponse> => {
+export const ArticleUpdateContent = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/update/content",
         data: data
@@ -73,7 +72,7 @@ export const ArticleUpdateContent = async (data: any): Promise<AxiosResponse> =>
     return res
 }
 
-export const ArticleUpdateSummary = async (data: any): Promise<AxiosResponse> => {
+export const ArticleUpdateSummary = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/update/summary",
         data: data
@@ -81,7 +80,7 @@ export const ArticleUpdateSummary = async (data: any): Promise<AxiosResponse> =>
     return res
 }
 
-export const ArticleUpdateTitle = async (data: any): Promise<AxiosResponse> => {
+export const ArticleUpdateTitle = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/update/title",
         data: data
@@ -89,7 +88,7 @@ export const ArticleUpdateTitle = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleUpdateStatus = async (data: any): Promise<AxiosResponse> => {
+export const ArticleUpdateStatus = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/update/status",
         data: data
@@ -97,15 +96,7 @@ export const ArticleUpdateStatus = async (data: any): Promise<AxiosResponse> => 
     return res
 }
 
-export const ArticleUpdateIsTop = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosPost({
-        url: "/article/update/istop",
-        data: data
-    });
-    return res
-}
-
-export const ArticleDelete = async (data: any): Promise<AxiosResponse> => {
+export const ArticleDelete = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/delete",
         data: data
@@ -113,7 +104,7 @@ export const ArticleDelete = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleLikeCreate = async (data: any): Promise<AxiosResponse> => {
+export const ArticleLikeCreate = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/like/create",
         data: data
@@ -121,7 +112,7 @@ export const ArticleLikeCreate = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleLikeDelete = async (data: any): Promise<AxiosResponse> => {
+export const ArticleLikeDelete = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/like/delete",
         data: data
@@ -129,7 +120,7 @@ export const ArticleLikeDelete = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleLike = async (data: any): Promise<AxiosResponse> => {
+export const ArticleLike = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/like",
         data: data
@@ -137,7 +128,7 @@ export const ArticleLike = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleLikeCheck = async (data: any): Promise<AxiosResponse> => {
+export const ArticleLikeCheck = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/like/check",
         data: data
@@ -145,7 +136,7 @@ export const ArticleLikeCheck = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleTagCreate = async (data: any): Promise<AxiosResponse> => {
+export const ArticleTagCreate = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/tag/create",
         data: data
@@ -153,7 +144,15 @@ export const ArticleTagCreate = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const ArticleTagDelete = async (data: any): Promise<AxiosResponse> => {
+export const ArticleTagUpdate = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url: "/article/tag/update",
+        data: data
+    });
+    return res
+}
+
+export const ArticleTagDelete = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/tag/delete",
         data: data
@@ -161,7 +160,7 @@ export const ArticleTagDelete = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const GetSelfArticle = async (data: any): Promise<AxiosResponse> => {
+export const GetSelfArticle = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get/self",
         data: data
@@ -169,9 +168,17 @@ export const GetSelfArticle = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const GetArticleList = async (data: any): Promise<AxiosResponse> => {
+export const GetArticleList = async (data: any): Promise<MyResponse> => {
     const res = await AxiosGet({
         url: "/article/get/time",
+        data: data
+    })
+    return res
+}
+
+export const UpdateArticleCategory = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url: "/article/update/category",
         data: data
     });
     return res

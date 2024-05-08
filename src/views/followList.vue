@@ -76,7 +76,7 @@ const goUser = (id: number) => {
 
 </script>
 <template>
-    <div class="follow-cont">
+    <div class="page-cont">
         <div class="follow-title">
             <h1>
                 {{ listType == 2 ? '粉丝' : '关注列表' }}
@@ -109,17 +109,6 @@ const goUser = (id: number) => {
     </div>
 </template>
 <style>
-.follow-cont {
-    padding: 10px 120px;
-    transition: 0.3s;
-}
-
-@media (max-width: 1200px) {
-    .follow-cont {
-        padding: 10px 80px;
-    }
-}
-
 .follow-userlist-card {
     margin: 6px 0;
     height: 36px;

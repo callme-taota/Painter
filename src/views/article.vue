@@ -171,7 +171,7 @@ const toUserPage = (id: number) => {
 
 </script>
 <template>
-    <div class="article-cont">
+    <div class="page-cont">
         <div class="article-title">{{ fullArticle.ArticleTable.Title }}</div>
         <div class="article-info-row">
             <div class="article-info-item article-info-user" @click="toUserPage(fullArticle.ArticleTable.Author)">
@@ -288,10 +288,6 @@ const toUserPage = (id: number) => {
     </div>
 </template>
 <style>
-.article-cont {
-    padding: 10px 120px;
-}
-
 .article-title {
     font-weight: bolder;
     font-size: 50px;
@@ -308,27 +304,12 @@ const toUserPage = (id: number) => {
     height: 34px;
 }
 
-.article-info-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 30px;
-    border-radius: 6px;
-    transition: 0.3s;
-    padding: 0px 12px;
-    user-select: none;
-}
-
 .article-info-cursor {
     cursor: pointer;
 }
 
 .article-info-cursor:hover {
     color: var(--highlight-color);
-}
-
-.article-info-item:hover {
-    background: var(--layout--bottom-background);
 }
 
 .article-info-user {

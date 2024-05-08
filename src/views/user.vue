@@ -72,7 +72,7 @@ const goCollections = (id: number) => {
 
 </script>
 <template>
-    <div class="user-cont">
+    <div class="page-cont">
         <div class="user-info-cont">
             <div class="user-info-head-cont">
                 <n-avatar round :size="80" :src="userInfo.UserInfo.HeaderField"></n-avatar>

@@ -72,7 +72,7 @@ const goBack = () => {
     <div class="page-header">
         <h1>文章列表</h1>
     </div>
-    <div class="article-list-cont" v-if="articleList.length > 0">
+    <div class="page-cont" v-if="articleList.length > 0">
         <div class="article-list-flex">
             <ArticleCard v-for="item in articleList" :article="item"></ArticleCard>
         </div>
@@ -80,7 +80,7 @@ const goBack = () => {
             show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
             :on-update:page-size="getWithSizeChange" />
     </div>
-    <div class="article-list-cont" v-if="articleList.length == 0 && isFirst == false">
+    <div class="page-cont" v-if="articleList.length == 0 && isFirst == false">
         <n-result status="404" title="好像是没东西的样子" description="换个地方吧～">
             <template #footer>
                 <n-button @click="goBack">返回</n-button>
@@ -90,18 +90,6 @@ const goBack = () => {
 </template>
 
 <style>
-.article-list-cont {
-    padding: 10px 120px;
-    transition: 0.3s;
-}
-
-@media (max-width: 1000px) {
-    .article-list-cont {
-        padding: 10px 80px;
-    }
-}
-
-
 .article-list-flex {
     display: flex;
     flex-direction: row;

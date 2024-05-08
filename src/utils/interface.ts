@@ -92,7 +92,7 @@ export interface SelfItem {
 
 export interface FullArticleItem {
     ArticleTable: ArticleItem,
-    ArticleTagTable: ArticleInfoItem[],
+    ArticleTagTable: ArticleTagItem[],
     ArticleContentTable: ArticleContentItem,
     User: MiniUser,
     LikesNumber: number,
@@ -114,4 +114,10 @@ export interface CommentItem {
     LikeCount: number
     Liked: boolean
     IsSelf: boolean
+}
+
+export interface CategoryItem {
+    CategoryID: number,
+    CategoryName: string,
+    Description: string
 }

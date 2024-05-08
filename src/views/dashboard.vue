@@ -3,7 +3,7 @@
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import { useMessage, NAvatar, NIcon, NModal, NCard, NInput, NButton } from 'naive-ui'
+import { useMessage, NAvatar, NIcon, NModal, NCard, NInput, NButton, NInputNumber } from 'naive-ui'
 //store
 import { useUserStore } from '@/stores/user';
 import { UserSelfFull, UserUpdate } from '@/apis/api_user';
@@ -14,6 +14,7 @@ import { dateDiff, dateToString } from "@/utils/timeToStr"
 //icons
 import { Add } from '@vicons/carbon'
 import { KeyboardArrowRightFilled } from '@vicons/material';
+import { LogoutOutlined } from '@vicons/antd';
 //ref
 const Router = useRouter()
 const UserStore = useUserStore()
@@ -76,6 +77,10 @@ const goEditArticle = (type: number, id: number) => {
     Router.push({ path: "/editarticle", query: { type: type, id: id } })
 }
 
+const goLogin = () => {
+    Router.push({ path: "/editarticle"})
+}
+
 const update = async () => {
     console.log(userInfo.value.UserInfo)
     await UserUpdate({
@@ -88,7 +93,7 @@ const update = async () => {
 
 </script>
 <template>
-    <div class="user-cont">
+    <div class="page-cont">
         <div class="user-info-cont">
             <div class="user-info-head-cont">
                 <n-avatar round :size="80" :src="userInfo.UserInfo.HeaderField"></n-avatar>
@@ -144,6 +149,11 @@ const update = async () => {
             <div class="user-follow-btn" @click="showModal = !showModal">
                 管理
             </div>
+            <n-button class="user-logout">
+                <n-icon>
+                    <LogoutOutlined />
+                </n-icon>
+            </n-button>
         </div>
         <h3>
             文章管理
@@ -195,13 +205,13 @@ const update = async () => {
                     </span>
                 </template>
             </n-input>
-            <n-input class="user-modal-input" placeholder="电话号码" v-model:value="userInfo.UserInfo.PhoneNum">
+            <n-input-number class="user-modal-input" placeholder="电话号码" v-model:value="userInfo.UserInfo.PhoneNum" :show-button="false">
                 <template #prefix>
                     <span class="user-modal-label">
                         电话号码
                     </span>
                 </template>
-            </n-input>
+            </n-input-number>
             <n-button @click="update">
                 提交
             </n-button>
@@ -227,6 +237,12 @@ const update = async () => {
     cursor: pointer;
 }
 
+.user-logout{
+    position: absolute;
+    right: 86px;
+    top: 15px;
+}
+
 .user-fix-add-btn:hover {
     box-shadow: 0 0 12px var(--second-highlight-color);
     color: var(--color-rev);
@@ -249,7 +265,7 @@ const update = async () => {
     box-shadow: 0 0 4px var(--second-highlight-color);
 }
 
-.user-article-list-item-left {}
+/* .user-article-list-item-left {} */
 
 .user-article-list-item-title {
     font-weight: bold;
