@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Layout from './layout/layout.vue'
-import {useThemeStore} from './stores/theme'
+import { useThemeStore } from './stores/theme'
 import { storeToRefs } from 'pinia'
 import { NConfigProvider, NMessageProvider, type GlobalThemeOverrides, darkTheme } from 'naive-ui'
 
@@ -18,6 +18,13 @@ const lightThemeOverrides: GlobalThemeOverrides = {
     borderRadiusSmall: '6px',
     textColorBase: '#000',
   },
+  Steps: {
+    indicatorColorProcess: '#378CE7FF',
+    indicatorBorderColorFinish: '#378CE7FF',
+  },
+  Result: {
+    iconColorSuccess: '#378CE7FF',
+  }
 }
 
 const darkThemeOverrides: GlobalThemeOverrides = {
@@ -30,12 +37,19 @@ const darkThemeOverrides: GlobalThemeOverrides = {
     borderRadiusSmall: '6px',
     textColorBase: '#fff',
   },
+  Steps: {
+    indicatorColorProcess: '#378CE7FF',
+    indicatorBorderColorFinish: '#378CE7FF',
+  },
+  Result: {
+    iconColorSuccess: '#378CE7FF',
+  }
 }
 
 </script>
 
 <template>
-  <n-config-provider  :theme="nDark" :theme-overrides="nDark === null ? lightThemeOverrides : darkThemeOverrides">
+  <n-config-provider :theme="nDark" :theme-overrides="nDark === null ? lightThemeOverrides : darkThemeOverrides">
     <n-message-provider>
       <layout></layout>
     </n-message-provider>

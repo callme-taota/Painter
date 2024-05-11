@@ -77,6 +77,7 @@ export interface FullUserItem {
     UserInfo: MiniUser
     Following: boolean
     TotalCount: number
+    Self : boolean
 }
 
 export interface SelfItem {

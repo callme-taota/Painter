@@ -1,17 +1,15 @@
-<script setup lang="ts">
+<script setup>
 import { NH1, NTabs, NTabPane, NTable, NButton, NModal, NCard, NInput, NPagination, NSelect, NPopconfirm } from "naive-ui";
 import { ref, onMounted, computed } from 'vue';
 import { TagList, CreateTag, UpdateTagName, UpdateTagDesc, TagListFull } from "@/apis/api_tag";
 import { CategoryList, CategoryCreate, CategoryUpdateName, CategoryUpdateDesc, GetCategoriesList } from "@/apis/api_category";
 import { GetSelfArticle, CreateArticle, GetArticle, ArticleDelete, ArticleUpdateTitle, ArticleUpdateContent, ArticleUpdateSummary } from "@/apis/api_article";
-import { dateToString } from '@/utils/timeToStr';
 
 onMounted(() => {
     getTags()
     getCates()
     getArticle()
 })
-
 
 //modal 
 const modalVis = ref(false)
@@ -221,172 +219,105 @@ const submitArticleModal = async () => {
 
 </script>
 <template>
-    <n-h1>管理</n-h1>
-    <n-tabs type="line" animated>
-        <n-tab-pane name="tag" tab="标签">
-            <n-button @click="change({}, 3)">新增</n-button>
-            <br>
-            <n-table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>标签名</th>
-                        <th>标签说明</th>
-                        <th>动作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="t in tagList">
-                        <td>{{ t.TagID }}</td>
-                        <td>{{ t.TagName }}</td>
-                        <td>{{ t.Description }}</td>
-                        <td>
-                            <n-button @click="change(t, 1)">改名</n-button> &nbsp;
-                            <n-button @click="change(t, 2)">改介绍</n-button>
-                        </td>
-                    </tr>
-                </tbody>
-            </n-table>
-            <br>
-            <n-pagination v-model:page="tagPanePageNum" :page-count="tagPaneTotal" v-model:page-size="tagPaneLimit"
-                show-size-picker :page-sizes="[5, 20, 30, 40]" :on-update:page="getTagWithNumChange"
-                :on-update:page-size="getTagWithSizeChange" />
-        </n-tab-pane>
-        <n-tab-pane name="cate" tab="类别">
-            <n-button @click="change({}, 6)">新增</n-button>
-            <br>
-            <n-table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>标签名</th>
-                        <th>标签说明</th>
-                        <th>动作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="c in cateList">
-                        <td>{{ c.CategoryID }}</td>
-                        <td>{{ c.CategoryName }}</td>
-                        <td>{{ c.Description }}</td>
-                        <td>
-                            <n-button @click="change(c, 4)">改名</n-button> &nbsp;
-                            <n-button @click="change(c, 5)">改介绍</n-button>
-                        </td>
-                    </tr>
-                </tbody>
-            </n-table>
-            <br>
-            <n-pagination v-model:page="catePanePageNum" :page-count="catePaneTotal" v-model:page-size="catePaneLimit"
-                show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getCateWithNumChange"
-                :on-update:page-size="getCateWithSizeChange" />
-        </n-tab-pane>
-        <n-tab-pane name="art" tab="文章">
-            <n-button @click="createArticle">新增文章</n-button>
-            <br>
-            <n-table>
-                <thead>
-                    <tr>
-                        <th>文章名</th>
-                        <th>创建时间</th>
-                        <th>动作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="a in articleList">
-                        <td>{{ a.ArticleTable.Title }}</td>
-                        <td>{{ dateToString(a.ArticleTable.CreatedAt) }}</td>
-                        <td>
-                            <n-button @click="UpdateArticle(a, 1)">修改标题</n-button>
-                            <n-button @click="UpdateArticle(a, 2)">修改内容</n-button>
-                            <n-button @click="UpdateArticle(a, 3)">修改简介</n-button>
-                            <n-popconfirm @positive-click="UpdateArticle(a, 4)" @negative-click="handleNegativeClick">
-                                <template #trigger>
-                                    <n-button>删除</n-button>
-                                </template>
-                                是否删除
-                            </n-popconfirm>
-                        </td>
-                    </tr>
-                </tbody>
-            </n-table>
-            <br>
-            <n-pagination v-model:page="catePanePageNum" :page-count="catePaneTotal" v-model:page-size="catePaneLimit"
-                show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getarticleWithNumChange"
-                :on-update:page-size="getarticleWithSizeChange" />
-        </n-tab-pane>
-    </n-tabs>
+    <div class="page-cont">
 
-    <n-modal v-model:show="modalVis">
-        <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="更改"
-            :bordered="false" size="huge" role="dialog" aria-modal="true">
-            <div class="input-area">
-                <n-input placeholder="请输入" maxlength="100" show-count v-model:value="inputValue"></n-input>
-                <div style="width: 20px;"></div>
-                <n-button @click="submitModal">提交</n-button>
-            </div>
-        </n-card>
-    </n-modal>
+        <n-h1>管理</n-h1>
+        <n-tabs type="line" animated>
+            <n-tab-pane name="tag" tab="标签">
+                <n-button @click="change({}, 3)">新增</n-button>
+                <br>
+                <n-table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标签名</th>
+                            <th>标签说明</th>
+                            <th>动作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="t in tagList">
+                            <td>{{ t.TagID }}</td>
+                            <td>{{ t.TagName }}</td>
+                            <td>{{ t.Description }}</td>
+                            <td>
+                                <n-button @click="change(t, 1)">改名</n-button> &nbsp;
+                                <n-button @click="change(t, 2)">改介绍</n-button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </n-table>
+                <br>
+                <n-pagination v-model:page="tagPanePageNum" :page-count="tagPaneTotal" v-model:page-size="tagPaneLimit"
+                    show-size-picker :page-sizes="[5, 20, 30, 40]" :on-update:page="getTagWithNumChange"
+                    :on-update:page-size="getTagWithSizeChange" />
+            </n-tab-pane>
+            <n-tab-pane name="cate" tab="类别">
+                <n-button @click="change({}, 6)">新增</n-button>
+                <br>
+                <n-table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标签名</th>
+                            <th>标签说明</th>
+                            <th>动作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="c in cateList">
+                            <td>{{ c.CategoryID }}</td>
+                            <td>{{ c.CategoryName }}</td>
+                            <td>{{ c.Description }}</td>
+                            <td>
+                                <n-button @click="change(c, 4)">改名</n-button> &nbsp;
+                                <n-button @click="change(c, 5)">改介绍</n-button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </n-table>
+                <br>
+                <n-pagination v-model:page="catePanePageNum" :page-count="catePaneTotal"
+                    v-model:page-size="catePaneLimit" show-size-picker :page-sizes="[10, 20, 30, 40]"
+                    :on-update:page="getCateWithNumChange" :on-update:page-size="getCateWithSizeChange" />
+            </n-tab-pane>
+        </n-tabs>
 
-    <n-modal v-model:show="articleModalVis">
-        <n-card style="width: 800px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="文章"
-            :bordered="false" size="huge" role="dialog" aria-modal="true">
-            <div>
-                <div>标题</div>
-                <n-input placeholder="请输入标题" maxlength="60" show-count v-model:value="articleTitle"></n-input>
-                <br>
-                <br>
-                <div style="display: flex; flex-direction: row; justify-content: space-between;">
-                    <div>
-                        <div>类别</div>
-                        <n-select v-model:value="articleCategory" label-field="CategoryName" value-field="CategoryID"
-                            placeholder="类别" filterable :on-focus="getCategoryList" :options="articleCategoryOptions">
-                        </n-select>
-                    </div>
-                    <div>
-                        <div>标签</div>
-                        <n-select style="min-width: 160px;" v-model:value="articleTags" multiple label-field="TagName"
-                            value-field="TagID" placeholder="类别" filterable :on-focus="getTagList"
-                            :options="articleTagOptions"></n-select>
-                    </div>
+        <n-modal v-model:show="modalVis">
+            <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);"
+                title="更改" :bordered="false" size="huge" role="dialog" aria-modal="true">
+                <div class="input-area">
+                    <n-input placeholder="请输入" maxlength="100" show-count v-model:value="inputValue"></n-input>
+                    <div style="width: 20px;"></div>
+                    <n-button @click="submitModal">提交</n-button>
                 </div>
-                <br>
-                <div>内容</div>
-                <n-input placeholder="文章内容" show-count type="textarea" v-model:value="articleContent"></n-input>
-                <br>
-                <br>
-                <div>总结</div>
-                <n-input placeholder="文章总结" show-count type="textarea" v-model:value="articleSummary"></n-input>
-                <br>
-                <br>
-                <n-button @click="articleSubmit">提交</n-button>
-            </div>
-        </n-card>
-    </n-modal>
+            </n-card>
+        </n-modal>
 
-    <n-modal v-model:show="articleUpdateTitleModalVis">
-        <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="更改"
-            :bordered="false" size="huge" role="dialog" aria-modal="true">
-            <div class="input-area">
-                <n-input placeholder="请输入" v-model:value="articleTitle"></n-input>
-                <div style="width: 20px;"></div>
-                <n-button @click="submitArticleModal">提交</n-button>
-            </div>
-        </n-card>
-    </n-modal>
+        <n-modal v-model:show="articleUpdateTitleModalVis">
+            <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);"
+                title="更改" :bordered="false" size="huge" role="dialog" aria-modal="true">
+                <div class="input-area">
+                    <n-input placeholder="请输入" v-model:value="articleTitle"></n-input>
+                    <div style="width: 20px;"></div>
+                    <n-button @click="submitArticleModal">提交</n-button>
+                </div>
+            </n-card>
+        </n-modal>
 
-    <n-modal v-model:show="articleUpdateContentModalVis">
-        <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);" title="更改"
-            :bordered="false" size="huge" role="dialog" aria-modal="true">
-            <div class="input-area">
-                <n-input placeholder="请输入" v-model:value="articleChange" :autosize="{
-                minRows: 3
-            }" type="textarea"></n-input>
-                <div style="width: 20px;"></div>
-                <n-button @click="submitArticleModal">提交</n-button>
-            </div>
-        </n-card>
-    </n-modal>
+        <n-modal v-model:show="articleUpdateContentModalVis">
+            <n-card style="width: 500px; position: fixed; left: 50%;top: 50%;transform: translate(-50%,-50%);"
+                title="更改" :bordered="false" size="huge" role="dialog" aria-modal="true">
+                <div class="input-area">
+                    <n-input placeholder="请输入" v-model:value="articleChange" :autosize="{
+                        minRows: 3
+                    }" type="textarea"></n-input>
+                    <div style="width: 20px;"></div>
+                    <n-button @click="submitArticleModal">提交</n-button>
+                </div>
+            </n-card>
+        </n-modal>
+    </div>
 
 </template>
 <style>

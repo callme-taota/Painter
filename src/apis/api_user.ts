@@ -1,7 +1,7 @@
 import { type AxiosResponse } from 'axios';
 import { AxiosGet, AxiosPost, type MyResponse } from './axios';
 
-export const CreateUser = async (data: any): Promise<AxiosResponse> => {
+export const CreateUser = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url:"/user/create",
         data: data
@@ -9,9 +9,17 @@ export const CreateUser = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const LoginUserWithEmail = async (data: any): Promise<AxiosResponse> => {
+export const LoginUserWithEmail = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url:"/user/login/email",
+        data: data
+    });
+    return res
+}
+
+export const LoginUserWithEmailCheck = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/user/login/email/pass",
         data: data
     });
     return res
@@ -25,9 +33,17 @@ export const LoginUserWithPhone = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const LoginUserWithUserName = async (data: any): Promise<AxiosResponse> => {
+export const LoginUserWithUserName = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url:"/user/login/uname",
+        data: data
+    });
+    return res
+}
+
+export const LoginUserWithUserNameCheck = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/user/login/uname/pass",
         data: data
     });
     return res
@@ -41,6 +57,13 @@ export const LoginUserWithCheck = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
+export const UserExist = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/user/login/exist",
+        data: data
+    });
+    return res
+}
 
 export const Logout = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
@@ -115,6 +138,22 @@ export const UserSelfFull = async (): Promise<AxiosResponse> => {
 export const UserInfo = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosGet({
         url:"/user/info",
+        data: data
+    });
+    return res
+}
+
+export const LoginSendMail = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/user/login/send",
+        data: data
+    });
+    return res
+}
+
+export const LoginMailCodeCheck = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/user/login/mailcheck",
         data: data
     });
     return res

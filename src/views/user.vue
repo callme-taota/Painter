@@ -34,7 +34,8 @@ const userInfo = ref<FullUserItem>({
         LastLogin: ''
     },
     Following: false,
-    TotalCount: 0
+    TotalCount: 0,
+    Self: false
 })
 
 //fn
@@ -59,15 +60,19 @@ const goArticleList = (id: number) => {
 }
 
 const goFollowing = (id: number) => {
-    Router.push({ path: "/follow", query: { type: 1, id: id } })
+    if (userInfo.value.Self) {
+        Router.push({ path: "/follow", query: { type: 1, id: id } })
+    }
 }
 
 const goFollower = (id: number) => {
-    Router.push({ path: "/follow", query: { type: 2, id: id } })
+    if (userInfo.value.Self) {
+        Router.push({ path: "/follow", query: { type: 2, id: id } })
+    }
 }
 
 const goCollections = (id: number) => {
-    Router.push({ path: "/articlelist", query: { type: 4,  id: id } })
+    Router.push({ path: "/articlelist", query: { type: 4, id: id } })
 }
 
 </script>
@@ -84,7 +89,7 @@ const goCollections = (id: number) => {
                 上次登录 {{ dateDiff(userInfo.UserInfo.LastLogin) }}
             </div>
             <div style="display: flex; justify-content: space-between; width: 80%;">
-                <div class="user-info-item user-cursor" @click="goFollowing(userID)">
+                <div class="user-info-item" :class="{ 'user-cursor': userInfo.Self }" @click="goFollowing(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.FollowingNumber }}
                     </div>
@@ -92,7 +97,7 @@ const goCollections = (id: number) => {
                         关注
                     </div>
                 </div>
-                <div class="user-info-item user-cursor"  @click="goFollower(userID)">
+                <div class="user-info-item" :class="{ 'user-cursor': userInfo.Self }" @click="goFollower(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.FollowerNumber }}
                     </div>

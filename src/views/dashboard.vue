@@ -42,7 +42,7 @@ const userInfo = ref<SelfItem>({
 })
 //fn
 onMounted(async () => {
-    if (!loginStatus) {
+    if (!loginStatus.value) {
         Router.push({ path: '/login' })
         Message.warning("账号还未登录，请登录再试！")
     }
@@ -77,18 +77,19 @@ const goEditArticle = (type: number, id: number) => {
     Router.push({ path: "/editarticle", query: { type: type, id: id } })
 }
 
-const goLogin = () => {
-    Router.push({ path: "/editarticle"})
+const doLogout = () => {
+    UserStore.logout()
+    Router.push({ path: "/login"})
 }
 
 const update = async () => {
-    console.log(userInfo.value.UserInfo)
     await UserUpdate({
         Name: userInfo.value.UserInfo.UserName,
         Email: userInfo.value.UserInfo.Email,
         PhoneNum: userInfo.value.UserInfo.PhoneNum as number,
         NickName: userInfo.value.UserInfo.NickName,
     })
+    showModal.value = !showModal.value
 }
 
 </script>
@@ -149,7 +150,7 @@ const update = async () => {
             <div class="user-follow-btn" @click="showModal = !showModal">
                 管理
             </div>
-            <n-button class="user-logout">
+            <n-button class="user-logout" @click="doLogout">
                 <n-icon>
                     <LogoutOutlined />
                 </n-icon>

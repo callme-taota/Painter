@@ -7,6 +7,7 @@ export const useThemeStore = defineStore("themeStore", {
         isDeviceDarkTheme: window.matchMedia('(prefers-color-scheme: dark)').matches,
         themeSetting: "auto",
         nDark: null as BuiltInGlobalTheme | null,
+        headerDisplay: true
     }),
     actions: {
         SetThemeLight() {
@@ -41,9 +42,17 @@ export const useThemeStore = defineStore("themeStore", {
         ChangeThemeHandler() {
             if (window.matchMedia('(prefers-color-scheme: dark)').matches == true) {
                 document.documentElement.setAttribute('theme', 'dark');
+                this.nDark = darkTheme
             } else {
                 document.documentElement.removeAttribute('theme')
+                this.nDark = null
             }
+        },
+        hideHeader() {
+            this.headerDisplay = false
+        },
+        showHeader() {
+            this.headerDisplay = true
         }
     },
     getters: {

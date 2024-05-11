@@ -3,12 +3,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { marked } from 'marked';
-import { NIcon, NInput, NSelect, NButton } from 'naive-ui';
+import { NIcon, NInput, NSelect, NButton, useMessage } from 'naive-ui';
 import RequiredStar from '@/components/required_star.vue'
 //apis
 import { GetCategoriesList } from '@/apis/api_category';
 import { TagListFull } from '@/apis/api_tag';
-import { GetArticle, ArticleUpdateContent, ArticleUpdateSummary, ArticleUpdateTitle, UpdateArticleCategory, ArticleTagUpdate } from '@/apis/api_article';
+import { GetArticle, ArticleUpdateContent, ArticleUpdateSummary, ArticleUpdateTitle, UpdateArticleCategory, ArticleTagUpdate, CreateArticle } from '@/apis/api_article';
 //icons
 import { CircleEdit20Regular, ProtocolHandler16Regular, PreviewLink20Regular, TextBold16Regular, TextStrikethrough16Regular, AppsList20Regular, TextNumberListLtr20Regular, Comment48Regular, Star20Regular } from '@vicons/fluent';
 import { FormatItalicSharp } from '@vicons/material';
@@ -17,10 +17,11 @@ import { FireOutlined } from '@vicons/antd';
 import { ThumbsUp } from '@vicons/carbon';
 //utils
 import type { FullArticleItem, ArticleTagItem, CategoryListItem } from '@/utils/interface';
-import { dateToString } from '@/utils/timeToStr';
+import { dateToString, dateNow } from '@/utils/timeToStr';
 //store
 const Route = useRoute()
 const Router = useRouter()
+const Message = useMessage()
 //refs
 const editType = ref<number>() // edit -> 1, add -> 2
 const articleID = ref<number>()
@@ -118,13 +119,38 @@ const addSomeContent = (add: string) => {
 
 const doUpdate = async () => {
     let id = articleID.value
-
     await ArticleUpdateContent({ "ArticleID": id, "Content": fullArticle.value.ArticleContentTable.Content })
     await ArticleUpdateSummary({ "ArticleID": id, "Summary": fullArticle.value.ArticleTable.Summary })
     await ArticleUpdateTitle({ "ArticleID": id, "Title": fullArticle.value.ArticleTable.Title })
     await UpdateArticleCategory({ "ArticleID": id, "CategoryID": fullArticle.value.ArticleTable.CategoryID })
-    console.log(tagSelect.value)
     await ArticleTagUpdate({ "ArticleID": id, "TagList": tagSelect.value })
+    Message.info("修改成功")
+    Router.push({ path: "/dashboard" })
+}
+
+const doCreate = async () => {
+    if (fullArticle.value.ArticleTable.Title == "" || fullArticle.value.ArticleContentTable.Content == "" || fullArticle.value.ArticleTable.Summary == "" || fullArticle.value.ArticleTable.CategoryID <= 0) {
+        Message.warning("检查一下少了啥")
+    }
+    let res = await CreateArticle({
+        "Title": fullArticle.value.ArticleTable.Title,
+        "Content": fullArticle.value.ArticleContentTable.Content,
+        "Summary": fullArticle.value.ArticleTable.Summary,
+        "CategoryID": fullArticle.value.ArticleTable.CategoryID,
+        "Tags": tagSelect.value
+    })
+    if (res.ok) {
+        Message.info("新增成功")
+    }
+    Router.push({ path: "/dashboard" })
+}
+
+const doPost = async () => {
+    if (editType.value == 1) {
+        await doUpdate()
+    } else if (editType.value == 2) {
+        await doCreate()
+    }
 }
 
 </script>
@@ -251,7 +277,7 @@ const doUpdate = async () => {
                     <n-select label-field="TagName" value-field="TagID" multiple :options="tagList"
                         v-model:value="tagSelect" />
                 </div>
-                <div class="edit-card">
+                <div class="edit-card" v-if="editType == 1">
                     <div class="edit-card-title">
                         信息
                     </div>
@@ -291,13 +317,13 @@ const doUpdate = async () => {
                         发布
                     </div>
                     <div>
-                        · 创建日期： {{ dateToString(fullArticle.ArticleTable.CreatedAt) }}
+                        · 创建日期： {{ editType == 1 ? dateToString(fullArticle.ArticleTable.CreatedAt) : dateNow() }}
                     </div>
-                    <div>
+                    <div v-if="editType == 1">
                         · 上次更新： {{ dateToString(fullArticle.ArticleTable.UpdatedAt) }}
                     </div>
                     <div style="height: 10px;"></div>
-                    <n-button @click="doUpdate">
+                    <n-button @click="doPost">
                         {{ editType == 1 ? '更新' : '新增' }}
                     </n-button>
                 </div>

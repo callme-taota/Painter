@@ -20,6 +20,7 @@ const handleScroll = () => {
 };
 
 onMounted(() => {
+    themeStore.SetThemeAuto()
     window.addEventListener('scroll', handleScroll);
 });
 
@@ -73,7 +74,7 @@ const showSearch = () => {
 </script>
 <template>
     <Transition>
-        <div class="layout-header-cont" :class="{ 'layout-header-cont-after-scroll': isScrolled }">
+        <div v-if="themeStore.headerDisplay" class="layout-header-cont" :class="{ 'layout-header-cont-after-scroll': isScrolled }">
             <div class="layout-header-left">
                 <img src="../../assets/logo.png" alt="Taota-Logo" class="layout-logo">
                 <div class="layout-header-painter">Painter</div>
@@ -165,10 +166,6 @@ const showSearch = () => {
     height: 40px;
     border-radius: 14px;
     transition: 0.3s;
-}
-
-.layout-logo:hover {
-    background-color: var(--base-hover-background);
 }
 
 .layout-header-left {

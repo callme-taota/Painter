@@ -66,6 +66,7 @@ a:visited {
   --article--background: rgba(255, 255, 255, 0.6);
   --add-btn-background: rgba(0, 0, 0, 0.05);
   --content-border: 1px solid rgb(224, 224, 230);
+  --login-border: 1px solid rgb(224, 224, 230);
 }
 
 [theme="dark"] {
@@ -85,6 +86,7 @@ a:visited {
   --article--background:rgba(0, 0, 0, 0.05);
   --add-btn-background: rgba(0, 0, 0, 0.14);
   --content-border: 1px solid #0000;
+  --login-border: 1px solid #67a7ec;
 }
 
 .page-header{
@@ -110,4 +112,18 @@ a:visited {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
 }

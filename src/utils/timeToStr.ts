@@ -19,6 +19,12 @@ export function dateToString(d: string): string {
     return numTimeToString(t)
 }
 
+export function dateNow() : string {
+    let day = new Date()
+    let t = day.getTime() / 1000
+    return numTimeToString(t)
+}
+
 export function dateToDescriptionN(d: number): string {
     d *= 1000
     return dateToDescription(d + "")
