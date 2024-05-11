@@ -12,7 +12,7 @@ import (
 
 func SessionCheckMid() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session, _ := c.Cookie("session")
+		session, _ := c.Cookie("painter-session")
 		if session == "" {
 			c.JSON(http.StatusBadRequest, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{"userid": ""}))
 			c.Abort()
@@ -48,7 +48,7 @@ func SessionCheckMid() gin.HandlerFunc {
 
 func CheckAdminMid() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session, _ := c.Cookie("session")
+		session, _ := c.Cookie("painter-session")
 		if session == "" {
 			c.JSON(http.StatusBadRequest, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{"userid": ""}))
 			c.Abort()
@@ -77,6 +77,11 @@ func CheckAdminMid() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		if !adminFlag {
+			c.JSON(http.StatusForbidden, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{"userid": ""}))
+			c.Abort()
+			return
+		}
 		go func() {
 			_, err := database.UpdateUserLoginTime(userID)
 			if err != nil {
@@ -91,7 +96,7 @@ func CheckAdminMid() gin.HandlerFunc {
 
 func BetterLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session, _ := c.Cookie("session")
+		session, _ := c.Cookie("painter-session")
 		if session == "" {
 			c.Set("isLogin", false)
 			c.Next()

@@ -31,6 +31,7 @@ type FullUser struct {
 	FollowerNumber   int
 	Following        bool
 	UserInfo         MiniUserFullInfo
+	Self             bool
 }
 
 type MiniUserFullInfo struct {

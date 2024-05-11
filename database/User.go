@@ -35,6 +35,16 @@ func CreateUser(username, email, nickname string, phoneNum int, headerField, pas
 	return user.ID, nil
 }
 
+func HasUser(key string) (bool, error) {
+	var user []models.UserTable
+	res := DbEngine.Where("user_name = ? or email = ?", key, key).Find(&user)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while hasuser %e", res.Error).PrintAndWriteSafe()
+		return false, res.Error
+	}
+	return res.RowsAffected > 0, nil
+}
+
 func UpdateUserName(id int, name string) error {
 	user := &models.UserTable{}
 	res := DbEngine.First(&user, id)
@@ -138,6 +148,15 @@ func GetUserIdUsingEmail(email string) (int, error) {
 		return -1, err
 	}
 	return user.ID, nil
+}
+
+func GetUserEmailUsingUserName(userName string) (string, error) {
+	user := &models.UserTable{}
+	err := DbEngine.Where("user_name = ?", userName).First(&user).Error
+	if err != nil {
+		return "", err
+	}
+	return user.Email, nil
 }
 
 func GetUserIDUsingUserName(username string) (int, error) {
@@ -260,6 +279,7 @@ func GetUserFullInfo(id int) (Response.FullUser, error) {
 	full.FollowingNumber = followingNum
 	full.FollowerNumber = followerNum
 	full.Following = false
+	full.Self = false
 
 	return full, nil
 }

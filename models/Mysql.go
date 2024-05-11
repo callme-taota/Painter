@@ -12,7 +12,7 @@ type UserTable struct {
 	AdminFlag   int    `gorm:"type:tinyint"`
 	LastLogin   time.Time
 	NickName    string `gorm:"type:varchar(255)"`
-	PhoneNum    int    `gorm:"type:int;unique"`
+	PhoneNum    int    `gorm:"type:int"`
 	HeaderField string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

@@ -5,6 +5,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	"painter-server-new/tolog"
 	"painter-server-new/utils"
+	"strconv"
+	"time"
 )
 
 // Constants for Redis hash keys
@@ -89,4 +91,32 @@ func DeleteUserBySession(session string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func CreateEmailCheck(mail string, code int) error {
+	res := RedisClient.Set(
+		"painter_verification_code:"+mail,
+		code,
+		5*time.Minute,
+	)
+	if res.Err() != nil {
+		return res.Err()
+	}
+	return nil
+}
+
+func CheckEmailPass(mail string, code int) (bool, error) {
+	key := "painter_verification_code:" + mail
+	val, err := RedisClient.Get(key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return false, nil // 验证码不存在
+		}
+		return false, err
+	}
+	codeStr := strconv.Itoa(code)
+	if val == codeStr {
+		return true, nil // 验证码正确
+	}
+	return false, nil // 验证码不正确
 }

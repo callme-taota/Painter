@@ -68,3 +68,12 @@ type UserResetPasswordJSON struct {
 type UserIDJSON struct {
 	ID int `json:"ID"`
 }
+
+type UserExistJSON struct {
+	Key string `json:"Key"`
+}
+
+type UserEmailCodeJSON struct {
+	Email string `json:"Email"`
+	Code  int    `json:"Code"`
+}

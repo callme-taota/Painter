@@ -86,6 +86,10 @@ func Rl(msg string, ok bool, data []any) *ReturnDatal {
 	return &ReturnDatal{msg, ok, data}
 }
 
+func SuccessR() *ReturnData {
+	return R(KReturnMsgSuccess, KReturnTrue, RDC{})
+}
+
 func ShouldCheckJSON(obj interface{}, checking []string) bool {
 	// Use reflection to retrieve information about the struct fields
 	objValue := reflect.ValueOf(obj)

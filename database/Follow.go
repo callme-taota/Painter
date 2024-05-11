@@ -47,7 +47,7 @@ func GetFollowerUsers(followings []models.FollowTable) ([]Response.FollowUserInf
 		var user Response.FollowUserInfo
 		result := DbEngine.Model(&models.UserTable{}).
 			Select("id, email, nick_name, header_field, created_at, last_login").
-			Where("id = ?", following.FollowingID).
+			Where("id = ?", following.FollowerID).
 			First(&user)
 		if result.Error != nil {
 			return nil, result.Error
@@ -74,12 +74,12 @@ func GetFollowingsUsers(followings []models.FollowTable) ([]Response.FollowUserI
 		var user Response.FollowUserInfo
 		result := DbEngine.Model(&models.UserTable{}).
 			Select("id, email, nick_name, header_field, created_at, last_login").
-			Where("id = ?", following.FollowerID).
+			Where("id = ?", following.FollowingID).
 			First(&user)
 		if result.Error != nil {
 			return nil, result.Error
 		}
-		user.Following, _ = CheckFollow(following.FollowingID, following.FollowerID)
+		user.Following, _ = CheckFollow(following.FollowingID, following.FollowingID)
 		users = append(users, user)
 	}
 	return users, nil

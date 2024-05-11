@@ -8,6 +8,7 @@ import (
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+	"painter-server-new/server/mail"
 	"painter-server-new/utils"
 )
 
@@ -116,8 +117,39 @@ func EmailLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	c.SetCookie("session", session, 3600*24*30, "/", "", false, true)
+	c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
+	return
+}
+
+func EmailPasswordCheck(c *gin.Context) {
+	var json Request.LoginUsingEmailJson
+
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"Email", "Password"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	email, password := json.Email, json.Password
+	if !utils.CheckMissings(email, password) {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	id, err := database.GetUserIdUsingEmail(email)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	ok, _ = database.CheckUserPassword(id, password)
+	if ok == false {
+		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Correct": true}))
 	return
 }
 
@@ -158,7 +190,7 @@ func PhoneLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	c.SetCookie("session", session, 3600*24*30, "/", "", false, true)
+	c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 	return
 }
@@ -200,14 +232,45 @@ func UserNameLogin(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
 		return
 	}
-	c.SetCookie("session", session, 3600*24*30, "/", "", false, true)
+	c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
+	return
+}
+
+func UserNamePasswordCheck(c *gin.Context) {
+	var json Request.LoginUsingUserNameJson
+
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"UserName", "Password"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	username, password := json.UserName, json.Password
+	if !utils.CheckMissings(username, password) {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	id, err := database.GetUserIDUsingUserName(username)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	ok, _ = database.CheckUserPassword(id, password)
+	if ok == false {
+		c.JSON(http.StatusOK, models.R(models.KErrorPassword, models.KReturnFalse, models.RDC{"Correct": false}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Correct": true}))
 	return
 }
 
 func LogOut(c *gin.Context) {
 	var json Request.LogOutJson
-	headSession, _ := c.Cookie("session")
+	headSession, _ := c.Cookie("painter-session")
 	if err := c.ShouldBind(&json); err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -231,7 +294,7 @@ func LogOut(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorSessionInvalid, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.SetCookie("session", "", 1, "/", "", false, true)
+	c.SetCookie("painter-session", "", 1, "/", "", false, true)
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
 	return
 }
@@ -446,7 +509,125 @@ func GetUserFullData(c *gin.Context) {
 			return
 		}
 		user.Following = following
+		if userID == json.ID {
+			user.Self = true
+		}
 	}
 	c.JSON(http.StatusOK, models.Rs(models.KReturnMsgSuccess, models.KReturnTrue, user))
+	return
+}
+
+func CheckUserExist(c *gin.Context) {
+	var json Request.UserExistJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"Key"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	has, err := database.HasUser(json.Key)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Has": has}))
+	return
+}
+
+func SendUserMail(c *gin.Context) {
+	var json Request.UserEmailCodeJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"Email"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	isMail := utils.IsValidEmail(json.Email)
+	if !isMail {
+		userEmail, err := database.GetUserEmailUsingUserName(json.Email)
+		if err != nil {
+			c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+			return
+		}
+		go mail.Sender(userEmail)
+		c.JSON(http.StatusOK, models.SuccessR())
+		return
+	}
+	go mail.Sender(json.Email)
+	c.JSON(http.StatusOK, models.SuccessR())
+	return
+}
+
+func CheckMail(c *gin.Context) {
+	var json Request.UserEmailCodeJSON
+
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"Email", "Code"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	isMail := utils.IsValidEmail(json.Email)
+	if !isMail {
+		id, err := database.GetUserIDUsingUserName(json.Email)
+		if err != nil {
+			c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
+			return
+		}
+		userEmail, err := database.GetUserEmailUsingUserName(json.Email)
+		if err != nil {
+			c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+			return
+		}
+		ok, err = cache.CheckEmailPass(userEmail, json.Code)
+		if err != nil || !ok {
+			c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
+			return
+		}
+		session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
+		if !utils.StringIsEmpty(session) {
+			c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
+			return
+		}
+		session, err = cache.AddUser(fmt.Sprintf("%d", id))
+		if err != nil {
+			c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
+			return
+		}
+		c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
+		return
+	}
+	id, err := database.GetUserIdUsingEmail(json.Email)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
+		return
+	}
+	ok, err = cache.CheckEmailPass(json.Email, json.Code)
+	if err != nil || !ok {
+		c.JSON(http.StatusOK, models.R(models.KErrorNotFound, models.KReturnFalse, models.RDC{"Session": ""}))
+		return
+	}
+	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
+	if !utils.StringIsEmpty(session) {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
+		return
+	}
+	session, err = cache.AddUser(fmt.Sprintf("%d", id))
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{"Session": ""}))
+		return
+	}
+	c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 	return
 }
