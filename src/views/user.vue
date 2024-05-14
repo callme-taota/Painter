@@ -2,17 +2,16 @@
 //base
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { NIcon, NAvatar, NPagination, NButton, NEmpty } from 'naive-ui';
+import { NAvatar, NButton, NEmpty } from 'naive-ui';
 import ArticleCard from '@/components/article_card.vue'
 //icons
 
 //api
 import { UserInfo } from "@/apis/api_user"
 import { CreateFollow, DeleteFollow } from '@/apis/api_follow';
-import { GetArticleByAuthor } from '@/apis/api_article';
 //fn
 import { dateDiff } from "@/utils/timeToStr"
-import type { FullUserItem, ArticleInfoItem } from '@/utils/interface'
+import type { FullUserItem } from '@/utils/interface'
 //store & route
 const Route = useRoute()
 const Router = useRouter()
@@ -72,7 +71,9 @@ const goFollower = (id: number) => {
 }
 
 const goCollections = (id: number) => {
-    Router.push({ path: "/articlelist", query: { type: 4, id: id } })
+    if (userInfo.value.Self) {
+        Router.push({ path: "/articlelist", query: { type: 4, id: id } })
+    }
 }
 
 </script>
@@ -105,7 +106,7 @@ const goCollections = (id: number) => {
                         粉丝
                     </div>
                 </div>
-                <div class="user-info-item user-cursor" @click="goCollections(userID)">
+                <div class="user-info-item" :class="{ 'user-cursor': userInfo.Self }" @click="goCollections(userID)">
                     <div class="user-info-item-number">
                         {{ userInfo.CollectionNumber }}
                     </div>

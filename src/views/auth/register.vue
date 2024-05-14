@@ -65,10 +65,6 @@ const handleDropDownSelect = async (key: string) => {
     }
 }
 
-const goRegister = () => {
-    Router.push({ path: "/register" })
-}
-
 const goLogin = () => {
     Router.push({ path: "/login" })
 }

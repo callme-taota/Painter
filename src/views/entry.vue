@@ -1,6 +1,40 @@
 <script setup lang="ts">
+//base
+import { onMounted, ref } from 'vue';
 import { NIcon } from 'naive-ui'
+//api
+import { GetStartTime, GetDayPV, GetMonthPV } from '@/apis/api_common';
+import { GetArticleCount } from '@/apis/api_article';
+//icon
 import { LogoGithub, LogoTwitter, LogoWechat, Mail } from '@vicons/ionicons5'
+//ref
+const dateDiff = ref<string>("")
+const dayPV = ref<number>(0)
+const monthPV = ref<number>(0)
+const articleCount = ref<number>(0)
+//hook
+onMounted(async () => {
+    let res = await GetStartTime();
+    if (res.ok) {
+        let day = new Date(res.data.JSTimeStamp)
+        let now = new Date()
+        let diff = Math.abs(now.getTime() - day.getTime())
+        const oneDay = 86400000; // 24 * 60 * 60 * 1000
+        dateDiff.value = `${Math.floor(diff / oneDay)}天`;
+    }
+    res = await GetDayPV()
+    if (res.ok) {
+        dayPV.value = res.data.Count
+    }
+    res = await GetMonthPV()
+    if (res.ok) {
+        monthPV.value = res.data.Count
+    }
+    res = await GetArticleCount()
+    if (res.ok) {
+        articleCount.value = res.data.ArticleCount
+    }
+})
 
 const goLink = (link: string) => {
     window.open(link, "_blank")
@@ -259,15 +293,15 @@ const goLink = (link: string) => {
                     <br>
                     <div class="entry-about-cont">
                         <div>
-                            今日访问
+                            昨日访问
                             <div class="entry-card-line2">
-                                100
+                                {{ dayPV }}
                             </div>
                         </div>
                         <div>
                             本月访问
                             <div class="entry-card-line2">
-                                200
+                                {{ monthPV }}
                             </div>
                         </div>
                         <div>
@@ -277,13 +311,13 @@ const goLink = (link: string) => {
                         <div>
                             文章总数
                             <div class="entry-card-line2">
-                                66
+                                {{ articleCount }}
                             </div>
                         </div>
                         <div>
                             已经运行
                             <div class="entry-card-line2">
-                                12天21小时
+                                {{ dateDiff }}
                             </div>
                         </div>
                         <div>

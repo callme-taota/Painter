@@ -183,3 +183,10 @@ export const UpdateArticleCategory = async (data: any): Promise<MyResponse> => {
     });
     return res
 }
+
+export const GetArticleCount = async (): Promise<MyResponse> => {
+    const res = await AxiosGet({
+        url: "/article/get/count",
+    });
+    return res
+}

@@ -28,6 +28,8 @@ export const useUserStore = defineStore('user', () => {
       userName.value = res.data.UserName
       userNickName.value = res.data.NickName
       userHeaderField.value = res.data.HeaderField
+    } else {
+      logout()
     }
     return res
   }

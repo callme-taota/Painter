@@ -118,15 +118,6 @@ const secondStep = async () => {
     } else {
         userPassSuccess.value = false
     }
-    // let res = await UserStore.login(userKey.value, userPass.value, !isKeyMail.value)
-    // console.log(res)
-    // if (res.ok == true) {
-    //     Message.success("登录成功")
-    //     Router.push({ path: "/" })
-    // } else {
-    //     userPassSuccess.value = false
-    // }
-    // current.value = current.value + 1
 }
 
 const sendAgain = async () => {

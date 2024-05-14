@@ -3,10 +3,10 @@
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import { useMessage, NAvatar, NIcon, NModal, NCard, NInput, NButton, NInputNumber } from 'naive-ui'
+import { useMessage, NAvatar, NIcon, NModal, NCard, NInput, NButton, NInputNumber, NUpload, type UploadFileInfo, type UploadCustomRequestOptions } from 'naive-ui'
 //store
 import { useUserStore } from '@/stores/user';
-import { UserSelfFull, UserUpdate } from '@/apis/api_user';
+import { UserSelfFull, UserUpdate, UserHeaderFieldUpdate } from '@/apis/api_user';
 //utils
 import type { SelfItem } from '@/utils/interface';
 import { dateDiff, dateToString } from "@/utils/timeToStr"
@@ -15,12 +15,14 @@ import { dateDiff, dateToString } from "@/utils/timeToStr"
 import { Add } from '@vicons/carbon'
 import { KeyboardArrowRightFilled } from '@vicons/material';
 import { LogoutOutlined } from '@vicons/antd';
+import axios from 'axios';
 //ref
 const Router = useRouter()
 const UserStore = useUserStore()
 const Message = useMessage()
 const { loginStatus } = storeToRefs(UserStore)
 const showModal = ref(false)
+const showAvatarModal = ref(false)
 const userInfo = ref<SelfItem>({
     ArticleNumber: 0,
     ArticleList: [],
@@ -40,6 +42,14 @@ const userInfo = ref<SelfItem>({
     Following: false,
     TotalCount: 0
 })
+const fileList = ref<UploadFileInfo[]>([
+    {
+        id: '1',
+        name: 'avatar',
+        status: 'finished',
+        url: userInfo.value.UserInfo.HeaderField
+    },
+])
 //fn
 onMounted(async () => {
     if (!loginStatus.value) {
@@ -49,8 +59,8 @@ onMounted(async () => {
     let res = await UserStore.loadSelfData()
     if (res.ok) {
         let info = await UserSelfFull()
-        console.log(info)
         userInfo.value = info.data
+        fileList.value[0].url = info.data.UserInfo.HeaderField
     } else {
         Router.push({ path: '/login' })
         Message.warning("账号还未登录，请登录再试！")
@@ -79,7 +89,7 @@ const goEditArticle = (type: number, id: number) => {
 
 const doLogout = () => {
     UserStore.logout()
-    Router.push({ path: "/login"})
+    Router.push({ path: "/login" })
 }
 
 const update = async () => {
@@ -92,12 +102,63 @@ const update = async () => {
     showModal.value = !showModal.value
 }
 
+const showChangeAvatarModal = async () => {
+    showAvatarModal.value = true
+}
+
+const customRequest = ({
+    file,
+    data,
+    headers,
+    action,
+    onFinish,
+    onError,
+    onProgress
+}: UploadCustomRequestOptions) => {
+    const formData = new FormData();
+    if (data) {
+        Object.keys(data).forEach((key) => {
+            formData.append(
+                key,
+                data[key as keyof UploadCustomRequestOptions['data']]
+            );
+        });
+    }
+    if (file.file) { // 添加额外的检查
+        formData.append("file", file.file as File);
+    }
+    onProgress({
+        percent: 0
+    })
+    axios.post(action as string, formData, {
+        headers: {
+            ...headers,
+            'Content-Type': 'multipart/form-data'
+        },
+        withCredentials: true
+    }).then(async (response) => {
+        console.log(response)
+        if (response.data.ok) {
+            let ava_url = "http://localhost:3003" + response.data.data.filePath + response.data.data.fileName
+            fileList.value[0].url = ava_url
+            userInfo.value.UserInfo.HeaderField = ava_url
+            await UserHeaderFieldUpdate({
+                "HeaderField": ava_url,
+            })
+        }
+        onFinish()
+    }).catch((error) => {
+        onError()
+    });
+};
+
 </script>
 <template>
     <div class="page-cont">
         <div class="user-info-cont">
             <div class="user-info-head-cont">
-                <n-avatar round :size="80" :src="userInfo.UserInfo.HeaderField"></n-avatar>
+                <n-avatar round :size="80" :src="userInfo.UserInfo.HeaderField" style="cursor: pointer;"
+                    @click="showChangeAvatarModal"></n-avatar>
                 <div class="user-nick">
                     {{ userInfo.UserInfo.NickName }}
                 </div>
@@ -183,6 +244,7 @@ const update = async () => {
         </div>
 
     </div>
+
     <n-modal v-model:show="showModal">
         <n-card style="width: 600px" title="管理" :bordered="false">
             <n-input class="user-modal-input" placeholder="用户名" v-model:value="userInfo.UserInfo.UserName">
@@ -206,7 +268,8 @@ const update = async () => {
                     </span>
                 </template>
             </n-input>
-            <n-input-number class="user-modal-input" placeholder="电话号码" v-model:value="userInfo.UserInfo.PhoneNum" :show-button="false">
+            <n-input-number class="user-modal-input" placeholder="电话号码" v-model:value="userInfo.UserInfo.PhoneNum"
+                :show-button="false">
                 <template #prefix>
                     <span class="user-modal-label">
                         电话号码
@@ -216,6 +279,18 @@ const update = async () => {
             <n-button @click="update">
                 提交
             </n-button>
+        </n-card>
+    </n-modal>
+    {{ fileList }}
+    <n-modal v-model:show="showAvatarModal">
+        <n-card style="width: 130px" title="头像" :bordered="false">
+            <div style="display: flex; align-items: center;justify-content: center;">
+                <n-upload action="http://localhost:3003/api/file/upload" :custom-request="customRequest"
+                    :default-file-list="fileList" :multiple="false" list-type="image" :show-file-list="false">
+                    <n-avatar round :size="80" :src="fileList[0].url as string" style="cursor: pointer;">
+                    </n-avatar>
+                </n-upload>
+            </div>
         </n-card>
     </n-modal>
 </template>
@@ -238,7 +313,7 @@ const update = async () => {
     cursor: pointer;
 }
 
-.user-logout{
+.user-logout {
     position: absolute;
     right: 86px;
     top: 15px;

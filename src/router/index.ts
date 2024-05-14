@@ -10,24 +10,19 @@ const router = createRouter({
       component: () => import("@/views/entry.vue")
     },
     {
-      path: '/home',
-      name: 'home',
-      component: () => import("@/views/home.vue")
-    },
-    {
       path: '/tag',
       name: 'tagList',
-      component: () => import("@/views/tagList.vue")
+      component: () => import("@/views/list/tagList.vue")
     },
     {
       path: '/category',
       name: 'categoryList',
-      component: () => import("@/views/categoryList.vue")
+      component: () => import("@/views/list/categoryList.vue")
     },
     {
       path: '/articlelist',
       name: 'articleList',
-      component: () => import("@/views/articleList.vue")
+      component: () => import("@/views/list/articleList.vue")
     },
     {
       path: '/login',
@@ -47,12 +42,12 @@ const router = createRouter({
     {
       path: '/follow',
       name: 'follow',
-      component: () => import('@/views/followList.vue'),
+      component: () => import('@/views/list/followList.vue'),
     },
     {
       path: '/article',
       name: 'article',
-      component: () => import("@/views/article.vue")
+      component: () => import("@/views/article/article.vue")
     },
     {
       path: '/admin',
@@ -68,7 +63,7 @@ const router = createRouter({
     {
       path: '/editarticle',
       name: 'editarticle',
-      component: () => import("@/views/editarticle.vue")
+      component: () => import("@/views/article/editarticle.vue")
     },
   ]
 })

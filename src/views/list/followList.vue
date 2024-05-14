@@ -61,11 +61,11 @@ async function getWithNumChange(num: number) {
     await getFollowList()
 }
 
-const doFollow = async (flag: boolean) => {
+const doFollow = async (flag: boolean, id : number) => {
     if (flag) {
-        await DeleteFollow({ "FollowingID": userID.value })
+        await DeleteFollow({ "FollowingID": id })
     } else {
-        await CreateFollow({ "FollowingID": userID.value })
+        await CreateFollow({ "FollowingID": id })
     }
     await getFollowList()
 }
@@ -97,7 +97,7 @@ const goUser = (id: number) => {
                         </div>
                     </div>
                 </div>
-                <div class="follow-btn" :class="{ 'follow-btn-on': user.Following }" @click="doFollow(user.Following)">
+                <div class="follow-btn" :class="{ 'follow-btn-on': user.Following }" @click="doFollow(user.Following,user.ID)">
                     {{ user.Following ? '已关注' : '关注' }}
                 </div>
             </div>
