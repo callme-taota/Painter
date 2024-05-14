@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-var settingKey = []string{"mail_from", "mail_password", "mail_smtphost", "mail_smtpport", "mail_active"}
+var settingKey = []string{"mail_from", "mail_password", "mail_smtphost", "mail_smtpport", "mail_active", "site_name", "github_href", "icp_code", "can_register"}
 
 func InitSettings() {
 	for _, setting := range settingKey {
@@ -19,7 +19,7 @@ func CheckKeyExistOrCreate(key string) (bool, error) {
 	res := DbEngine.Where("name = ?", key).First(&s)
 	if res.RowsAffected == 0 {
 		s.Name = key
-		s.Description = "0"
+		s.Value = "0"
 		res = DbEngine.Create(&s)
 		if res.Error != nil {
 			tolog.Log().Infof("Error while create setting %e", res.Error).PrintAndWriteSafe()

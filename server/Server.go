@@ -89,6 +89,8 @@ func StaticWeb() {
 	if conf.Server.Model == "release" {
 		webRootDir := http.Dir(dirRoot + StaticWebRootAssets)
 		BaseServer.StaticFS("/assets", webRootDir)
+		fileRootDir := http.Dir(dirRoot + StaticFileRoot)
+		BaseServer.StaticFS("/fs", fileRootDir)
 		BaseServer.StaticFile("/", dirRoot+StaticWebRoot)
 		BaseServer.NoRoute(func(c *gin.Context) {
 			c.File(dirRoot + StaticWebRoot)

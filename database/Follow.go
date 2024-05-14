@@ -79,7 +79,7 @@ func GetFollowingsUsers(followings []models.FollowTable) ([]Response.FollowUserI
 		if result.Error != nil {
 			return nil, result.Error
 		}
-		user.Following, _ = CheckFollow(following.FollowingID, following.FollowingID)
+		user.Following, _ = CheckFollow(following.FollowerID, following.FollowingID)
 		users = append(users, user)
 	}
 	return users, nil

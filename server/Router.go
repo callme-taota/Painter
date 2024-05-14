@@ -138,7 +138,7 @@ func LinkArticle() {
 func LinkFile() {
 	FileGroup := LoginGroup.Group("/file")
 
-	FileGroup.GET("/get", api.FileGetter)
+	//FileGroup.GET("/get", api.FileGetter)
 	FileGroup.POST("/upload", api.FileUpload)
 }
 

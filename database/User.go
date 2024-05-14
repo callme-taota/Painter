@@ -108,7 +108,7 @@ func UpdateUserHeaderField(id int, headerfield string) error {
 		return res.Error
 	}
 	user.HeaderField = headerfield
-	res = DbEngine.Save(&user)
+	res = DbEngine.Where("id = ?", id).Save(&user)
 	if res.Error != nil {
 		return res.Error
 	}

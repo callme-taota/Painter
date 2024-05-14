@@ -8,6 +8,7 @@ import (
 	"painter-server-new/models"
 	"painter-server-new/utils"
 	"strings"
+	"time"
 )
 
 // upload
@@ -15,6 +16,11 @@ func FileUpload(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+
+	if file.Size > 10<<20 { // 10MB
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
 
@@ -26,18 +32,23 @@ func FileUpload(c *gin.Context) {
 		return
 	}
 
-	err = database.CreateFileRecord(file.Filename, dir, fileSize, fileType)
+	fileName := time.Now().Format("20060102150405") + "_" + file.Filename
+
+	err = database.CreateFileRecord(fileName, dir+fileName, fileSize, fileType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
 
-	dst := dir + "/static/upload/" + file.Filename
+	dst := dir + "/server/static/upload/" + fileName
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		c.JSON(http.StatusInternalServerError, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{
+		"filePath": "/fs/",
+		"fileName": fileName,
+	}))
 	return
 }
 
