@@ -1,0 +1,127 @@
+.page-cont {
+    padding: 10px 120px;
+    transition: 0.3s;
+}
+
+@media (max-width: 1000px) {
+    .page-cont {
+        padding: 10px 80px;
+    }
+}
+
+.user-info-cont {
+    padding: 30px;
+    border-radius: 14px;
+    background: var(--card--background);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.user-article-list {
+    margin-top: 20px;
+    border-radius: 14px;
+}
+
+.user-article-list-none {
+    background: var(--card--background);
+    padding: 30px;
+}
+
+.user-info-head-cont {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.user-nick {
+    font-size: x-large;
+    font-weight: bolder;
+    margin-top: -20px;
+    z-index: 1;
+    padding: 2px 50px;
+    user-select: none;
+    backdrop-filter: blur(2px);
+}
+
+.user-info-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 6px;
+    user-select: none;
+}
+
+.user-info-item-number {
+    font-size: large;
+    font-weight: bolder;
+}
+
+.user-info-item-name {
+    font-size: small;
+    font-weight: 300;
+}
+
+.user-cursor {
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.user-cursor:hover {
+    color: var(--highlight-color);
+}
+
+.user-follow-btn {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    width: 60px;
+    height: 30px;
+    border-radius: 8px;
+    transition: 0.3s;
+    text-align: center;
+    font-weight: bold;
+    line-height: 30px;
+    user-select: none;
+    color: var(--color-rev);
+    background: var(--base-hover-background);
+    border: 1px solid rgba(0, 0, 0, 0);
+    cursor: pointer;
+}
+
+.user-follow-btn-on {
+    border: 1px solid var(--border-color);
+    color: var(--color);
+    background: var(--layout--bottom-background);
+}
+
+.user-follow-btn:hover {
+    background: var(--highlight-color);
+}
+
+.article-list-flex {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    transition: 0.5s;
+    flex-wrap: wrap;
+}
+
+.article-info-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 30px;
+    border-radius: 6px;
+    transition: 0.3s;
+    padding: 0px 12px;
+    user-select: none;
+}
+
+.article-info-item:hover {
+    background: var(--layout--bottom-background);
+}
