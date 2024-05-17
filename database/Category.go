@@ -85,6 +85,23 @@ func UpdateCategoryDescByName(name, desc string) error {
 	return nil
 }
 
+func UpdateCategory(id int, name, desc string) error {
+	cate := models.CategoryTable{}
+	res := DbEngine.First(&cate, id)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while UpdateCategory %e", res.Error).PrintAndWriteSafe()
+		return res.Error
+	}
+	cate.CategoryName = name
+	cate.Description = desc
+	res = DbEngine.Where("category_id = ?", id).Save(&cate)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while UpdateCategory %e", res.Error)
+		return res.Error
+	}
+	return nil
+}
+
 func CheckCategoryExist(name string) bool {
 	var category models.CategoryTable
 	result := DbEngine.Where("category_name = ?", name).First(&category)

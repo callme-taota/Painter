@@ -52,6 +52,22 @@ func UpdateTagDesc(id int, description string) error {
 	return nil
 }
 
+func UpdateTag(id int, name, description string) error {
+	tag := &models.TagTable{}
+	res := DbEngine.First(&tag, id)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while update tag description %e", res.Error)
+		return res.Error
+	}
+	tag.Description = description
+	tag.TagName = name
+	res = DbEngine.Where("tag_id = ?", id).Save(&tag)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while update tag description %e", res.Error)
+		return res.Error
+	}
+	return nil
+}
 func CheckTagExist(name string) bool {
 	var tag models.TagTable
 	result := DbEngine.Where("tag_name = ?", name).First(&tag)

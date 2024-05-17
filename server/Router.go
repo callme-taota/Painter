@@ -44,6 +44,7 @@ func LinkTag() {
 	TagAdminGroup.POST("/create", api.NewTag)
 	TagAdminGroup.POST("/update/name", api.UpdateTagName)
 	TagAdminGroup.POST("/update/desc", api.UpdateTagDesc)
+	TagAdminGroup.POST("/update/", api.UpdateTag)
 }
 
 func LinkHistory() {
@@ -95,7 +96,7 @@ func LinkCategory() {
 	CategoryAdminGroup.POST("/create", api.CreateCategory)
 	CategoryAdminGroup.POST("/update/name", api.UpdateCategoryName)
 	CategoryAdminGroup.POST("/update/desc", api.UpdateCategoryDesc)
-
+	CategoryAdminGroup.POST("/update/", api.UpdateCategory)
 }
 
 func LinkArticle() {
@@ -148,6 +149,15 @@ func LinkCommon() {
 	CommonGroup.GET("/starttime", api.GetServerRunningTime)
 	CommonGroup.GET("/vis/preday", api.GetServerPreDayVis)
 	CommonGroup.GET("/vis/currmonth", api.GetServerCurrentMonthVis)
+	CommonGroup.GET("/info", api.GetSettingsOnLoad)
+	CommonGroup.GET("/isadmin", api.CheckUserAdmin)
+}
+
+func LinkSetting() {
+	SettingAdminGroup := AdminGroup.Group("/setting")
+
+	SettingAdminGroup.GET("/", api.GetSettings)
+	SettingAdminGroup.POST("/", api.SetSetting)
 }
 
 func LinkDebug() {

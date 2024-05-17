@@ -314,7 +314,6 @@ func GetCollectionCountByUser(userID int) (int, error) {
 func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTagTable
 	result := DbEngine.Where("tag_id = ?", tagID).Limit(limit).Offset(offset).
-		Order("updated_at DESC").
 		Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleByTag %e", result.Error).PrintAndWriteSafe()

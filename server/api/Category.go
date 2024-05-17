@@ -68,6 +68,26 @@ func UpdateCategoryDesc(c *gin.Context) {
 	return
 }
 
+func UpdateCategory(c *gin.Context) {
+	var json Request.CategoryJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"CategoryID", "Name", "Description"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err := database.UpdateCategory(json.CategoryID, json.Name, json.Description)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
 func GetCategories(c *gin.Context) {
 	var json models.OnlyPageOption
 	if err := c.ShouldBind(&json); err != nil {

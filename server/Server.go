@@ -79,6 +79,7 @@ func LinkAPI() {
 	LinkCategory()
 	LinkArticle()
 	LinkCommon()
+	LinkSetting()
 	LinkFile()
 	LinkDebug()
 	StaticWeb()

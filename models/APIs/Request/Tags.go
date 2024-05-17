@@ -14,3 +14,9 @@ type UpdateTagDescJSON struct {
 	TagID       int    `json:"tagID"`
 	Description string `json:"description"`
 }
+
+type UpdateTagJSON struct {
+	TagID       int    `json:"tagID"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
