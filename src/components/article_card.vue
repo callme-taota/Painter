@@ -66,16 +66,11 @@ function goPage(id : number) {
 }
 
 .article-card:hover {
-    height: 154px;
-    border: 0.5px solid var(--border-color);
+    box-shadow: 0 0 6px var(--border-color);
 }
 
 .article-card-cont {
     padding: 26px;
-}
-
-.article-card-cont:hover {
-    padding: 25.5px 25.5px 26px 26px;
 }
 
 .article-card-title {

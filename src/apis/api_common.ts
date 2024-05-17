@@ -20,3 +20,17 @@ export const GetMonthPV = async (): Promise<MyResponse> => {
     });
     return res
 }
+
+export const GetInfo = async (): Promise<MyResponse> => {
+    const res = await AxiosGet({
+        url: "/common/info",
+    });
+    return res
+}
+
+export const IsAdmin = async (): Promise<MyResponse> => {
+    const res = await AxiosGet({
+        url: "/common/isadmin",
+    });
+    return res
+}

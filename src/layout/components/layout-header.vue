@@ -1,24 +1,28 @@
 <script setup lang="ts">
+//base
 import { ref, onMounted, onUnmounted, Transition } from 'vue';
+import { storeToRefs } from 'pinia'
 import { NIcon } from 'naive-ui'
+import { useRouter } from 'vue-router'
+//icons
 import { Search, LogoGithub, Sunny, Moon, SyncOutline } from '@vicons/ionicons5'
 import { ArticleOutlined } from '@vicons/material'
+//store
 import { useThemeStore } from '@/stores/theme'
-import { useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { useSearchStore } from '@/stores/search'
-
+import { useInfoStore } from '@/stores/info';
+import { useTitleStore } from '@/stores/title';
 const SearchStore = useSearchStore()
+const themeStore = useThemeStore()
+const InfoStore = useInfoStore()
+const TitleStore = useTitleStore()
+const Router = useRouter()
+const { github_href, site_name } = storeToRefs(InfoStore)
+const { secondaryTitle } = storeToRefs(TitleStore)
+//ref
 const isScrolled = ref(false)
 const themeChanger = ref(false)
-const themeStore = useThemeStore()
-const { currentTheme } = storeToRefs(themeStore)
-const Router = useRouter()
-
-const handleScroll = () => {
-    isScrolled.value = window.scrollY > 0;
-};
-
+//hook
 onMounted(() => {
     themeStore.SetThemeAuto()
     window.addEventListener('scroll', handleScroll);
@@ -27,6 +31,11 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
+
+//fn
+const handleScroll = () => {
+    isScrolled.value = window.scrollY > 0;
+};
 
 const setTheme = (themeID: number) => {
     if (themeID == 1) {
@@ -48,7 +57,7 @@ const hideThemeChanger = () => {
 }
 
 const goGithub = () => {
-    window.open("https://www.github.com/callme-taota", "_blank");
+    window.open(github_href.value, "_blank");
 }
 
 const goHome = () => {
@@ -74,14 +83,17 @@ const showSearch = () => {
 </script>
 <template>
     <Transition>
-        <div v-if="themeStore.headerDisplay" class="layout-header-cont" :class="{ 'layout-header-cont-after-scroll': isScrolled }">
+        <div v-if="themeStore.headerDisplay" class="layout-header-cont"
+            :class="{ 'layout-header-cont-after-scroll': isScrolled }">
             <div class="layout-header-left">
                 <img src="../../assets/logo.png" alt="Taota-Logo" class="layout-logo">
-                <div class="layout-header-painter">Painter</div>
+                <div class="layout-header-painter">{{ site_name }}</div>
             </div>
-            <div class="layout-header-center">
-
-            </div>
+            <Transition>
+                <div v-if="isScrolled" class="layout-header-center">
+                    <!-- {{ secondaryTitle }} -->
+                </div>
+            </Transition>
             <div class="layout-header-right">
                 <div class="layout-header-right-icon-cont" @click="showSearch">
                     <n-icon size="20">
@@ -189,6 +201,13 @@ const showSearch = () => {
 .layout-header-painter:hover {
     background-color: var(--base-hover-background);
     color: var(--btn-hover-color);
+}
+
+.layout-header-center {
+    display: flex;
+    align-items: center;
+    font-size: large;
+    font-weight: bold;
 }
 
 .layout-header-right {

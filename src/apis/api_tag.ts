@@ -1,5 +1,5 @@
 import type { AxiosResponse } from "axios";
-import { AxiosGet, AxiosPost } from "./axios";
+import { AxiosGet, AxiosPost, type MyResponse } from "./axios";
 
 export const TagSuggest = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosGet({
@@ -25,7 +25,7 @@ export const TagListFull = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const CreateTag = async (data: any): Promise<AxiosResponse> => {
+export const CreateTag = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url:"/tag/create",
         data: data
@@ -44,6 +44,14 @@ export const UpdateTagName = async (data: any): Promise<AxiosResponse> => {
 export const UpdateTagDesc = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosPost({
         url:"/tag/update/desc",
+        data: data
+    });
+    return res
+}
+
+export const UpdateTag = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/tag/update/",
         data: data
     });
     return res

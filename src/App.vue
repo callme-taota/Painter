@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import Layout from './layout/layout.vue'
 import { useThemeStore } from './stores/theme'
+import { useInfoStore } from './stores/info'
 import { storeToRefs } from 'pinia'
 import { NConfigProvider, NMessageProvider, type GlobalThemeOverrides, darkTheme } from 'naive-ui'
+import { useTitleStore } from '@/stores/title';
 
 const themeStore = useThemeStore()
-
+const InfoStore = useInfoStore()
+const TitleStore = useTitleStore()
 const { nDark } = storeToRefs(themeStore)
 
 const lightThemeOverrides: GlobalThemeOverrides = {
@@ -24,7 +28,7 @@ const lightThemeOverrides: GlobalThemeOverrides = {
   },
   Result: {
     iconColorSuccess: '#378CE7FF',
-  }
+  },
 }
 
 const darkThemeOverrides: GlobalThemeOverrides = {
@@ -43,8 +47,18 @@ const darkThemeOverrides: GlobalThemeOverrides = {
   },
   Result: {
     iconColorSuccess: '#378CE7FF',
+  },
+  DataTable: {
+    thColor: "#00000020",
+    tdColor: "#00000010",
+    tdColorHover: "#00000020",
   }
 }
+
+onMounted(() => {
+  InfoStore.getInfo()
+  TitleStore.setPrimaryTitle("Painter")
+})
 
 </script>
 

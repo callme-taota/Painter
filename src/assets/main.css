@@ -82,16 +82,12 @@ a:visited {
   --btn-hover-grey: #00000010;
   --btn-hover-deep-grey: #00000030;
   --border-color: #67a7ec;
-  --layout--bottom-background: #dcdcdc30;
+  --layout--bottom-background: #dcdcdc05;
   --card--background: #333;
   --article--background:rgba(0, 0, 0, 0.05);
   --add-btn-background: rgba(0, 0, 0, 0.14);
   --content-border: 1px solid #0000;
   --login-border: 1px solid #67a7ec;
-}
-
-.page-header{
-  padding: 0 120px;
 }
 
 .v-enter-active,

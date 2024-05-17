@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { useInfoStore } from '@/stores/info';
+const InfoStore = useInfoStore()
+const { icp_code } = storeToRefs(InfoStore);
 </script>
 <template>
     <div class="layout-footer-cont">
         <div class="footer-info">@ 2019 - 2024 · <a href="http://blog.callmetaota.fun/">逃塔小站</a>
         </div>
-        <div>浙ICP备2023013990号</div>
+        <div>{{ icp_code }}</div>
         <div class="footer-info">Power by Taota</div>
     </div>
 </template>

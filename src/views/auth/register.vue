@@ -14,8 +14,10 @@ import { validateEmail, validatePassword, validateUserID } from '@/utils/check';
 import { useUserStore } from '@/stores/user';
 import { useThemeStore } from '@/stores/theme';
 import { CreateUser } from '@/apis/api_user';
+import { useInfoStore } from '@/stores/info';
 const UserStore = useUserStore()
 const ThemeStore = useThemeStore()
+const InfoStore = useInfoStore()
 const Message = useMessage()
 const Router = useRouter()
 // ref
@@ -46,6 +48,10 @@ const dropDownOptions2nd = ref([
 ])
 // hook
 onMounted(() => {
+    if (InfoStore.can_register == true) {
+        Message.info("当前站点未开启注册功能")
+        Router.push({ path: "/" })
+    }
     ThemeStore.hideHeader();
 })
 onUnmounted(() => {

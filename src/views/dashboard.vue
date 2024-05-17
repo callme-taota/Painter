@@ -281,7 +281,7 @@ const customRequest = ({
             </n-button>
         </n-card>
     </n-modal>
-    {{ fileList }}
+    
     <n-modal v-model:show="showAvatarModal">
         <n-card style="width: 130px" title="头像" :bordered="false">
             <div style="display: flex; align-items: center;justify-content: center;">

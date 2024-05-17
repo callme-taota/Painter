@@ -1,20 +1,36 @@
 <script setup lang="ts">
+//base
 import { ref, onMounted, computed } from 'vue'
 import { NButton, NPagination, NResult } from 'naive-ui'
 import { useRouter, useRoute } from 'vue-router'
-import { GetArticleByCategory, GetArticleByTag, GetArticleByAuthor, GetArticleByCollection, GetArticleList } from '@/apis/api_article'
-import { type ArticleInfoItem } from '@/utils/interface'
 import ArticleCard from '@/components/article_card.vue'
-
+//api
+import { GetArticleByCategory, GetArticleByTag, GetArticleByAuthor, GetArticleByCollection, GetArticleList } from '@/apis/api_article'
+//utils
+import { type ArticleInfoItem } from '@/utils/interface'
+//store
+import { useTitleStore } from '@/stores/title'
 const Route = useRoute()
 const Router = useRouter()
-
+//hook
 onMounted(async () => {
     searchType.value = parseInt(Route.query.type as string)
     searchTarget.value = parseInt(Route.query.id as string)
     getAritcleList()
 })
+//ref
+const searchType = ref(1) // 1 -> category, 2 -> tag, 3 -> author, 4-> user's collection, 5-> time(default)
+const searchTarget = ref(0)
 
+const articleList = ref<ArticleInfoItem[]>([])
+const pageLimit = ref(10)
+const pageNum = ref(1)
+const listTotal = ref(0)
+const pageTotal = computed<number>(() => {
+    return Math.floor(listTotal.value / pageLimit.value) + 1
+})
+const isFirst = ref(true)
+//fn
 async function getAritcleList() {
     let res;
     let type = searchType.value
@@ -33,7 +49,7 @@ async function getAritcleList() {
     }
     let list = res.data.ArticleList
     let len = res.data.ArticleCount
-    if(len == 0) {
+    if (len == 0) {
         list = []
     }
     isFirst.value = false
@@ -51,18 +67,6 @@ async function getWithNumChange(num: number) {
     await getAritcleList()
 }
 
-const searchType = ref(1) // 1 -> category, 2 -> tag, 3 -> author, 4-> user's collection, 5-> time(default)
-const searchTarget = ref(0)
-
-const articleList = ref<ArticleInfoItem[]>([])
-const pageLimit = ref(10)
-const pageNum = ref(1)
-const listTotal = ref(0)
-const pageTotal = computed<number>(() => {
-    return Math.floor(listTotal.value / pageLimit.value) + 1
-})
-const isFirst = ref(true)
-
 const goBack = () => {
     Router.go(-1)
 }
@@ -76,9 +80,11 @@ const goBack = () => {
         <div class="article-list-flex">
             <ArticleCard v-for="item in articleList" :article="item"></ArticleCard>
         </div>
-        <n-pagination style="float:right;" v-model:page="pageNum" :page-count="pageTotal" v-model:page-size="pageLimit"
-            show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
-            :on-update:page-size="getWithSizeChange" />
+        <div style="display: flex; justify-content: flex-end;">
+            <n-pagination style="float:right;" v-model:page="pageNum" :page-count="pageTotal"
+                v-model:page-size="pageLimit" show-size-picker :page-sizes="[10, 20, 30, 40]"
+                :on-update:page="getWithNumChange" :on-update:page-size="getWithSizeChange" />
+        </div>
     </div>
     <div class="page-cont" v-if="articleList.length == 0 && isFirst == false">
         <n-result status="404" title="好像是没东西的样子" description="换个地方吧～">

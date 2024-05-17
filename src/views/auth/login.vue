@@ -14,8 +14,10 @@ import { validateEmail } from '@/utils/check';
 // store
 import { useUserStore } from '@/stores/user';
 import { useThemeStore } from '@/stores/theme';
+import { useInfoStore } from '@/stores/info';
 const UserStore = useUserStore()
 const ThemeStore = useThemeStore()
+const InfoStore = useInfoStore()
 const Message = useMessage()
 const Router = useRouter()
 // ref
@@ -105,18 +107,35 @@ const firstStep = async () => {
 }
 
 const secondStep = async () => {
+    let can_mail = InfoStore.can_mail
     let isMail = isKeyMail.value
     let res
-    if (isMail) {
-        res = await LoginUserWithEmailCheck({ "Email": userKey.value, "Password": userPass.value })
+    if (can_mail) {
+        if (isMail) {
+            res = await LoginUserWithEmailCheck({ "Email": userKey.value, "Password": userPass.value })
+        } else {
+            res = await LoginUserWithUserNameCheck({ "UserName": userKey.value, "Password": userPass.value })
+        }
+        if (res.ok && res.data.Correct) {
+            await LoginSendMail({ "Email": userKey.value })
+            current.value = current.value + 1
+        } else {
+            userPassSuccess.value = false
+        }
     } else {
-        res = await LoginUserWithUserNameCheck({ "UserName": userKey.value, "Password": userPass.value })
-    }
-    if (res.ok && res.data.Correct) {
-        await LoginSendMail({ "Email": userKey.value })
-        current.value = current.value + 1
-    } else {
-        userPassSuccess.value = false
+        if (isMail) {
+            res = await UserStore.loginWithEmail(userKey.value, userPass.value)
+        } else {
+            res = await UserStore.loginWithUName(userKey.value, userPass.value)
+        }
+        if (res.ok && res.data.Correct) {
+            current.value = current.value + 2
+            setTimeout(() => {
+                Router.push({ path: "/" })
+            }, 1000);
+        } else {
+            userPassSuccess.value = false
+        }
     }
 }
 
@@ -215,7 +234,8 @@ const thirdStep = async () => {
                             <div class="login-account-text">
                                 请输入邮箱中的验证码
                             </div>
-                            <n-input-number v-model:value="mailCode" placeholder="验证码" :show-button="false"></n-input-number>
+                            <n-input-number v-model:value="mailCode" placeholder="验证码"
+                                :show-button="false"></n-input-number>
                             <div v-if="!mailCodeSuccess" style="color: var(--highlight-color);">
                                 验证码错误
                             </div>

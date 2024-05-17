@@ -4,6 +4,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NIcon, NAvatar, NPagination, NInput, NButton, NText } from 'naive-ui';
 import { marked } from 'marked';
+import { useTitleStore } from '@/stores/title';
 //icons
 import { AccessTimeOutlined, LabelOutlined } from '@vicons/material';
 import { FireOutlined, DeleteOutlined } from '@vicons/antd'
@@ -20,6 +21,7 @@ import type { FullArticleItem, CommentItem } from '@/utils/interface'
 //store & route
 const Route = useRoute()
 const Router = useRouter()
+const TitleStore = useTitleStore()
 
 //refs
 const articleID = ref<number>()
@@ -264,7 +266,7 @@ const toUserPage = (id: number) => {
                             </div>
                         </div>
                         <div style="width: 6px;"></div>
-                        <div @click="delComment(c)" class="article-info-cursor article-comment-like">
+                        <div v-if="c.IsSelf" @click="delComment(c)" class="article-info-cursor article-comment-like">
                             <n-icon size="14">
                                 <DeleteOutlined />
                             </n-icon>
@@ -272,9 +274,12 @@ const toUserPage = (id: number) => {
                     </div>
                 </div>
             </div>
-            <n-pagination v-model:page="pageNum" :page-count="pageTotal" v-model:page-size="pageLimit" show-size-picker
-                :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
-                :on-update:page-size="getWithSizeChange" />
+            <div>
+                <n-pagination v-model:page="pageNum" :page-count="pageTotal" v-model:page-size="pageLimit" show-size-picker
+                    :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
+                    :on-update:page-size="getWithSizeChange" />
+            </div>
+            
         </div>
 
         <div class="article-comment-input">

@@ -6,12 +6,13 @@ interface TitleGroup {
     secondaryTitle: string,
 }
 
-export const titleStore = defineStore("titleStore", () => {
+export const useTitleStore = defineStore("titleStore", () => {
     const primaryTitle = ref("")
     const secondaryTitle = ref("")
 
     const setPrimaryTitle = (title: string) => {
         primaryTitle.value = title
+        document.title = title
     }
 
     const setSecondaryTitle = (title: string) => {

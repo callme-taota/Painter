@@ -19,7 +19,7 @@ export function dateToString(d: string): string {
     return numTimeToString(t)
 }
 
-export function dateNow() : string {
+export function dateNow(): string {
     let day = new Date()
     let t = day.getTime() / 1000
     return numTimeToString(t)
@@ -38,20 +38,20 @@ export function dateToDescription(d: string): string {
     const oneDay = 86400000; // 24 * 60 * 60 * 1000
 
     if (diff < oneDay) {
-        return `${day.getHours()}:${day.getMinutes()}`;
-    } else if (diff < oneDay * 3) {
+        return `${day.getHours().toString().padStart(2, '0')}:${day.getMinutes().toString().padStart(2, '0')}`;
+    } else if (diff < oneDay * 5) {
         return `${Math.floor(diff / oneDay)}天前`;
     } else {
         return `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}`;
     }
 }
 
-export function dateDiff(d :string):string {
+export function dateDiff(d: string): string {
     let day = new Date(d)
     let now = new Date()
     let diff = Math.abs(now.getTime() - day.getTime())
 
     const oneDay = 86400000; // 24 * 60 * 60 * 1000
-    
+
     return `${Math.floor(diff / oneDay)}天前`;
 }

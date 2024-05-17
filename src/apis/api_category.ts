@@ -1,5 +1,5 @@
 import type { AxiosResponse } from "axios";
-import { AxiosGet, AxiosPost } from "./axios";
+import { AxiosGet, AxiosPost, type MyResponse } from "./axios";
 
 export const CategoryList = async (data: any): Promise<AxiosResponse> => {
     const res = await AxiosGet({
@@ -9,9 +9,17 @@ export const CategoryList = async (data: any): Promise<AxiosResponse> => {
     return res
 }
 
-export const CategoryCreate = async (data: any): Promise<AxiosResponse> => {
+export const CategoryCreate = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url:"/category/create",
+        data: data
+    });
+    return res
+}
+
+export const CategoryUpdate = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url:"/category/update/",
         data: data
     });
     return res

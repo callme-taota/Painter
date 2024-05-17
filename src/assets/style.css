@@ -3,9 +3,17 @@
     transition: 0.3s;
 }
 
+.page-header {
+    padding: 0 120px;
+}
+
 @media (max-width: 1000px) {
     .page-cont {
         padding: 10px 80px;
+    }
+
+    .page-header {
+        padding: 0 80px;
     }
 }
 
