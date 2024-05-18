@@ -7,6 +7,7 @@ import { GetStartTime, GetDayPV, GetMonthPV } from '@/apis/api_common';
 import { GetArticleCount } from '@/apis/api_article';
 //icon
 import { LogoGithub, LogoTwitter, LogoWechat, Mail } from '@vicons/ionicons5'
+import { MouseOutlined as mouseIcon } from '@vicons/material';
 //ref
 const dateDiff = ref<string>("")
 const dayPV = ref<number>(0)
@@ -42,7 +43,7 @@ const goLink = (link: string) => {
 </script>
 <template>
     <div class="entry-main-cont">
-        <div>
+        <div class="entry-painter">
             <div class="entry-img-cont">
                 <img class="entry-img" src="../assets/me.png" alt="Me">
             </div>
@@ -74,7 +75,13 @@ const goLink = (link: string) => {
                     !
                 </span>
             </div>
+            <div class="entry-mouse">
+                <n-icon>
+                    <mouseIcon />
+                </n-icon>
+            </div>
         </div>
+
         <div class="entry-main-flex">
             <div class="entry-card6 entry-card entry-card-border">
                 <div class="entry-card-cont">
@@ -95,22 +102,22 @@ const goLink = (link: string) => {
                         <span class="entry-tag">
                             Golang工程师
                         </span>
-                        <span class="entry-tag entry-tag-background1">
+                        <span class="entry-tag">
                             云原生
                         </span>
-                        <span class="entry-tag entry-tag-background2">
+                        <span class="entry-tag">
                             学生
                         </span>
-                        <span class="entry-tag  entry-tag-background3">
+                        <span class="entry-tag">
                             摄影师
                         </span>
-                        <span class="entry-tag entry-tag-background2">
+                        <span class="entry-tag">
                             Crypto玩家
                         </span>
-                        <span class="entry-tag entry-tag-background1">
+                        <span class="entry-tag">
                             EDM Producer
                         </span>
-                        <span class="entry-tag entry-tag-background2">
+                        <span class="entry-tag">
                             前端爱好者
                         </span>
                     </div>
@@ -122,63 +129,30 @@ const goLink = (link: string) => {
                         Painter为何物?
                     </div>
                     <div class="entry-card-line3">
-                        Painter是一个 博客/文章 框架，通过Go语言后端以及Vue前端进行搭建，目的是为了建立一个分享技术笔记以及日常的地方。
+                        Painter是一个通过Golang与Vue进行搭建的 社区博客 框架，目的是为了建立一个分享技术笔记以及日常的地方。
                     </div>
                 </div>
             </div>
+
         </div>
+
         <div class="entry-main-flex">
+            <div class="entry-card7 entry-card entry-card-border">
+                <div class="entry-card-cont">
+                    <div class="entry-card-line1">
+                        探索
+                    </div>
+                </div>
+            </div>
             <div class="entry-card3 entry-card entry-card-border">
                 <div class="entry-card-cont">
                     <div class="entry-card-line1">
-                        联系我
-                    </div>
-                    <div class="entry-contact-me">
-                        <div class="entry-icon-cont" @click="goLink('https://github.com/callme-taota')">
-                            <n-icon size="20">
-                                <logo-github />
-                            </n-icon>
-                        </div>
-                        <div class="entry-icon-cont" @click="goLink('https://twitter.com/Taota_chen')">
-                            <n-icon size="20">
-                                <logo-twitter />
-                            </n-icon>
-                        </div>
-                        <div class="entry-icon-cont" @click="goLink('http://www.callmetaota.fun/wechat.jpeg')">
-                            <n-icon size="20">
-                                <logo-wechat />
-                            </n-icon>
-                        </div>
-                        <div class="entry-icon-cont" @click="goLink('mailto:taota.chen@gmail.com')">
-                            <n-icon size="20">
-                                <mail />
-                            </n-icon>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="entry-card7 entry-card-linear-2">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line2">
-                        我的项目
-                    </div>
-                    <div class="entry-contact-me">
-                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/Painter-Blog')">
-                            Painter
-                        </div>
-                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/SendUCode')">
-                            SendUCode
-                        </div>
-                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/CloudBox')">
-                            CloudBox
-                        </div>
-                        <div class="entry-text-cont" @click="goLink('https://github.com/OpenAtomFoundation/pikiwidb')">
-                            PikiwiDB(参与)
-                        </div>
+                        友链
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="entry-main-flex">
             <div class="entry-card4 entry-card entry-card-border">
                 <div class="entry-card-cont">
@@ -285,6 +259,7 @@ const goLink = (link: string) => {
                     </div>
                 </div>
             </div>
+
             <div class="entry-card6 entry-card entry-card-with-background-1">
                 <div class="entry-card-cont">
                     <div class="entry-card-line1">
@@ -326,18 +301,55 @@ const goLink = (link: string) => {
                 </div>
             </div>
         </div>
+
         <div class="entry-main-flex">
-            <div class="entry-card7 entry-card entry-card-border">
+            <div class="entry-card7 entry-card-linear-2">
                 <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        探索
+                    <div class="entry-card-line2">
+                        我的项目
+                    </div>
+                    <div class="entry-contact-me">
+                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/Painter-Blog')">
+                            Painter
+                        </div>
+                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/SendUCode')">
+                            SendUCode
+                        </div>
+                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/CloudBox')">
+                            CloudBox
+                        </div>
+                        <div class="entry-text-cont" @click="goLink('https://github.com/OpenAtomFoundation/pikiwidb')">
+                            PikiwiDB(参与)
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="entry-card3 entry-card entry-card-border">
                 <div class="entry-card-cont">
                     <div class="entry-card-line1">
-                        友链
+                        联系我
+                    </div>
+                    <div class="entry-contact-me">
+                        <div class="entry-icon-cont" @click="goLink('https://github.com/callme-taota')">
+                            <n-icon size="20">
+                                <logo-github />
+                            </n-icon>
+                        </div>
+                        <div class="entry-icon-cont" @click="goLink('https://twitter.com/Taota_chen')">
+                            <n-icon size="20">
+                                <logo-twitter />
+                            </n-icon>
+                        </div>
+                        <div class="entry-icon-cont" @click="goLink('http://www.callmetaota.fun/wechat.jpeg')">
+                            <n-icon size="20">
+                                <logo-wechat />
+                            </n-icon>
+                        </div>
+                        <div class="entry-icon-cont" @click="goLink('mailto:taota.chen@gmail.com')">
+                            <n-icon size="20">
+                                <mail />
+                            </n-icon>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -358,6 +370,32 @@ const goLink = (link: string) => {
     transition: 0.5s;
 }
 
+.entry-painter {
+    height: 86vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.entry-mouse {
+    position: absolute;
+    bottom: 60px;
+    font-size: x-large;
+    border-radius: 18px;
+    height: 50px;
+    line-height: 56px;
+    width: 38px;
+    text-align: center;
+    background-color: var(--btn-hover-grey);
+    transition: 0.3s;
+}
+
+.entry-mouse:hover {
+    background-color: var(--btn-hover-deep-grey);
+}
+
 .entry-info {
     padding: 0px 140px;
     text-align: center;
@@ -368,7 +406,7 @@ const goLink = (link: string) => {
 .entry-img-cont {
     display: flex;
     flex-direction: row;
-    height: 130px;
+    height: 180px;
     justify-content: center;
 }
 
@@ -403,19 +441,19 @@ const goLink = (link: string) => {
 }
 
 .entry-card3 {
-    width: 29%;
+    width: 29.3%;
 }
 
 .entry-card4 {
-    width: 39%;
+    width: 39.3%;
 }
 
 .entry-card6 {
-    width: 59%;
+    width: 59.3%;
 }
 
 .entry-card7 {
-    width: 69%;
+    width: 69.3%;
 }
 
 .entry-card {
@@ -426,8 +464,8 @@ const goLink = (link: string) => {
     transition: 0.3s;
 }
 
-.entry-card-border {
-    border: 0.5px solid var(--border-color);
+.entry-card-border:hover {
+    box-shadow: 0 0 4px var(--border-color);
 }
 
 .entry-card-with-background-1 {
@@ -438,13 +476,13 @@ const goLink = (link: string) => {
 }
 
 .entry-card-linear-1 {
-    background: linear-gradient(90deg, #3296f4 0%, #3d3ae2 100%);
+    background: linear-gradient(90deg, #479ff2 0%, #5d5af7 100%);
     border-radius: 20px;
     color: var(--color-rev);
 }
 
 .entry-card-linear-2 {
-    background: linear-gradient(90deg, #FFAF45 0%, #FB6D48 100%);
+    background: linear-gradient(90deg, #ffb95e 0%, #ffa791 100%);
     border-radius: 20px;
     color: var(--color-rev);
 }
@@ -478,18 +516,6 @@ const goLink = (link: string) => {
     color: var(--color-rev);
     background-color: #4facfe;
     border-radius: 10px;
-}
-
-.entry-tag-background1 {
-    background-color: #0d96ff;
-}
-
-.entry-tag-background2 {
-    background-color: #00c3ff;
-}
-
-.entry-tag-background3 {
-    background-color: #00f2fe;
 }
 
 .entry-contact-me {

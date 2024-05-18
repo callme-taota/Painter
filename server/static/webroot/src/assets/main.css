@@ -13,45 +13,41 @@ body,
   margin: 8px 0;
 }
 
-/* 未点击时的样式 */
+code {
+  color: var(--color) !important;
+  background: var(--code-background) !important;
+  border-radius: 12px;
+}
+
 a {
   color: black;
-  /* 设置为你希望的默认颜色 */
 }
 
-/* 点击后的样式 */
 a:visited {
   color: var(--border-color);
-  /* 设置为你希望的点击后的颜色 */
 }
 
-/* 定义滚动条的宽度、颜色和样式 */
 ::-webkit-scrollbar {
   width: 8px;
-  /* 宽度 */
 }
 
-/* 定义滚动条的轨道颜色 */
 ::-webkit-scrollbar-track {
   background-color: var(--home-background);
 }
 
-/* 定义滚动条的滑块颜色 */
 ::-webkit-scrollbar-thumb {
   background-color: #34343425;
   border-radius: 4px;
-  /* 圆角 */
 }
 
-/* 鼠标悬停在滑块上的样式 */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #222222;
-
+  background-color: var(--scrollbar--hover);
 }
 
 [theme="light"],
 :root {
   color: #444444;
+  --color: #444444;
   --color-rev: #fff;
   --highlight-color: #67a7ec;
   --second-highlight-color: #378CE7;
@@ -68,10 +64,13 @@ a:visited {
   --add-btn-background: rgba(0, 0, 0, 0.05);
   --content-border: 1px solid rgb(224, 224, 230);
   --login-border: 1px solid rgb(224, 224, 230);
+  --scrollbar--hover: #ebebeb;
+  --code-background: #6488ad10;
 }
 
 [theme="dark"] {
   color: #dddddd;
+  --color: #dddddd;
   --color-rev: #fff;
   --highlight-color: #67a7ec;
   --second-highlight-color: #378CE7;
@@ -84,10 +83,12 @@ a:visited {
   --border-color: #67a7ec;
   --layout--bottom-background: #dcdcdc05;
   --card--background: #333;
-  --article--background:rgba(0, 0, 0, 0.05);
+  --article--background: rgba(0, 0, 0, 0.05);
   --add-btn-background: rgba(0, 0, 0, 0.14);
   --content-border: 1px solid #0000;
   --login-border: 1px solid #67a7ec;
+  --scrollbar--hover: #222222;
+  --code-background: #7992ad10;
 }
 
 .v-enter-active,

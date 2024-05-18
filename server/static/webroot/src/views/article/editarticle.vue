@@ -2,7 +2,10 @@
 //base
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { marked } from 'marked';
+import { Marked } from 'marked';
+import { markedHighlight } from "marked-highlight";
+import hljs from "highlight.js";
+import 'highlight.js/styles/github.css'
 import { NIcon, NInput, NSelect, NButton, useMessage } from 'naive-ui';
 import RequiredStar from '@/components/required_star.vue'
 //apis
@@ -99,8 +102,16 @@ const getArticle = async () => {
 
 const renderMarkdown = async () => {
     const content = fullArticle.value.ArticleContentTable.Content;
-    const markedContent = await marked(content);
-    renderedMarkdown.value = markedContent;
+    const marked = new Marked(
+        markedHighlight({
+            langPrefix: 'hljs language-',
+            highlight(code: string, lang: string, info: any) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            }
+        })
+    )
+    renderedMarkdown.value = await marked.parse(content);
 }
 
 const handleContentChange = async (content: string) => {

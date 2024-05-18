@@ -3,7 +3,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NIcon, NAvatar, NPagination, NInput, NButton, NText } from 'naive-ui';
-import { marked } from 'marked';
+import { Marked } from 'marked';
+import { markedHighlight } from "marked-highlight";
+import hljs from "highlight.js";
+import 'highlight.js/styles/github.css'
 import { useTitleStore } from '@/stores/title';
 //icons
 import { AccessTimeOutlined, LabelOutlined } from '@vicons/material';
@@ -154,8 +157,16 @@ const delComment = async (c: CommentItem) => {
 
 const renderMarkdown = async () => {
     const content = fullArticle.value.ArticleContentTable.Content;
-    const markedContent = await marked(content);
-    renderedMarkdown.value = markedContent;
+    const marked = new Marked(
+        markedHighlight({
+            langPrefix: 'hljs language-',
+            highlight(code: string, lang: string, info: any) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            }
+        })
+    )
+    renderedMarkdown.value = await marked.parse(content);
 }
 
 const toCategoryPage = () => {
@@ -237,6 +248,7 @@ const toUserPage = (id: number) => {
         </div>
 
         <div class="article-content" v-html="renderedMarkdown"></div>
+
         <div class="article-comment" ref="articleComment" v-if="comments.length != 0">
             <div class="article-comment-title">
                 评论（{{ listTotal }}）
@@ -275,11 +287,11 @@ const toUserPage = (id: number) => {
                 </div>
             </div>
             <div>
-                <n-pagination v-model:page="pageNum" :page-count="pageTotal" v-model:page-size="pageLimit" show-size-picker
-                    :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
+                <n-pagination v-model:page="pageNum" :page-count="pageTotal" v-model:page-size="pageLimit"
+                    show-size-picker :page-sizes="[10, 20, 30, 40]" :on-update:page="getWithNumChange"
                     :on-update:page-size="getWithSizeChange" />
             </div>
-            
+
         </div>
 
         <div class="article-comment-input">
