@@ -1,6 +1,7 @@
 package models
 
 import (
+	"net/http"
 	"reflect"
 )
 
@@ -86,8 +87,8 @@ func Rl(msg string, ok bool, data []any) *ReturnDatal {
 	return &ReturnDatal{msg, ok, data}
 }
 
-func SuccessR() *ReturnData {
-	return R(KReturnMsgSuccess, KReturnTrue, RDC{})
+func SuccessR() (int, *ReturnData) {
+	return http.StatusOK, R(KReturnMsgSuccess, KReturnTrue, RDC{})
 }
 
 func ShouldCheckJSON(obj interface{}, checking []string) bool {

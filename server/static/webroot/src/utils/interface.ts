@@ -46,7 +46,8 @@ export interface UserItem {
     CreatedAt: string,
     LastLogin: string,
     UserName: string,
-    PhoneNum: number
+    PhoneNum: number,
+    UserGroup: number
 }
 
 export interface MiniUser {

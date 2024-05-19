@@ -14,3 +14,19 @@ export const SetSettings = async (data: any): Promise<MyResponse> => {
     });
     return res
 }
+
+export const GetUserList = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosGet({
+        url: "/setting/userlist",
+        data: data
+    });
+    return res
+}
+
+export const SetUserPermission = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url: "/setting/user/permission",
+        data: data
+    });
+    return res
+}

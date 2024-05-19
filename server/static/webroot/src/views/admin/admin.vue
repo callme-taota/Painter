@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router';
 import AdminBase from './admin_base.vue';
 import AdminTag from './admin_tag.vue';
 import AdminCategory from './admin_category.vue';
+import AdminUser from './admin_user.vue';
 //api
 import { IsAdmin } from '@/apis/api_common';
 //store
@@ -38,6 +39,9 @@ onMounted(async () => {
                 </n-tab-pane>
                 <n-tab-pane name="category" tab="类别设置">
                     <AdminCategory />
+                </n-tab-pane>
+                <n-tab-pane name="user" tab="用户设置">
+                    <AdminUser />
                 </n-tab-pane>
             </n-tabs>
         </div>

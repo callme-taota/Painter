@@ -30,6 +30,11 @@ func CreateComment(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	check, err := database.CanUserComment(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	commentID, err := database.CreateComment(json.ArticleID, userID.(int), json.Content)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))

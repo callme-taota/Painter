@@ -70,9 +70,6 @@ func CheckHistoryExist(userID, articleID int) (bool, error) {
 
 func AutoHistory(userID, articleID int) (bool, error) {
 	flag, err := CheckHistoryExist(userID, articleID)
-	if err != nil {
-		return false, err
-	}
 	if flag == false {
 		_, err = CreateHistory(userID, articleID)
 		if err != nil {

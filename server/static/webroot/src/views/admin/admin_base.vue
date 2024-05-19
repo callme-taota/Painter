@@ -116,7 +116,7 @@ const submit = async () => {
                 发件人
             </div>
             <div class="input-right">
-                <n-input v-model:value="config.Mail.From" placeholder="发件人"></n-input>
+                <n-input v-model:value="config.Mail.From" :disabled="!config.Mail.Active" placeholder="发件人"></n-input>
             </div>
         </div>
         <div class="input-item">
@@ -124,7 +124,7 @@ const submit = async () => {
                 密码
             </div>
             <div class="input-right">
-                <n-input v-model:value="config.Mail.Password" placeholder="密码"></n-input>
+                <n-input v-model:value="config.Mail.Password" :disabled="!config.Mail.Active" placeholder="密码"></n-input>
             </div>
         </div>
         <div class="input-item">
@@ -132,7 +132,7 @@ const submit = async () => {
                 SMTP服务地址
             </div>
             <div class="input-right">
-                <n-input v-model:value="config.Mail.SmtpHost" placeholder="SMTP服务地址"></n-input>
+                <n-input v-model:value="config.Mail.SmtpHost" :disabled="!config.Mail.Active" placeholder="SMTP服务地址"></n-input>
             </div>
         </div>
         <div class="input-item">
@@ -140,7 +140,7 @@ const submit = async () => {
                 SMTP服务端口
             </div>
             <div class="input-right">
-                <n-input-number v-model:value="config.Mail.SmtpPort" :show-button="false"></n-input-number>
+                <n-input-number v-model:value="config.Mail.SmtpPort" :disabled="!config.Mail.Active" :show-button="false"></n-input-number>
             </div>
         </div>
         <br>

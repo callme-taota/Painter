@@ -60,6 +60,50 @@ func SetSetting(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	c.JSON(http.StatusOK, models.SuccessR())
+	c.JSON(models.SuccessR())
+	return
+}
+
+func GetUserList(c *gin.Context) {
+	var json models.OnlyPageOption
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	Limit, Offset := json.Limit, json.Offset
+	if ok != true {
+		Limit, Offset = 20, 0
+	}
+	list, err := database.GetUserList(Limit, Offset)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	count, _ := database.GetUserCount()
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{
+		"Users":      list,
+		"UserNumber": count,
+	}))
+	return
+}
+
+func SetUserGroup(c *gin.Context) {
+	var json Request.SetUserGroupJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"UserID", "GroupID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err := database.AssignGroupToUser(json.UserID, json.GroupID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(models.SuccessR())
 	return
 }

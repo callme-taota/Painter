@@ -11,3 +11,8 @@ type SetSettingJSON struct {
 	MailSMTPHost string `json:"MailSMTPHost"`
 	MailSMTPPort int    `json:"MailSMTPPort"`
 }
+
+type SetUserGroupJSON struct {
+	UserID  int `json:"userID"`
+	GroupID int `json:"groupID"`
+}

@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-var settingKey = []string{"mail_from", "mail_password", "mail_smtphost", "mail_smtpport", "mail_active", "site_name", "github_href", "icp_code", "can_register"}
+var settingKey = []string{"mail_from", "mail_password", "mail_smtphost", "mail_smtpport", "mail_active", "site_name", "github_href", "icp_code", "can_register", "entry_article"}
 
 func InitSettings() {
 	for _, setting := range settingKey {
@@ -139,4 +139,24 @@ func SetSetting(json Request.SetSettingJSON) error {
 		}
 	}
 	return nil
+}
+
+func GetUserList(limit, offset int) ([]models.UserTable, error) {
+	var userList []models.UserTable
+	res := DbEngine.Select("id, user_name, nick_name, header_field, user_group").Limit(limit).Offset(offset).Find(&userList)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while GetUserList %e", res.Error).PrintAndWriteSafe()
+		return nil, res.Error
+	}
+	return userList, nil
+}
+
+func GetUserCount() (int, error) {
+	var count int64
+	res := DbEngine.Model(&models.UserTable{}).Count(&count)
+	if res.Error != nil {
+		tolog.Log().Infof("Error while GetUserCount %e", res.Error).PrintAndWriteSafe()
+		return 0, res.Error
+	}
+	return int(count), nil
 }

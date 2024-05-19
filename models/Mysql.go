@@ -10,6 +10,7 @@ type UserTable struct {
 	UserName    string `gorm:"type:varchar(255);unique"`
 	Email       string `gorm:"type:varchar(255);unique"`
 	AdminFlag   int    `gorm:"type:tinyint"`
+	UserGroup   int
 	LastLogin   time.Time
 	NickName    string `gorm:"type:varchar(255)"`
 	PhoneNum    int    `gorm:"type:int"`
@@ -112,7 +113,6 @@ type ArticleTable struct {
 	Author     int
 	Summary    string
 	ReadCount  int
-	IsTop      bool
 	Status     int `gorm:"comment:0 草稿，1 发布，2 隐藏，3 限制，4 封禁'"`
 	CategoryID int
 	CreatedAt  time.Time
@@ -186,4 +186,35 @@ type VisitorRecordTable struct {
 
 func (VisitorRecordTable) TableName() string {
 	return "visitor_record"
+}
+
+type UserGroupTable struct {
+	ID        int       `gorm:"primaryKey;autoIncrement"`
+	Name      string    `gorm:"notNull"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+func (UserGroupTable) TableName() string {
+	return "user_group"
+}
+
+type RuleTable struct {
+	ID        int       `gorm:"primaryKey;autoIncrement"`
+	Name      string    `gorm:"notNull"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+func (RuleTable) TableName() string {
+	return "rule"
+}
+
+type GroupRuleTable struct {
+	GroupID int
+	RuleID  int
+}
+
+func (GroupRuleTable) TableName() string {
+	return "group_rule"
 }

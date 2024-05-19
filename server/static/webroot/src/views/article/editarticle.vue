@@ -11,7 +11,7 @@ import RequiredStar from '@/components/required_star.vue'
 //apis
 import { GetCategoriesList } from '@/apis/api_category';
 import { TagListFull } from '@/apis/api_tag';
-import { GetArticle, ArticleUpdateContent, ArticleUpdateSummary, ArticleUpdateTitle, UpdateArticleCategory, ArticleTagUpdate, CreateArticle } from '@/apis/api_article';
+import { GetArticle, ArticleUpdateContent, ArticleUpdateSummary, ArticleUpdateTitle, UpdateArticleCategory, ArticleTagUpdate, CreateArticle, ArticleUpdateStatusPublic, ArticleUpdateStatusDart } from '@/apis/api_article';
 //icons
 import { CircleEdit20Regular, ProtocolHandler16Regular, PreviewLink20Regular, TextBold16Regular, TextStrikethrough16Regular, AppsList20Regular, TextNumberListLtr20Regular, Comment48Regular, Star20Regular } from '@vicons/fluent';
 import { FormatItalicSharp } from '@vicons/material';
@@ -76,7 +76,16 @@ const tagSelect = computed<number[]>({
 const categoryList = ref<CategoryListItem[]>([])
 const markdownEditType = ref<number>(2) // 1-> only edit, 2-> both, 3-> only preview
 const renderedMarkdown = ref("")
-
+const statusOptions = ref([
+    {
+        label: "草稿",
+        value: 0
+    },
+    {
+        label: "发布",
+        value: 1
+    },
+])
 //fn
 onMounted(async () => {
     articleID.value = parseInt(Route.query.id as string)
@@ -135,6 +144,12 @@ const doUpdate = async () => {
     await ArticleUpdateTitle({ "ArticleID": id, "Title": fullArticle.value.ArticleTable.Title })
     await UpdateArticleCategory({ "ArticleID": id, "CategoryID": fullArticle.value.ArticleTable.CategoryID })
     await ArticleTagUpdate({ "ArticleID": id, "TagList": tagSelect.value })
+    console.log(fullArticle.value.ArticleTable.Status)
+    if (fullArticle.value.ArticleTable.Status == 0) {
+        await ArticleUpdateStatusDart({ "ArticleID": id})
+    } else {
+        await ArticleUpdateStatusPublic({ "ArticleID": id})
+    }
     Message.info("修改成功")
     Router.push({ path: "/dashboard" })
 }
@@ -333,6 +348,9 @@ const doPost = async () => {
                     <div v-if="editType == 1">
                         · 上次更新： {{ dateToString(fullArticle.ArticleTable.UpdatedAt) }}
                     </div>
+                    <div>
+                        <n-select :options="statusOptions" v-model:value="fullArticle.ArticleTable.Status"></n-select>
+                    </div>
                     <div style="height: 10px;"></div>
                     <n-button @click="doPost">
                         {{ editType == 1 ? '更新' : '新增' }}
@@ -341,16 +359,6 @@ const doPost = async () => {
             </div>
         </div>
     </div>
-    <!-- 左侧 -->
-    <!-- 标题 -->
-    <!-- 内容 -->
-    <!-- 概述 -->
-
-    <!-- 右侧  -->
-    <!-- 类别 -->
-    <!-- 标签 -->
-    <!-- 其他信息 -->
-    <!-- 发布 -->
 </template>
 <style>
 .edit-card {

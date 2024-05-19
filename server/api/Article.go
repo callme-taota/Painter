@@ -30,6 +30,11 @@ func CreateArticle(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	// Create article in database
 	id, err := database.CreateArticle(json.Title, userID.(int), json.Summary, json.CategoryID, json.Content, json.Tags)
 	if err != nil {
@@ -64,8 +69,13 @@ func UpdateArticleContent(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	// Check if user is the author of the article
-	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
 		// Permission denied
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
@@ -105,8 +115,13 @@ func UpdateArticleCategory(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	// Check if user is the author of the article
-	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
 		// Permission denied
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
@@ -146,8 +161,13 @@ func UpdateArticleSummary(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
 	// Check if user is the author of the article
-	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
 		// Permission denied
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
@@ -222,7 +242,12 @@ func UpdateArticleTitle(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
 		return
@@ -258,36 +283,6 @@ func UpdateArticleStatus(c *gin.Context) {
 		return
 	}
 	err = database.UpdateArticleStatus(json.ArticleID, json.Status)
-	if err != nil {
-		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
-	return
-}
-
-func UpdateArticleIsTop(c *gin.Context) {
-	var json Request.UpdateArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "IsTop"})
-	if ok != true {
-		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	userID, flag := c.Get("userID")
-	if flag == false {
-		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
-	if flag == false || err != nil {
-		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	err = database.UpdateArticleIsTop(json.ArticleID, json.IsTop)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
@@ -760,12 +755,87 @@ func UpdateArticleTag(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	flag, err := database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
 	if flag == false || err != nil {
 		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	err = database.UpdateArticleTags(json.ArticleID, json.TagList)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func SetArticleStatusDart(c *gin.Context) {
+	var json Request.ArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	if flag == false || err != nil {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err = database.UpdateArticleStatus(json.ArticleID, 0)
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func SetArticleStatusPublic(c *gin.Context) {
+	var json Request.ArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
+	if ok != true {
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	userID, flag := c.Get("userID")
+	if flag == false {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	if flag == false || err != nil {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	err = database.UpdateArticleStatus(json.ArticleID, 1)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

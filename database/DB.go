@@ -24,6 +24,7 @@ func InitDB() error {
 	}
 	tolog.Log().Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	InitSettings()
+	InitRules()
 	return nil
 }
 

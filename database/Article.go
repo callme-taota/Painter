@@ -16,6 +16,7 @@ func CreateArticle(title string, author int, summary string, categoryID int, con
 		Summary:    summary,
 		CategoryID: categoryID,
 		CreatedAt:  time.Now(),
+		Status:     0,
 	}
 	if err := tx.Create(&article).Error; err != nil {
 		tx.Rollback()
@@ -121,22 +122,6 @@ func ArticleReadCountAdd(articleID int) error {
 	return nil
 }
 
-func UpdateArticleIsTop(articleID int, isTop bool) error {
-	var article models.ArticleTable
-	result := DbEngine.First(&article, articleID)
-	if result.Error != nil {
-		tolog.Log().Infof("Error while UpdateArticleIsTop %e", result.Error).PrintAndWriteSafe()
-		return result.Error
-	}
-	article.IsTop = isTop
-	err := UpdateArticleUpdateTime(articleID)
-	if err != nil {
-		tolog.Log().Infof("Error while UpdateArticleIsTop %e", result.Error).PrintAndWriteSafe()
-		return result.Error
-	}
-	return nil
-}
-
 func UpdateArticleTitle(articleID int, title string) error {
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
@@ -161,6 +146,11 @@ func UpdateArticleStatus(articleID int, status int) error {
 		return result.Error
 	}
 	article.Status = status
+	result = DbEngine.Where("article_id = ?", articleID).Save(&article)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while UpdateArticleStatus %e", result.Error).PrintAndWriteSafe()
+		return result.Error
+	}
 	err := UpdateArticleUpdateTime(articleID)
 	if err != nil {
 		tolog.Log().Infof("Error while UpdateArticleStatus %e", result.Error).PrintAndWriteSafe()
@@ -197,7 +187,7 @@ func DeleteArticle(articleID, author int) error {
 func GetArticlesByAuthor(userID, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
 	result := DbEngine.
-		Where("author = ?", userID).
+		Where("author = ? and status = 1", userID).
 		Limit(limit).
 		Offset(offset).
 		Order("updated_at DESC").
@@ -226,7 +216,7 @@ func GetArticleCountByAuthor(userID int) (int, error) {
 
 func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
-	result := DbEngine.Where("title like", "%"+title+"%").Limit(limit).Offset(offset).
+	result := DbEngine.Where("title like and status = 1", "%"+title+"%").Limit(limit).Offset(offset).
 		Order("updated_at DESC").
 		Find(&articles)
 	if result.Error != nil {
@@ -243,7 +233,7 @@ func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
 
 func GetArticlesByContent(content string, limit, offset int) ([]int, error) {
 	var articles []models.ArticleContentTable
-	result := DbEngine.Where("content like", "%"+content+"%").Limit(limit).Offset(offset).
+	result := DbEngine.Where("content like and status = 1", "%"+content+"%").Limit(limit).Offset(offset).
 		Order("updated_at DESC").
 		Find(&articles)
 	if result.Error != nil {
@@ -260,7 +250,7 @@ func GetArticlesByContent(content string, limit, offset int) ([]int, error) {
 
 func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTable
-	result := DbEngine.Where("category_id = ?", category).Limit(limit).Offset(offset).
+	result := DbEngine.Where("category_id = ? and status = 1", category).Limit(limit).Offset(offset).
 		Order("updated_at DESC").
 		Find(&articles)
 	if result.Error != nil {
@@ -287,7 +277,7 @@ func GetArticleCountByCategory(category int) (int, error) {
 
 func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
 	var collections []models.CollectionTable
-	result := DbEngine.Where("user_id = ?", userID).Limit(limit).Offset(offset).
+	result := DbEngine.Where("user_id = ? and status = 1", userID).Limit(limit).Offset(offset).
 		Find(&collections)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticlesByCollection %e", result.Error).PrintAndWriteSafe()
@@ -313,7 +303,7 @@ func GetCollectionCountByUser(userID int) (int, error) {
 
 func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 	var articles []models.ArticleTagTable
-	result := DbEngine.Where("tag_id = ?", tagID).Limit(limit).Offset(offset).
+	result := DbEngine.Where("tag_id = ? and status = 1", tagID).Limit(limit).Offset(offset).
 		Find(&articles)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while GetArticleByTag %e", result.Error).PrintAndWriteSafe()
@@ -331,6 +321,7 @@ func GetArticleIDsByTime(limit, offset int) ([]int, error) {
 	var articleIDs []int
 	result := DbEngine.Model(&models.ArticleTable{}).
 		Select("article_id").
+		Where("status = 1").
 		Order("updated_at DESC").
 		Limit(limit).
 		Offset(offset).

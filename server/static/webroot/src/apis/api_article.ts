@@ -88,9 +88,17 @@ export const ArticleUpdateTitle = async (data: any): Promise<MyResponse> => {
     return res
 }
 
-export const ArticleUpdateStatus = async (data: any): Promise<MyResponse> => {
+export const ArticleUpdateStatusDart = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
-        url: "/article/update/status",
+        url: "/article/update/status/dart",
+        data: data
+    });
+    return res
+}
+
+export const ArticleUpdateStatusPublic = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url: "/article/update/status/public",
         data: data
     });
     return res

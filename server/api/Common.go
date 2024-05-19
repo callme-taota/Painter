@@ -103,7 +103,7 @@ func CheckUserAdmin(c *gin.Context) {
 		return
 	}
 	if !adminFlag {
-		c.JSON(http.StatusForbidden, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{"isAdmin": false}))
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"isAdmin": false}))
 		return
 	}
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"isAdmin": true}))

@@ -16,6 +16,7 @@ func CreateUser(username, email, nickname string, phoneNum int, headerField, pas
 		NickName:    nickname,
 		PhoneNum:    phoneNum,
 		HeaderField: headerField,
+		UserGroup:   3,
 		LastLogin:   time.Now(),
 	}
 	err := DbEngine.Create(&user).Error
@@ -275,7 +276,7 @@ func GetUserFullInfo(id int) (Response.FullUser, error) {
 	full.UserInfo = user
 	full.ArticleList = art
 	full.ArticleNumber = articleNum
-	full.CollectionNumber = int(collectionNum)
+	full.CollectionNumber = collectionNum
 	full.FollowingNumber = followingNum
 	full.FollowerNumber = followerNum
 	full.Following = false
@@ -285,12 +286,7 @@ func GetUserFullInfo(id int) (Response.FullUser, error) {
 }
 
 func GetAdminFlag(id int) (bool, error) {
-	user := models.UserTable{}
-	result := DbEngine.Select("admin_flag").First(&user, id)
-	if result.Error != nil {
-		return false, result.Error
-	}
-	return user.AdminFlag == 1, nil
+	return CheckUserAdmin(id)
 }
 
 func UpdateUserLoginTime(id int) (bool, error) {

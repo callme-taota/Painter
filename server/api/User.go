@@ -556,11 +556,11 @@ func SendUserMail(c *gin.Context) {
 			return
 		}
 		go mail.Sender(userEmail)
-		c.JSON(http.StatusOK, models.SuccessR())
+		c.JSON(models.SuccessR())
 		return
 	}
 	go mail.Sender(json.Email)
-	c.JSON(http.StatusOK, models.SuccessR())
+	c.JSON(models.SuccessR())
 	return
 }
 

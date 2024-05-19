@@ -120,7 +120,9 @@ func LinkArticle() {
 	ArticleLoginGroup.POST("/update/category", api.UpdateArticleCategory)
 	//ArticleLoginGroup.POST("/update/readcount", api.UpdateArticleReadCount)
 	ArticleLoginGroup.POST("/update/title", api.UpdateArticleTitle)
-	ArticleLoginGroup.POST("/update/status", api.UpdateArticleStatus)
+	//ArticleLoginGroup.POST("/update/status", api.UpdateArticleStatus)
+	ArticleLoginGroup.POST("/update/status/dart", api.SetArticleStatusDart)
+	ArticleLoginGroup.POST("/update/status/public", api.SetArticleStatusPublic)
 	//ArticleLoginGroup.POST("/update/istop", api.UpdateArticleIsTop)
 	ArticleLoginGroup.POST("/delete", api.DeleteArticle)
 
@@ -158,6 +160,8 @@ func LinkSetting() {
 
 	SettingAdminGroup.GET("/", api.GetSettings)
 	SettingAdminGroup.POST("/", api.SetSetting)
+	SettingAdminGroup.GET("/userlist", api.GetUserList)
+	SettingAdminGroup.POST("/user/permission", api.SetUserGroup)
 }
 
 func LinkDebug() {

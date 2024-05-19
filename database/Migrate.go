@@ -86,5 +86,20 @@ func Migrate() error {
 		tolog.Log().Errorf("Migrate table setting %e:", err).PrintAndWriteSafe()
 		return err
 	}
+	err = DbEngine.AutoMigrate(&models.RuleTable{})
+	if err != nil {
+		tolog.Log().Errorf("Migrate table rule %e:", err).PrintAndWriteSafe()
+		return err
+	}
+	err = DbEngine.AutoMigrate(&models.GroupRuleTable{})
+	if err != nil {
+		tolog.Log().Errorf("Migrate table group rule %e:", err).PrintAndWriteSafe()
+		return err
+	}
+	err = DbEngine.AutoMigrate(&models.UserGroupTable{})
+	if err != nil {
+		tolog.Log().Errorf("Migrate table user group %e:", err).PrintAndWriteSafe()
+		return err
+	}
 	return nil
 }
