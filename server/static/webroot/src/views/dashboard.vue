@@ -37,7 +37,8 @@ const userInfo = ref<SelfItem>({
         CreatedAt: '',
         LastLogin: '',
         UserName: '',
-        PhoneNum: 0
+        PhoneNum: 0,
+        UserGroup: 0
     },
     Following: false,
     TotalCount: 0
