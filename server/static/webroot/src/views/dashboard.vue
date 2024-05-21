@@ -248,7 +248,7 @@ const customRequest = ({
 
     <n-modal v-model:show="showModal">
         <n-card style="width: 600px" title="管理" :bordered="false">
-            <n-input class="user-modal-input" placeholder="用户名" v-model:value="userInfo.UserInfo.UserName">
+            <n-input class="user-modal-input" placeholder="用户名" v-model:value="userInfo.UserInfo.UserName" disabled>
                 <template #prefix>
                     <span class="user-modal-label">
                         用户名
