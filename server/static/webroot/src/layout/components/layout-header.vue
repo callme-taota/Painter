@@ -2,23 +2,26 @@
 //base
 import { ref, onMounted, onUnmounted, Transition } from 'vue';
 import { storeToRefs } from 'pinia'
-import { NIcon } from 'naive-ui'
+import { NIcon, NAvatar } from 'naive-ui'
 import { useRouter } from 'vue-router'
 //icons
 import { Search, LogoGithub, Sunny, Moon, SyncOutline } from '@vicons/ionicons5'
-import { ArticleOutlined } from '@vicons/material'
+import { ArticleOutlined, AccountCircleOutlined } from '@vicons/material'
 //store
 import { useThemeStore } from '@/stores/theme'
 import { useSearchStore } from '@/stores/search'
 import { useInfoStore } from '@/stores/info';
 import { useTitleStore } from '@/stores/title';
+import { useUserStore } from '@/stores/user';
 const SearchStore = useSearchStore()
 const themeStore = useThemeStore()
 const InfoStore = useInfoStore()
 const TitleStore = useTitleStore()
+const UserStore = useUserStore()
 const Router = useRouter()
 const { github_href, site_name } = storeToRefs(InfoStore)
 const { secondaryTitle } = storeToRefs(TitleStore)
+const { loginStatus, userHeaderField } = storeToRefs(UserStore)
 //ref
 const isScrolled = ref(false)
 const themeChanger = ref(false)
@@ -96,9 +99,10 @@ const showSearch = () => {
             </Transition>
             <div class="layout-header-right">
                 <div class="layout-header-right-icon-cont" @click="showSearch">
-                    <n-icon size="20">
-                        <search />
+                    <n-icon size="20" v-if="!loginStatus">
+                        <AccountCircleOutlined />
                     </n-icon>
+                    <n-avatar :src="userHeaderField" v-else :size="22"></n-avatar>
                 </div>
                 <div class="layout-header-right-icon-cont" @click="showThemeChanger">
                     <n-icon size="20">

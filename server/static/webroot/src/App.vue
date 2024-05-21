@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import Layout from './layout/layout.vue'
-import { useThemeStore } from './stores/theme'
-import { useInfoStore } from './stores/info'
 import { storeToRefs } from 'pinia'
 import { NConfigProvider, NMessageProvider, type GlobalThemeOverrides, darkTheme } from 'naive-ui'
+import { useThemeStore } from './stores/theme'
+import { useInfoStore } from './stores/info'
 import { useTitleStore } from '@/stores/title';
+import { useUserStore } from './stores/user'
 
 const themeStore = useThemeStore()
 const InfoStore = useInfoStore()
 const TitleStore = useTitleStore()
+const UserStore = useUserStore()
 const { nDark } = storeToRefs(themeStore)
 
 const lightThemeOverrides: GlobalThemeOverrides = {
@@ -58,6 +60,7 @@ const darkThemeOverrides: GlobalThemeOverrides = {
 onMounted(() => {
   InfoStore.getInfo()
   TitleStore.setPrimaryTitle("Painter")
+  UserStore.loadSelfData()
 })
 
 </script>

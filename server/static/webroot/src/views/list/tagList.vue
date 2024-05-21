@@ -33,7 +33,7 @@ function toPage(id: number) {
 
 <template>
     <div class="catrgories-header">
-        <h1>分类</h1>
+        <h1>标签</h1>
     </div>
     <div class="tags-cont">
         <div class="tag-item" v-for="c in tagList" @click="toPage(c.TagID)">
