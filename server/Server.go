@@ -22,6 +22,7 @@ var dirRoot, _ = utils.GetProjectDirRoot()
 const StaticWebRoot = "/server/static/webroot/dist/index.html"
 const StaticWebRootAssets = "/server/static/webroot/dist/assets"
 const StaticFileRoot = "/server/static/upload"
+const StaticIconRoot = "/server/static/webroot/dist/favicon.ico"
 
 // InitServer initializes the main Gin server with CORS configuration.
 func InitServer() error {
@@ -90,6 +91,7 @@ func StaticWeb() {
 	if conf.Server.Model == "release" {
 		webRootDir := http.Dir(dirRoot + StaticWebRootAssets)
 		BaseServer.StaticFS("/assets", webRootDir)
+		BaseServer.StaticFile("/favicon.ico", dirRoot+StaticIconRoot)
 		fileRootDir := http.Dir(dirRoot + StaticFileRoot)
 		BaseServer.StaticFS("/fs", fileRootDir)
 		BaseServer.StaticFile("/", dirRoot+StaticWebRoot)

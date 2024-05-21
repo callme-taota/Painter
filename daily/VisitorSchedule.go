@@ -22,7 +22,7 @@ func ScheduleDailyVisitorAggregation() {
 
 	// 创建访客统计数据结构
 	visitorStats := models.VisitorRecordTable{
-		Date:  yesterdayStr,
+		Date:  yesterday,
 		Total: totalVisitors,
 	}
 

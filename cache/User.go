@@ -120,3 +120,45 @@ func CheckEmailPass(mail string, code int) (bool, error) {
 	}
 	return false, nil // 验证码不正确
 }
+
+func CreateUserAccess(userID int) error {
+	// get current time
+	now := time.Now()
+	// redis key，with yyyy-MM-dd-HH
+	redisKey := "painter-connect" + now.Format("2006-01-02-15")
+
+	// put user ID into redis set
+	_, err := RedisClient.SAdd(redisKey, userID).Result()
+	if err != nil {
+		return err
+	}
+
+	expire := time.Hour * 2
+
+	// set key expire
+	_, err = RedisClient.Expire(redisKey, expire).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetPastHourLoginUserList() ([]int, error) {
+	// get current time
+	now := time.Now().Add(-time.Hour)
+	// redis key，with yyyy-MM-dd-HH
+	redisKey := "painter-connect" + now.Format("2006-01-02-15")
+	//get list
+	userIDs, err := RedisClient.SMembers(redisKey).Result()
+	if err != nil {
+		tolog.Log().Infof("Error getting user IDs from Redis: %e", err).PrintAndWriteSafe()
+		return nil, err
+	}
+	var userList []int
+	for _, userID := range userIDs {
+		userIntID, _ := strconv.Atoi(userID)
+		userList = append(userList, userIntID)
+	}
+	return userList, nil
+}

@@ -15,7 +15,7 @@ const Message = useMessage()
 //hook
 onMounted(async () => {
     let res = await IsAdmin()
-    if (res.ok && res.data.isAdmin) {
+    if (res.data.isAdmin) {
     } else {
         Message.error("无管理权限！")
         Router.go(-1)

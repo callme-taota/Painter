@@ -48,7 +48,7 @@ const dropDownOptions2nd = ref([
 ])
 // hook
 onMounted(() => {
-    if (InfoStore.can_register == true) {
+    if (InfoStore.can_register != true) {
         Message.info("当前站点未开启注册功能")
         Router.push({ path: "/" })
     }

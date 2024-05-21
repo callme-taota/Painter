@@ -128,7 +128,7 @@ const secondStep = async () => {
         } else {
             res = await UserStore.loginWithUName(userKey.value, userPass.value)
         }
-        if (res.ok && res.data.Correct) {
+        if (res.ok) {
             current.value = current.value + 2
             setTimeout(() => {
                 Router.push({ path: "/" })

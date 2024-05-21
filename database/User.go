@@ -102,15 +102,10 @@ func UpdateUserPhoneNum(id int, number int) error {
 	return nil
 }
 
-func UpdateUserHeaderField(id int, headerfield string) error {
-	user := &models.UserTable{}
-	res := DbEngine.First(&user, id)
+func UpdateUserHeaderField(id int, headerField string) error {
+	res := DbEngine.Model(&models.UserTable{}).Where("id = ?", id).Update("header_field", headerField)
 	if res.Error != nil {
-		return res.Error
-	}
-	user.HeaderField = headerfield
-	res = DbEngine.Where("id = ?", id).Save(&user)
-	if res.Error != nil {
+		tolog.Log().Errorf("Error while UpdateUserHeaderField %v", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	return nil
@@ -296,7 +291,7 @@ func UpdateUserLoginTime(id int) (bool, error) {
 		tolog.Log().Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
 	}
-	user.LastLogin = time.Now()
+	user.LastLogin = time.Now().Add(-time.Hour)
 	result = DbEngine.Save(&user)
 	if result.Error != nil {
 		tolog.Log().Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()

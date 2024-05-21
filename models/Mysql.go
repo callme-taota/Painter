@@ -180,7 +180,7 @@ func (FileStorageTable) TableName() string {
 
 type VisitorRecordTable struct {
 	ID    int `gorm:"primaryKey;autoIncrement"`
-	Date  string
+	Date  time.Time
 	Total int
 }
 

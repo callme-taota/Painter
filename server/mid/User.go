@@ -36,9 +36,11 @@ func SessionCheckMid() gin.HandlerFunc {
 			return
 		}
 		go func() {
-			_, err := database.UpdateUserLoginTime(userID)
-			if err != nil {
-				tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+			if userID != 0 {
+				err := cache.CreateUserAccess(userID)
+				if err != nil {
+					tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+				}
 			}
 		}()
 		c.Set("userID", userID)
@@ -83,9 +85,11 @@ func CheckAdminMid() gin.HandlerFunc {
 			return
 		}
 		go func() {
-			_, err := database.UpdateUserLoginTime(userID)
-			if err != nil {
-				tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+			if userID != 0 {
+				err := cache.CreateUserAccess(userID)
+				if err != nil {
+					tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+				}
 			}
 		}()
 		c.Set("userID", userID)
@@ -116,9 +120,11 @@ func BetterLogin() gin.HandlerFunc {
 			c.Next()
 		}
 		go func() {
-			_, err := database.UpdateUserLoginTime(userID)
-			if err != nil {
-				tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+			if userID != 0 {
+				err := cache.CreateUserAccess(userID)
+				if err != nil {
+					tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+				}
 			}
 		}()
 		c.Set("isLogin", true)

@@ -15,6 +15,7 @@ func InitDaily() error {
 			if time.Now().Hour() == 1 {
 				ScheduleDailyVisitorAggregation()
 			}
+			UserLastLoginUpdate()
 		case <-done:
 			return nil
 		}

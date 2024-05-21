@@ -1,8 +1,6 @@
 package database
 
 import (
-	"errors"
-	"gorm.io/gorm"
 	"painter-server-new/models"
 	"painter-server-new/tolog"
 	"time"
@@ -26,15 +24,10 @@ func GetMonthlyVisitors() (int, error) {
 	endDate := startDate.AddDate(0, 1, 0)
 
 	var total int64
-	res := DbEngine.Model(&models.VisitorRecordTable{}).
+	DbEngine.Model(&models.VisitorRecordTable{}).
 		Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
-		Select("SUM(total)").
+		Select("COALESCE(SUM(total), 0)").
 		Scan(&total)
-	if res.Error != nil {
-		tolog.Log().Warningf("Failed to get monthly visitors total: %v", res.Error).PrintAndWriteSafe()
-		return 0, res.Error
-	}
-
 	return int(total), nil
 }
 
@@ -50,16 +43,9 @@ func GetPreDayVisitors() (int, error) {
 	endDate := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
 
 	var total int64
-	res := DbEngine.Model(&models.VisitorRecordTable{}).
+	DbEngine.Model(&models.VisitorRecordTable{}).
 		Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
 		Select("COALESCE(SUM(total), 0)").
 		Scan(&total)
-	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		total = 0
-	} else {
-		tolog.Log().Infof("Failed to get previous day's visitors total: %v", res.Error).PrintAndWriteSafe()
-		return 0, res.Error
-	}
-
 	return int(total), nil
 }

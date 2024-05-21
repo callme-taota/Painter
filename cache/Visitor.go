@@ -28,6 +28,14 @@ func AddVisRecord2Set(record models.VisitorRecord) error {
 		tolog.Log().Infof("Visitor record already exists").PrintAndWriteSafe()
 	}
 
+	// Set expiration time for the key
+	expiration := 48 * time.Hour
+	_, err = RedisClient.Expire(todayKey, expiration).Result()
+	if err != nil {
+		tolog.Log().Warningf("Failed to set expiration for key: %v", err).PrintAndWriteSafe()
+		return err
+	}
+
 	return nil
 }
 
