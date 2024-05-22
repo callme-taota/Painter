@@ -1,9 +1,20 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { RouterView, useRouter, useRoute } from 'vue-router'
+import { useMessage } from "naive-ui"
 import LayoutHeader from "./components/layout-header.vue"
 import LayoutFooter from "./components/layout-footer.vue"
 import Search from './components/search.vue'
-import { RouterView, useRouter, useRoute } from 'vue-router'
 
+const Message = useMessage()
+
+onMounted(() => {
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'F12') {
+            Message.error('调皮！ 请遵守Apache-2.0 协议')
+        }
+    });
+})
 </script>
 <template>
     <div id="base">

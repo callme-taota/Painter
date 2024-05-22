@@ -2,7 +2,7 @@ export function numTimeToString(numTime: number): string {
     let t = numTime * 1000;
     let d = new Date(t);
     let y = d.getFullYear()
-    let m = d.getMonth()
+    let m = d.getMonth() + 1
     let mm = m > 9 ? m : "0" + m
     let da = d.getDate()
     let dd = da > 9 ? da : "0" + da

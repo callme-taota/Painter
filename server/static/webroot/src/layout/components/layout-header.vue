@@ -90,7 +90,9 @@ const showSearch = () => {
             :class="{ 'layout-header-cont-after-scroll': isScrolled }">
             <div class="layout-header-left">
                 <img src="../../assets/logo.png" alt="Taota-Logo" class="layout-logo">
-                <div class="layout-header-painter">{{ site_name }}</div>
+                <Transition>
+                    <div class="layout-header-painter">{{ site_name }}</div>
+                </Transition>
             </div>
             <Transition>
                 <div v-if="isScrolled" class="layout-header-center">
@@ -98,18 +100,18 @@ const showSearch = () => {
                 </div>
             </Transition>
             <div class="layout-header-right">
-                <div class="layout-header-right-icon-cont" @click="showSearch">
+                <div class="layout-header-right-icon-cont" :class="{'layout-header-right-icon-hover':!loginStatus,'layout-header-right-icon-avatar':loginStatus}" @click="showSearch">
                     <n-icon size="20" v-if="!loginStatus">
                         <AccountCircleOutlined />
                     </n-icon>
-                    <n-avatar :src="userHeaderField" v-else :size="22"></n-avatar>
+                    <n-avatar :src="userHeaderField" v-else :size="30"></n-avatar>
                 </div>
-                <div class="layout-header-right-icon-cont" @click="showThemeChanger">
+                <div class="layout-header-right-icon-cont layout-header-right-icon-hover" @click="showThemeChanger">
                     <n-icon size="20">
                         <sunny />
                     </n-icon>
                 </div>
-                <div class="layout-header-right-icon-cont" @click="goGithub">
+                <div class="layout-header-right-icon-cont layout-header-right-icon-hover" @click="goGithub">
                     <n-icon size="20">
                         <logo-github />
                     </n-icon>
@@ -127,7 +129,7 @@ const showSearch = () => {
                 <div class="layout-header-right-text-cont" @click="goHome">
                     主页
                 </div>
-                <div class="layout-header-right-icon-cont latout-header-right-icon-afterhide" @click="goArticleList">
+                <div class="layout-header-right-icon-cont  layout-header-right-icon-hover latout-header-right-icon-afterhide" @click="goArticleList">
                     <n-icon size="20">
                         <ArticleOutlined />
                     </n-icon>
@@ -171,6 +173,19 @@ const showSearch = () => {
     justify-content: space-between;
     transition: 0.5s;
     z-index: 2;
+}
+
+@media (max-width: 1000px) {
+    .layout-header-cont {
+        width: calc(100% - 40px);
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 500px) {
+    .layout-header-painter {
+        display: none;
+    }
 }
 
 .layout-header-cont-after-scroll {
@@ -232,9 +247,13 @@ const showSearch = () => {
     justify-content: center;
 }
 
-.layout-header-right-icon-cont:hover {
+.layout-header-right-icon-hover:hover {
     background-color: var(--base-hover-background);
     color: var(--btn-hover-color);
+}
+
+.layout-header-right-icon-avatar:hover{
+    transform: scale(1.2);
 }
 
 .layout-header-right-text-cont {

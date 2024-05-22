@@ -138,7 +138,6 @@ const getWithNumChange = async (num: number) => {
 
 const updateUserPermission = async (newValue: number, row: UserItem) => {
     row.UserGroup = newValue
-    console.log(row)
     await SetUserPermission({ "UserID": row.ID, "GroupID": newValue })
 }
 </script>

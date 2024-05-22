@@ -318,7 +318,7 @@ const toUserPage = (id: number) => {
     flex-direction: row;
     align-items: center;
     line-height: 34px;
-    height: 34px;
+    flex-wrap: wrap;
 }
 
 .article-info-cursor {

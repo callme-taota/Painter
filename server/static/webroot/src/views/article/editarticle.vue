@@ -1,6 +1,6 @@
 <script setup lang="ts">
 //base
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Marked } from 'marked';
 import { markedHighlight } from "marked-highlight";
@@ -86,7 +86,7 @@ const statusOptions = ref([
         value: 1
     },
 ])
-//fn
+//hook
 onMounted(async () => {
     articleID.value = parseInt(Route.query.id as string)
     editType.value = parseInt(Route.query.type as string)
@@ -94,7 +94,27 @@ onMounted(async () => {
     if (editType.value == 1) {
         await getArticle()
     }
+    document.addEventListener('keydown', handleCtrlS);
 })
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleCtrlS);
+});
+//fn
+const handleCtrlS = (event: KeyboardEvent) => {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    if (isMac) {
+        if (event.metaKey && event.key === 's') {
+            event.preventDefault();
+            doPost(0);
+        }
+    } else {
+        if (event.ctrlKey && event.key === 's') {
+            event.preventDefault();
+            doPost(0);
+        }
+    }
+};
 
 const getSelections = async () => {
     let tag_res = await TagListFull({})
@@ -137,26 +157,26 @@ const addSomeContent = (add: string) => {
     handleContentChange(content)
 }
 
-const doUpdate = async () => {
+const doUpdate = async (): Promise<boolean> => {
     let id = articleID.value
     await ArticleUpdateContent({ "ArticleID": id, "Content": fullArticle.value.ArticleContentTable.Content })
     await ArticleUpdateSummary({ "ArticleID": id, "Summary": fullArticle.value.ArticleTable.Summary })
     await ArticleUpdateTitle({ "ArticleID": id, "Title": fullArticle.value.ArticleTable.Title })
     await UpdateArticleCategory({ "ArticleID": id, "CategoryID": fullArticle.value.ArticleTable.CategoryID })
     await ArticleTagUpdate({ "ArticleID": id, "TagList": tagSelect.value })
-    console.log(fullArticle.value.ArticleTable.Status)
     if (fullArticle.value.ArticleTable.Status == 0) {
-        await ArticleUpdateStatusDart({ "ArticleID": id})
+        await ArticleUpdateStatusDart({ "ArticleID": id })
     } else {
-        await ArticleUpdateStatusPublic({ "ArticleID": id})
+        await ArticleUpdateStatusPublic({ "ArticleID": id })
     }
     Message.info("修改成功")
-    Router.push({ path: "/dashboard" })
+    return true
 }
 
-const doCreate = async () => {
+const doCreate = async (): Promise<boolean> => {
     if (fullArticle.value.ArticleTable.Title == "" || fullArticle.value.ArticleContentTable.Content == "" || fullArticle.value.ArticleTable.Summary == "" || fullArticle.value.ArticleTable.CategoryID <= 0) {
         Message.warning("检查一下少了啥")
+        return false
     }
     let res = await CreateArticle({
         "Title": fullArticle.value.ArticleTable.Title,
@@ -167,15 +187,20 @@ const doCreate = async () => {
     })
     if (res.ok) {
         Message.info("新增成功")
+        return true
     }
-    Router.push({ path: "/dashboard" })
+    return false
 }
 
-const doPost = async () => {
+const doPost = async (type: number) => {
+    let flag = false
     if (editType.value == 1) {
-        await doUpdate()
+        flag = await doUpdate()
     } else if (editType.value == 2) {
-        await doCreate()
+        flag = await doCreate()
+    }
+    if (type == 1 && flag) {
+        Router.push({ path: "/dashboard" })
     }
 }
 
@@ -352,7 +377,7 @@ const doPost = async () => {
                         <n-select :options="statusOptions" v-model:value="fullArticle.ArticleTable.Status"></n-select>
                     </div>
                     <div style="height: 10px;"></div>
-                    <n-button @click="doPost">
+                    <n-button @click="doPost(1)">
                         {{ editType == 1 ? '更新' : '新增' }}
                     </n-button>
                 </div>

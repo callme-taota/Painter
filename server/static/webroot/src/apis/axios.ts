@@ -20,7 +20,7 @@ export interface MyResponse<T = any> extends AxiosResponse {
 }
 
 const instance = axios.create({
-    baseURL: 'http://localhost:3003/api',
+    baseURL: import.meta.env.VITE_BASE_API_URL + '/api',
     timeout: 5000,
     withCredentials: true,
 });

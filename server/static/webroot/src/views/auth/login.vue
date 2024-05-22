@@ -148,7 +148,6 @@ const thirdStep = async () => {
         Message.error("验证码错误")
     }
     let res = await UserStore.loginWithEmailCode(userKey.value, mailCode.value as number)
-    console.log(res)
     if (res.ok == true) {
         current.value = current.value + 1
         setTimeout(() => {

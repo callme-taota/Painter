@@ -111,7 +111,6 @@ const customRequest = ({
     file,
     data,
     headers,
-    action,
     onFinish,
     onError,
     onProgress
@@ -131,16 +130,15 @@ const customRequest = ({
     onProgress({
         percent: 0
     })
-    axios.post(action as string, formData, {
+    axios.post(import.meta.env.VITE_BASE_API_URL + "/api/file/upload", formData, {
         headers: {
             ...headers,
             'Content-Type': 'multipart/form-data'
         },
         withCredentials: true
     }).then(async (response) => {
-        console.log(response)
         if (response.data.ok) {
-            let ava_url = "http://localhost:3003" + response.data.data.filePath + response.data.data.fileName
+            let ava_url = import.meta.env.VITE_BASE_API_URL + response.data.data.filePath + response.data.data.fileName
             fileList.value[0].url = ava_url
             userInfo.value.UserInfo.HeaderField = ava_url
             await UserHeaderFieldUpdate({
@@ -282,12 +280,12 @@ const customRequest = ({
             </n-button>
         </n-card>
     </n-modal>
-    
+
     <n-modal v-model:show="showAvatarModal">
         <n-card style="width: 130px" title="头像" :bordered="false">
             <div style="display: flex; align-items: center;justify-content: center;">
-                <n-upload action="http://localhost:3003/api/file/upload" :custom-request="customRequest"
-                    :default-file-list="fileList" :multiple="false" list-type="image" :show-file-list="false">
+                <n-upload :custom-request="customRequest" :default-file-list="fileList" :multiple="false"
+                    list-type="image" :show-file-list="false">
                     <n-avatar round :size="80" :src="fileList[0].url as string" style="cursor: pointer;">
                     </n-avatar>
                 </n-upload>
