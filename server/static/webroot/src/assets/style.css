@@ -27,6 +27,18 @@
     }
 }
 
+.md-image-container {
+    width: 90%;
+    margin-left: 5%;
+    overflow: hidden;
+}
+
+.md-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
 .user-info-cont {
     padding: 30px;
     border-radius: 14px;

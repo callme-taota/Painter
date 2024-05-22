@@ -2,7 +2,7 @@
 //base
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Marked } from 'marked';
+import { marked, Marked } from 'marked';
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
 import 'highlight.js/styles/github.css'
@@ -21,6 +21,7 @@ import { ThumbsUp } from '@vicons/carbon';
 //utils
 import type { FullArticleItem, ArticleTagItem, CategoryListItem } from '@/utils/interface';
 import { dateToString, dateNow } from '@/utils/timeToStr';
+import axios from 'axios';
 //store
 const Route = useRoute()
 const Router = useRouter()
@@ -95,10 +96,15 @@ onMounted(async () => {
         await getArticle()
     }
     document.addEventListener('keydown', handleCtrlS);
+    document.addEventListener('paste', handlePaste)
+    document.getElementById('editor')?.addEventListener('keydown', handleTab);
 })
 
 onUnmounted(() => {
     document.removeEventListener('keydown', handleCtrlS);
+    document.removeEventListener('paste', handlePaste)
+    document.getElementById('editor')?.removeEventListener('keydown', handleTab);
+    // editorRef.value?.removeEventListener('keydown', handleTab);
 });
 //fn
 const handleCtrlS = (event: KeyboardEvent) => {
@@ -114,7 +120,59 @@ const handleCtrlS = (event: KeyboardEvent) => {
             doPost(0);
         }
     }
-};
+}
+
+const handlePaste = async (event: ClipboardEvent) => {
+    if (event.clipboardData !== null && event.clipboardData.items) {
+        const items = event.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    Message.info("上传图片ing～")
+                    uploadImage(file);
+                }
+                break;
+            }
+        }
+    }
+}
+
+async function handleTab(event: KeyboardEvent) {
+    if (event.key === 'Tab') {
+        event.preventDefault();
+        const editor = document.getElementById('editor')?.querySelector('textarea') as HTMLTextAreaElement;
+        if (editor) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+
+            let content = editor.value.substring(0, start) + '\t' + editor.value.substring(end);
+            editor.value = content
+            handleContentChange(content)
+            editor.selectionStart = editor.selectionEnd = start + 1;
+
+        }
+    }
+}
+
+const uploadImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    axios.post(import.meta.env.VITE_BASE_API_URL + "/api/file/upload", formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
+        withCredentials: true
+    }).then(async (response) => {
+        if (response.data.ok) {
+            let img_url = import.meta.env.VITE_BASE_API_URL + response.data.data.filePath + response.data.data.fileName
+            Message.success("上传成功! ")
+            addSomeContent(`![image](${img_url})`)
+        }
+    }).catch((error) => {
+        Message.error("上传失败了")
+    });
+}
 
 const getSelections = async () => {
     let tag_res = await TagListFull({})
@@ -131,7 +189,17 @@ const getArticle = async () => {
 
 const renderMarkdown = async () => {
     const content = fullArticle.value.ArticleContentTable.Content;
-    const marked = new Marked(
+    const renderer = new marked.Renderer();
+
+    renderer.image = (href, title, text) => {
+        return `
+            <div class="md-image-container">
+                <img class="md-image" src="${href}" alt="${text}" ${title ? `title="${title}"` : ''} />
+            </div>
+        `;
+    };
+
+    const markedInstance = new Marked(
         markedHighlight({
             langPrefix: 'hljs language-',
             highlight(code: string, lang: string, info: any) {
@@ -140,7 +208,8 @@ const renderMarkdown = async () => {
             }
         })
     )
-    renderedMarkdown.value = await marked.parse(content);
+    markedInstance.use({ renderer });
+    renderedMarkdown.value = await markedInstance.parse(content);
 }
 
 const handleContentChange = async (content: string) => {
@@ -153,8 +222,19 @@ const setMarkdownEditType = (type: number) => {
 }
 
 const addSomeContent = (add: string) => {
-    let content = fullArticle.value.ArticleContentTable.Content + add
-    handleContentChange(content)
+    const editor = document.getElementById('editor')?.querySelector('textarea') as HTMLTextAreaElement;
+    if (editor) {
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+
+        // Insert the tab character at the current cursor position
+        let content = editor.value.substring(0, start) + '\n' + add + editor.value.substring(end);
+        editor.value = content
+        handleContentChange(content)
+
+        // Move the cursor to the right position after inserting the tab character
+        editor.selectionStart = editor.selectionEnd = start + 1;
+    }
 }
 
 const doUpdate = async (): Promise<boolean> => {
@@ -303,7 +383,7 @@ const doPost = async (type: number) => {
                         <div class="edit-content-text" v-if="markdownEditType == 1 || markdownEditType == 2">
                             <n-input type="textarea" :autosize="{ minRows: 10 }" placeholder="请输入正文内容"
                                 v-model:value="fullArticle.ArticleContentTable.Content"
-                                :on-update:value="handleContentChange"></n-input>
+                                :on-update:value="handleContentChange" id="editor"></n-input>
                         </div>
                         <div style="width: 10px;" v-if="markdownEditType == 2"></div>
                         <div class="edit-content-preview" v-if="markdownEditType == 3 || markdownEditType == 2">
