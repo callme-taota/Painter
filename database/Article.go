@@ -582,7 +582,6 @@ func UpdateArticleTags(articleID int, tagIDs []int) error {
 			tagsToAdd = append(tagsToAdd, tagID)
 		}
 	}
-	tolog.Log().Infoln(tagIDs, existingTagIDs, tagsToAdd, tagsToDelete).PrintAndWriteSafe()
 
 	// 删除需要删除的标签记录
 	if len(tagsToDelete) > 0 {

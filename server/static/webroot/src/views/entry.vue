@@ -97,7 +97,7 @@ const goLink = (link: string) => {
                             逃塔
                         </span>
                     </div>
-                    <div class="entry-card-line3">
+                    <div class="entry-card-line4">
                         我是
                         <span class="entry-tag">
                             Golang工程师
@@ -490,7 +490,7 @@ const goLink = (link: string) => {
 .entry-card-cont {
     overflow: hidden;
     padding: 30px;
-    width: 100%;
+    /* width: 100%; */
 }
 
 .entry-card-line1 {
@@ -510,9 +510,18 @@ const goLink = (link: string) => {
     font-weight: bold;
 }
 
+.entry-card-line4 {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: larger;
+    font-weight: bold;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .entry-tag {
-    margin: 0 4px;
-    padding: 4px 6px 4px 8px;
+    margin: 4px 4px;
+    padding: 2px 8px 2px 8px;
     color: var(--color-rev);
     background-color: #4facfe;
     border-radius: 10px;
@@ -606,6 +615,10 @@ const goLink = (link: string) => {
         padding: 0px 80px;
         flex-direction: column;
     }
+    
+    .entry-info {
+        padding: 0 10px;
+    }
 
     .entry-card3,
     .entry-card4,
@@ -613,6 +626,13 @@ const goLink = (link: string) => {
     .entry-card7 {
         width: 100%;
         margin: 10px 0;
+    }
+}
+
+@media (max-width: 500px) {
+    .entry-main-flex {
+        padding: 0px 20px;
+        flex-direction: column;
     }
 }
 

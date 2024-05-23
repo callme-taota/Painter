@@ -37,7 +37,7 @@ export function dateToDescription(d: string): string {
 
     const oneDay = 86400000; // 24 * 60 * 60 * 1000
 
-    if (diff < oneDay) {
+    if (diff < oneDay && day.toDateString() == now.toDateString()) {
         return `${day.getHours().toString().padStart(2, '0')}:${day.getMinutes().toString().padStart(2, '0')}`;
     } else if (diff < oneDay * 5) {
         return `${Math.floor(diff / oneDay)}天前`;

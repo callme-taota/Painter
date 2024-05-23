@@ -595,6 +595,7 @@ func CheckMail(c *gin.Context) {
 		}
 		session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
 		if !utils.StringIsEmpty(session) {
+			c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
 			c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 			return
 		}
@@ -619,6 +620,7 @@ func CheckMail(c *gin.Context) {
 	}
 	session, err := cache.GetUserSessionByID(fmt.Sprintf("%d", id))
 	if !utils.StringIsEmpty(session) {
+		c.SetCookie("painter-session", session, 3600*24*30, "/", "", false, true)
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"Session": session}))
 		return
 	}

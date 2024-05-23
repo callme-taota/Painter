@@ -89,7 +89,7 @@ const showSearch = () => {
         <div v-if="themeStore.headerDisplay" class="layout-header-cont"
             :class="{ 'layout-header-cont-after-scroll': isScrolled }">
             <div class="layout-header-left">
-                <img src="../../assets/logo.png" alt="Taota-Logo" class="layout-logo">
+                <img src="../../assets/logo.png" @click="goHome" alt="Taota-Logo" class="layout-logo" >
                 <Transition>
                     <div class="layout-header-painter">{{ site_name }}</div>
                 </Transition>
@@ -126,9 +126,9 @@ const showSearch = () => {
                 <div class="layout-header-right-text-cont" @click="goArticleList">
                     文章
                 </div>
-                <div class="layout-header-right-text-cont" @click="goHome">
+                <!-- <div class="layout-header-right-text-cont" @click="goHome">
                     主页
-                </div>
+                </div> -->
                 <div class="layout-header-right-icon-cont  layout-header-right-icon-hover latout-header-right-icon-afterhide" @click="goArticleList">
                     <n-icon size="20">
                         <ArticleOutlined />
@@ -197,6 +197,7 @@ const showSearch = () => {
     height: 40px;
     border-radius: 14px;
     transition: 0.3s;
+    cursor: pointer;
 }
 
 .layout-header-left {

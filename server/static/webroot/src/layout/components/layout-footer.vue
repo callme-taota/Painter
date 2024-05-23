@@ -16,9 +16,15 @@ const { icp_code } = storeToRefs(InfoStore);
 .layout-footer-cont {
     display: flex;
     justify-content: space-between;
-    padding:20px 40px;
-    height: 40px;
+    padding: 20px 40px;
     line-height: 40px;
     background: var(--layout--bottom-background);
+    transition: 0.3s;
+}
+
+@media (max-width: 800px) {
+    .layout-footer-cont {
+        flex-direction: column;
+    }
 }
 </style>

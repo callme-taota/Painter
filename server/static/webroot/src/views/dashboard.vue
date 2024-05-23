@@ -282,7 +282,7 @@ const customRequest = ({
     </n-modal>
 
     <n-modal v-model:show="showAvatarModal">
-        <n-card style="width: 130px" title="头像" :bordered="false">
+        <n-card style="width: 130px" title="修改头像" :bordered="false">
             <div style="display: flex; align-items: center;justify-content: center;">
                 <n-upload :custom-request="customRequest" :default-file-list="fileList" :multiple="false"
                     list-type="image" :show-file-list="false">
