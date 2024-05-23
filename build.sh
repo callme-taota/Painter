@@ -30,6 +30,15 @@ echo "Build vue"
 npm install
 npm run build
 
+echo "Moving build files to build directory"
+rm -rf ../../../build
+mkdir ../../../build
+mkdir -p ../../../build/server/static/upload
+mkdir -p ../../../build/server/static/webroot
+mkdir -p ../../../build/conf
+mkdir -p ../../../build/tolog/logs
+cp -r dist/* ../../../build/server/static/webroot
+
 cd ..
 cd ..
 cd ..
@@ -40,3 +49,4 @@ export GOOS=linux
 export GOARCH=amd64
 go build -o painter
 echo "Build success"
+mv painter ./build/painter

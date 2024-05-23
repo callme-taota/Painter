@@ -3,3 +3,4 @@ tolog/logs/*
 server/static/webroot/node_modules
 server/static/webroot/dist
 server/static/upload/*
+build/*

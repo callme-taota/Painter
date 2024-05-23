@@ -191,6 +191,12 @@ const renderMarkdown = async () => {
     const content = fullArticle.value.ArticleContentTable.Content;
     const renderer = new marked.Renderer();
 
+    let linkRenderer = renderer.link;
+    renderer.link = (href, title, text) => {
+        const html = linkRenderer.call(renderer, href, title, text)
+        return html.replace(/^<a /, '<a target="_blank" ')
+    }
+
     renderer.image = (href, title, text) => {
         return `
             <div class="md-image-container">
@@ -380,13 +386,15 @@ const doPost = async (type: number) => {
                         </span>
                     </div>
                     <div class="edit-content-main">
-                        <div class="edit-content-text" v-if="markdownEditType == 1 || markdownEditType == 2">
+                        <div class="edit-content-text" :class="{ 'edit-content-flex': markdownEditType == 1 }"
+                            v-if="markdownEditType == 1 || markdownEditType == 2">
                             <n-input type="textarea" :autosize="{ minRows: 10 }" placeholder="请输入正文内容"
                                 v-model:value="fullArticle.ArticleContentTable.Content"
                                 :on-update:value="handleContentChange" id="editor"></n-input>
                         </div>
                         <div style="width: 10px;" v-if="markdownEditType == 2"></div>
-                        <div class="edit-content-preview" v-if="markdownEditType == 3 || markdownEditType == 2">
+                        <div class="edit-content-preview" :class="{ 'edit-content-flex': markdownEditType == 3 }"
+                            v-if="markdownEditType == 3 || markdownEditType == 2">
                             <div v-html="renderedMarkdown"></div>
                         </div>
                     </div>
@@ -523,12 +531,16 @@ const doPost = async (type: number) => {
 }
 
 .edit-content-text {
+    width: 49%;
+}
+
+.edit-content-flex {
     flex: 1;
 }
 
 .edit-content-preview {
+    width: 49%;
     padding: 10px;
-    flex: 1;
     border: var(--content-border);
     border-radius: 12px;
     transition: 0.3s;
