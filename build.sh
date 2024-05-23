@@ -34,10 +34,10 @@ echo "Moving build files to build directory"
 rm -rf ../../../build
 mkdir ../../../build
 mkdir -p ../../../build/server/static/upload
-mkdir -p ../../../build/server/static/webroot
+mkdir -p ../../../build/server/static/webroot/dist
 mkdir -p ../../../build/conf
 mkdir -p ../../../build/tolog/logs
-cp -r dist/* ../../../build/server/static/webroot
+cp -r dist/* ../../../build/server/static/webroot/dist
 
 cd ..
 cd ..
