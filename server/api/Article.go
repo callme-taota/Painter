@@ -566,11 +566,6 @@ func GetArticlesByTime(c *gin.Context) {
 }
 
 func GetArticlesCount(c *gin.Context) {
-	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
 	count, err := database.GetArticleCount()
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))

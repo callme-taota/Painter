@@ -1,365 +1,241 @@
 <script setup lang="ts">
 //base
-import { onMounted, ref } from 'vue';
-import { NIcon } from 'naive-ui'
+import { onMounted, onUnmounted, ref } from 'vue';
+import { NIcon, NPopover } from 'naive-ui'
 //api
-import { GetStartTime, GetDayPV, GetMonthPV } from '@/apis/api_common';
-import { GetArticleCount } from '@/apis/api_article';
+import { GetEntryInfo } from '@/apis/api_common';
 //icon
 import { LogoGithub, LogoTwitter, LogoWechat, Mail } from '@vicons/ionicons5'
-import { MouseOutlined as mouseIcon } from '@vicons/material';
+import { QuestionCircleOutlined } from '@vicons/antd';
 //ref
 const dateDiff = ref<string>("")
-const dayPV = ref<number>(0)
+const yesterDayPV = ref<number>(0)
 const monthPV = ref<number>(0)
 const articleCount = ref<number>(0)
+const pageHeight = ref<number>(window.innerHeight)
 //hook
+let timer: number | undefined;
 onMounted(async () => {
-    let res = await GetStartTime();
+    let res = await GetEntryInfo();
     if (res.ok) {
         let day = new Date(res.data.JSTimeStamp)
         let now = new Date()
         let diff = Math.abs(now.getTime() - day.getTime())
         const oneDay = 86400000; // 24 * 60 * 60 * 1000
         dateDiff.value = `${Math.floor(diff / oneDay)}天`;
-    }
-    res = await GetDayPV()
-    if (res.ok) {
-        dayPV.value = res.data.Count
-    }
-    res = await GetMonthPV()
-    if (res.ok) {
-        monthPV.value = res.data.Count
-    }
-    res = await GetArticleCount()
-    if (res.ok) {
+        yesterDayPV.value = res.data.YesterdayCount
+        monthPV.value = res.data.CurrentMonthCount
         articleCount.value = res.data.ArticleCount
     }
+    document.addEventListener('scroll', changeTitleStyle)
+    document.addEventListener('scroll', changePage2Opacity)
+    document.addEventListener('scroll', changePage3Opacity)
+    timer = setInterval(autoChangeName, 300)
 })
+
+const imTag = ["Golang工程师", "云原生小白", "前端爱好者", "学生", "币圈玩家", "摄影佬", "EDM制作人"]
+
+// 动态变化
+const titleName = ref("")
+const painterList = [
+    "Painter",
+    "Pai|nter",
+    "Pai nter",
+    "Pai|nter",
+    "Pa|nter",
+    "P|nter",
+    "|nter",
+    " nter",
+    "E|nter",
+    "E|nter",
+    "Enter",
+]
+let currentIndex = 0
+const autoChangeName = () => {
+    if (currentIndex >= painterList.length - 1) {
+        clearInterval(timer)
+    }
+    titleName.value = painterList[currentIndex]
+    currentIndex++
+}
+
+const scrollTo = (pos: number) => {
+    window.scrollTo({ left: 0, top: pos, behavior: "smooth" })
+}
+
+// 视差计算 Page1
+const titleOpacity = ref(1)
+const titleLetterSpacing = ref(2)
+const changeTitleStyle = (e: any) => {
+    let formTop = e.target.scrollingElement.scrollTop
+    if (formTop <= 220) {
+        titleOpacity.value = 1 - (formTop / 200)
+        titleLetterSpacing.value = 4 + 0.2 * formTop
+    }
+}
+
+// 视差计算 Page2
+const page2Opacity = ref(0)
+const page2Offset = ref(0)
+const changePage2Opacity = (e: any) => {
+    let scrollTop = e.target.scrollingElement.scrollTop
+    let height = pageHeight.value
+    let page2Start = height - 70
+    let page2End = height + 80
+
+    if (scrollTop >= page2Start && scrollTop < page2End) {
+        page2Opacity.value = 1
+        page2Offset.value = (scrollTop - page2Start)
+    } else {
+        page2Opacity.value = 0
+    }
+}
+
+// 视差计算 Page3
+const page3Opacity = ref(0)
+const page3Offset = ref(0)
+const changePage3Opacity = (e: any) => {
+    let scrollTop = e.target.scrollingElement.scrollTop
+    let height = pageHeight.value
+    let page3Start = height + 120
+    let page3End = height + 270
+
+    console.log(scrollTop, page3Start, page3End)
+    if (scrollTop >= page3Start && scrollTop < page3End) {
+        page3Opacity.value = 1
+        page3Offset.value = (scrollTop - page3Start)
+    } else {
+        page3Opacity.value = 0
+    }
+}
+
+
+const scrollToPage = (page: number) => {
+    let pos = (pageHeight.value - 60) * (page - 1)
+    scrollTo(pos)
+}
 
 const goLink = (link: string) => {
     window.open(link, "_blank")
 }
 </script>
 <template>
-    <div class="entry-main-cont">
+    <div class="entry-cont">
+
+        <!-- page1 -->
         <div class="entry-painter">
-            <div class="entry-img-cont">
-                <img class="entry-img" src="../assets/me.png" alt="Me">
-            </div>
-            <div class="entry-info">
-                <span class="entry-info-highlight">
-                    Hi,
-                </span>
-                <span>
-                    &nbsp;
-                </span>
-                <span>
-                    it's
-                </span>
-                <span class="entry-info-second-highlight entry-info-large-text">
-                    Taota
-                </span>
-                <span>
-                    here.
-                </span>
-            </div>
-            <div class="entry-info">
-                <span>
-                    Welcome to
-                </span>
-                <span class="entry-info-box">
-                    Painter
-                </span>
-                <span>
-                    !
-                </span>
-            </div>
-            <div class="entry-mouse">
-                <n-icon>
-                    <mouseIcon />
-                </n-icon>
-            </div>
+            <span class="entry-painter-text"
+                :style="{ 'letter-spacing': titleLetterSpacing + 'px', 'opacity': titleOpacity }"
+                @click="scrollToPage(2)">
+                {{ titleName }}
+            </span>
         </div>
 
-        <div class="entry-main-flex">
-            <div class="entry-card6 entry-card entry-card-border">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        <span class="entry-info-second-highlight">
-                            你好,
-                        </span>
-                        &nbsp;欢迎来到Painter 👋
+        <!-- page2 -->
+        <div class="entry-page-2"
+            :style="{ 'opacity': page2Opacity, 'transform': 'translateY(' + page2Offset + 'px)' }">
+            <span class="second-highlight">
+                你好,
+            </span>
+            &nbsp;欢迎来到
+            <span>
+                Painter
+                👋
+            </span>
+            <span style="vertical-align: super; margin: 0 5px;">
+                <n-popover>
+                    <template #trigger>
+                        <n-icon size="18">
+                            <QuestionCircleOutlined />
+                        </n-icon>
+                    </template>
+                    <div>
+                        <div>
+                            Painter是一个通过Golang与Vue进行搭建的 社区博客 框架
+                        </div>
+                        <div>
+                            目的是为了建立一个分享技术笔记以及日常的地方
+                        </div>
                     </div>
-                    <div class="entry-card-line2">
-                        我叫&nbsp;
-                        <span class="entry-info-second-highlight">
-                            逃塔
-                        </span>
-                    </div>
-                    <div class="entry-card-line4">
-                        我是
-                        <span class="entry-tag">
-                            Golang工程师
-                        </span>
-                        <span class="entry-tag">
-                            云原生
-                        </span>
-                        <span class="entry-tag">
-                            学生
-                        </span>
-                        <span class="entry-tag">
-                            摄影师
-                        </span>
-                        <span class="entry-tag">
-                            Crypto玩家
-                        </span>
-                        <span class="entry-tag">
-                            EDM Producer
-                        </span>
-                        <span class="entry-tag">
-                            前端爱好者
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="entry-card4 entry-card entry-card-linear-1">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        Painter为何物?
-                    </div>
-                    <div class="entry-card-line3">
-                        Painter是一个通过Golang与Vue进行搭建的 社区博客 框架，目的是为了建立一个分享技术笔记以及日常的地方。
-                    </div>
-                </div>
-            </div>
-
+                </n-popover>
+            </span>
         </div>
 
-        <div class="entry-main-flex">
-            <div class="entry-card7 entry-card entry-card-border">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        探索
-                    </div>
-                </div>
+        <div style="height: 140px;"></div>
+
+        <!-- page3 -->
+        <div class="entry-page-3"
+            :style="{ 'opacity': page3Opacity, 'transform': 'translateY(' + page3Offset + 'px)' }">
+            <div style="display: flex; align-items: center;">
+                我是
+                <span class="second-highlight">
+                    逃塔
+                </span>
             </div>
-            <div class="entry-card3 entry-card entry-card-border">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        友链
-                    </div>
+
+            <span v-for="tag in imTag" class="entry-tag">
+                {{ tag }}
+            </span>
+            <div style="height: 10px;"></div>
+            <div class="entry-contact-me">
+                <div class="entry-icon-cont" @click="goLink('https://github.com/callme-taota')">
+                    <n-icon size="20">
+                        <logo-github />
+                    </n-icon>
+                </div>
+                <div class="entry-icon-cont" @click="goLink('https://twitter.com/Taota_chen')">
+                    <n-icon size="20">
+                        <logo-twitter />
+                    </n-icon>
+                </div>
+                <div class="entry-icon-cont" @click="goLink('http://www.callmetaota.fun/wechat.jpeg')">
+                    <n-icon size="20">
+                        <logo-wechat />
+                    </n-icon>
+                </div>
+                <div class="entry-icon-cont" @click="goLink('mailto:taota.chen@gmail.com')">
+                    <n-icon size="20">
+                        <mail />
+                    </n-icon>
                 </div>
             </div>
         </div>
 
-        <div class="entry-main-flex">
-            <div class="entry-card4 entry-card entry-card-border">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        我的技能
-                    </div>
-                    <div class="entry-skill-roll">
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Go.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Ts.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Docker.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/K8s.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Mysql.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Redis.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/NodeJS.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Vue.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/React.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Cpp.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Flutter.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/FL.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Go.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Ts.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Docker.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/K8s.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Mysql.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Redis.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/NodeJS.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Vue.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/React.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/Cpp.png" alt="">
-                            </div>
-                        </div>
-                        <div class="entry-skill-single-c">
-                            <div class="entry-skill-icon-cont">
-                                <img class="entry-skill-icon" src="../assets/logos/Flutter.png" alt="">
-                            </div>
-                            <div class="entry-skill-icon-cont entry-skill-line2">
-                                <img class="entry-skill-icon" src="../assets/logos/FL.png" alt="">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div style="height: 340px;"></div>
 
-            <div class="entry-card6 entry-card entry-card-with-background-1">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        关于本站
-                    </div>
-                    <br>
-                    <div class="entry-about-cont">
-                        <div>
-                            昨日访问
-                            <div class="entry-card-line2">
-                                {{ dayPV }}
-                            </div>
-                        </div>
-                        <div>
-                            本月访问
-                            <div class="entry-card-line2">
-                                {{ monthPV }}
-                            </div>
-                        </div>
-                        <div>
-                        </div>
-                    </div>
-                    <div class="entry-about-cont">
-                        <div>
-                            文章总数
-                            <div class="entry-card-line2">
-                                {{ articleCount }}
-                            </div>
-                        </div>
-                        <div>
-                            已经运行
-                            <div class="entry-card-line2">
-                                {{ dateDiff }}
-                            </div>
-                        </div>
-                        <div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="entry-main-flex">
-            <div class="entry-card7 entry-card-linear-2">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line2">
-                        我的项目
-                    </div>
-                    <div class="entry-contact-me">
-                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/Painter-Blog')">
-                            Painter
-                        </div>
-                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/SendUCode')">
-                            SendUCode
-                        </div>
-                        <div class="entry-text-cont" @click="goLink('https://github.com/callme-taota/CloudBox')">
-                            CloudBox
-                        </div>
-                        <div class="entry-text-cont" @click="goLink('https://github.com/OpenAtomFoundation/pikiwidb')">
-                            PikiwiDB(参与)
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="entry-card3 entry-card entry-card-border">
-                <div class="entry-card-cont">
-                    <div class="entry-card-line1">
-                        联系我
-                    </div>
-                    <div class="entry-contact-me">
-                        <div class="entry-icon-cont" @click="goLink('https://github.com/callme-taota')">
-                            <n-icon size="20">
-                                <logo-github />
-                            </n-icon>
-                        </div>
-                        <div class="entry-icon-cont" @click="goLink('https://twitter.com/Taota_chen')">
-                            <n-icon size="20">
-                                <logo-twitter />
-                            </n-icon>
-                        </div>
-                        <div class="entry-icon-cont" @click="goLink('http://www.callmetaota.fun/wechat.jpeg')">
-                            <n-icon size="20">
-                                <logo-wechat />
-                            </n-icon>
-                        </div>
-                        <div class="entry-icon-cont" @click="goLink('mailto:taota.chen@gmail.com')">
-                            <n-icon size="20">
-                                <mail />
-                            </n-icon>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </div>
 </template>
 <style>
-.entry-main-cont {
-    min-height: 640px;
-    padding-bottom: 20px;
+.entry-cont {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    padding: 0 80px 20px 80px;
+}
+
+.entry-painter {
+    min-height: calc(100vh - 65px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.entry-painter-text {
+    font-weight: 500;
+    font-size: xx-large;
+    padding: 0 18px;
+    cursor: pointer;
+    transition: 0.08s;
+    text-align: center;
+}
+
+.entry-painter-text:hover {
+    text-shadow: 0 0 12px #fff;
+    color: var(--color-rev);
+    background-color: var(--base-hover-background);
 }
 
 .entry-main-flex {
@@ -370,31 +246,35 @@ const goLink = (link: string) => {
     transition: 0.5s;
 }
 
-.entry-painter {
-    height: 86vh;
+.entry-page-2 {
+    height: calc(50vh - 30px);
+    font-weight: bold;
+    font-size: xx-large;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    align-items: end;
+    transition: opacity 0.3s ease-in-out;
+    flex-wrap: wrap;
+    align-content: flex-end;
 }
 
-.entry-mouse {
-    position: absolute;
-    bottom: 60px;
-    font-size: x-large;
-    border-radius: 18px;
-    height: 50px;
-    line-height: 56px;
-    width: 38px;
-    text-align: center;
-    background-color: var(--btn-hover-grey);
-    transition: 0.3s;
+.entry-page-3 {
+    font-weight: bold;
+    transition: opacity 0.3s ease-in-out;
+    font-size: xx-large;
 }
 
-.entry-mouse:hover {
-    background-color: var(--btn-hover-deep-grey);
+.entry-tag {
+    margin: 4px 8px 4px 0;
+    padding: 2px 4px 2px 4px;
+    font-size: large;
+    font-weight: lighter;
+    font-style: italic;
+    border-bottom: 1px solid var(--highlight-color);
 }
+
+
+
+
 
 .entry-info {
     padding: 0px 140px;
@@ -403,12 +283,6 @@ const goLink = (link: string) => {
     font-weight: bolder;
 }
 
-.entry-img-cont {
-    display: flex;
-    flex-direction: row;
-    height: 180px;
-    justify-content: center;
-}
 
 .entry-img {
     height: 100%;
@@ -424,20 +298,12 @@ const goLink = (link: string) => {
     color: var(--highlight-color);
 }
 
-.entry-info-second-highlight {
+.second-highlight {
     color: var(--second-highlight-color);
 }
 
 .entry-info-large-text {
     font-size: 46px;
-}
-
-.entry-info-box {
-    font-weight: normal;
-    color: var(--color-rev);
-    background-color: var(--base-hover-background);
-    padding: 0 0 0 8px;
-    font-style: italic;
 }
 
 .entry-card3 {
@@ -501,6 +367,7 @@ const goLink = (link: string) => {
 .entry-card-line2 {
     font-size: 30px;
     font-weight: bolder;
+    display: flex;
 }
 
 .entry-card-line3 {
@@ -519,13 +386,6 @@ const goLink = (link: string) => {
     align-items: center;
 }
 
-.entry-tag {
-    margin: 4px 4px;
-    padding: 2px 8px 2px 8px;
-    color: var(--color-rev);
-    background-color: #4facfe;
-    border-radius: 10px;
-}
 
 .entry-contact-me {
     flex-wrap: wrap;
@@ -615,7 +475,7 @@ const goLink = (link: string) => {
         padding: 0px 80px;
         flex-direction: column;
     }
-    
+
     .entry-info {
         padding: 0 10px;
     }

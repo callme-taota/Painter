@@ -9,8 +9,13 @@ import (
 )
 
 func ScheduleDailyVisitorAggregation() {
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		tolog.Log().Errorf("Failed to load location: %v", err).PrintAndWriteSafe()
+		return
+	}
 	// 获取昨天的日期
-	yesterday := time.Now().AddDate(0, 0, -1)
+	yesterday := time.Now().In(location).AddDate(0, 0, -1)
 	yesterdayStr := yesterday.Format("2006-01-02")
 
 	// 获取昨天的访客记录

@@ -109,3 +109,35 @@ func CheckUserAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"isAdmin": true}))
 	return
 }
+
+func GetEntryInfo(c *gin.Context) {
+	timeStamp := conf.Server.FirstInit
+	jsTimeStamp, _ := strconv.Atoi(timeStamp)
+	jsTimeStamp = jsTimeStamp * 1000
+	preDayCount, err := database.GetPreDayVisitors()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	currMonthCount, err := database.GetMonthlyVisitors()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	articleCount, err := database.GetArticleCount()
+	if err != nil {
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	c.JSON(http.StatusOK, models.R(
+		models.KReturnMsgSuccess,
+		models.KReturnTrue,
+		models.RDC{
+			"TimeStamp":         timeStamp,
+			"JSTimeStamp":       jsTimeStamp,
+			"YesterdayCount":    preDayCount,
+			"CurrentMonthCount": currMonthCount,
+			"ArticleCount":      articleCount,
+		}))
+	return
+}

@@ -153,6 +153,7 @@ func LinkCommon() {
 	CommonGroup.GET("/vis/currmonth", api.GetServerCurrentMonthVis)
 	CommonGroup.GET("/info", api.GetSettingsOnLoad)
 	CommonGroup.GET("/isadmin", api.CheckUserAdmin)
+	CommonGroup.GET("/entry", api.GetEntryInfo)
 }
 
 func LinkSetting() {

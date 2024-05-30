@@ -34,3 +34,10 @@ export const IsAdmin = async (): Promise<MyResponse> => {
     });
     return res
 }
+
+export const GetEntryInfo = async (): Promise<MyResponse> => {
+    const res = await AxiosGet({
+        url: "/common/entry",
+    });
+    return res
+}
