@@ -1,6 +1,6 @@
 # PainterBlog-server[English](https://github.com/callme-taota/Painter-Blog/blob/Server/README.md)
 
-## 介绍
+## 介绍内容
 这是PainterBlog的后端服务端。这可以帮助你轻松地建立自己的博客。
 基于golang，如果你有docker环境，你可以在没有golang环境的情况下轻松启动。
 
