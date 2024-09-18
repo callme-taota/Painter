@@ -1,4 +1,4 @@
-cd ./server/static/webroot
+cd ./server/static/webroot || exist
 
 if ! command -v node &> /dev/null; then
     echo "Node.js not found, please install Node.js."
@@ -47,6 +47,9 @@ echo "Build painter"
 export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH=amd64
-go build -o painter
+go build -x -o painter
 echo "Build success"
 mv painter ./build/painter
+
+cd ./build || exit
+./painter

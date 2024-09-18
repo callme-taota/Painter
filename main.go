@@ -12,7 +12,7 @@ import (
 func main() {
 	err := conf.InitConf()
 	if err != nil {
-		tolog.Log().Errorf("Config init %e", err).PrintAndWriteSafe()
+		tolog.Log().Infof("Config init %s", err).PrintAndWriteSafe()
 		return
 	}
 	cache.InitCache()
