@@ -14,7 +14,7 @@ import (
 var DbEngine *gorm.DB
 
 func InitDB() error {
-	dataSourceName := conf.MysqlConf.User + ":" + conf.MysqlConf.Password + "@tcp(" + conf.MysqlConf.Host + ":" + conf.MysqlConf.Port + ")/" + conf.MysqlConf.Database + "?charset=utf8&parseTime=true"
+	dataSourceName := conf.MysqlConf.User + ":" + conf.MysqlConf.Password + "@tcp(" + conf.MysqlConf.Host + ":" + conf.MysqlConf.Port + ")/" + conf.MysqlConf.Database + "?charset=utf8mb4&parseTime=true"
 
 	configLog := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer

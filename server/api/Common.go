@@ -1,13 +1,14 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/cache"
 	"painter-server-new/conf"
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func GetServerRunningTime(c *gin.Context) {
@@ -80,7 +81,7 @@ func GetSettingsOnLoad(c *gin.Context) {
 func CheckUserAdmin(c *gin.Context) {
 	session, _ := c.Cookie("painter-session")
 	if session == "" {
-		c.JSON(http.StatusBadRequest, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{"isAdmin": false}))
+		c.JSON(http.StatusOK, models.R(models.KErrorInvalid, models.KReturnFalse, models.RDC{"isAdmin": false}))
 		return
 	}
 	userid, err := cache.GetUserIDByUserSession(session)

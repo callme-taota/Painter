@@ -18,7 +18,7 @@ onMounted(async () => {
     if (res.data.isAdmin) {
     } else {
         Message.error("无管理权限！")
-        Router.go(-1)
+        Router.push({ path: '/' })
     }
 })
 </script>

@@ -48,8 +48,8 @@ func Conf2Memory(data map[string]interface{}) {
 	server := utils.JSONConvertToMapString(serverMap)
 	port := getEnv("SERVER_PORT", server["port"])
 	model := getEnv("SERVER_MODEL", server["model"])
-	name, version, firstInit, author := server["name"], server["version"], server["firstInit"], server["author"]
-	Server.Port, Server.Model, Server.Name, Server.Version, Server.Author = port, model, name, version, author
+	name, version, firstInit, author, timezone := server["name"], server["version"], server["firstInit"], server["author"], server["timezone"]
+	Server.Port, Server.Model, Server.Name, Server.Version, Server.Author, Server.Timezone = port, model, name, version, author, timezone
 	Server.FirstInit = firstInit
 
 	// Process cache configuration.

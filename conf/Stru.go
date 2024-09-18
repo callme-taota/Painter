@@ -16,6 +16,7 @@ type server struct {
 	Author    string `json:"author"`
 	Version   string `json:"version"`
 	FirstInit string `json:"firstInit"`
+	Timezone  string `json:"timezone"`
 }
 
 // Server is a global variable to store server configuration.
@@ -59,6 +60,7 @@ func NewConf() map[string]interface{} {
 			Name:      "",
 			Port:      "3003",
 			Version:   "1.0.0",
+			Timezone:  "Asia/Shanghai",
 		},
 		Redis: cacheConf{
 			Host:     "localhost",

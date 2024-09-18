@@ -1,4 +1,4 @@
-import { type AxiosResponse } from 'axios';
+import axios, { type AxiosResponse, type AxiosResponseHeaders, type InternalAxiosRequestConfig } from 'axios';
 import { AxiosGet, AxiosPost, type MyResponse } from './axios';
 
 export const CreateUser = async (data: any): Promise<MyResponse> => {
@@ -122,10 +122,33 @@ export const UserUpdate = async (data: any): Promise<AxiosResponse> => {
 }
 
 export const UserSelf = async (): Promise<MyResponse> => {
-    const res = await AxiosGet({
-        url:"/user/self",
-    });
-    return res
+    try {
+        const res = await AxiosGet({
+            url: "/user/self",
+        });
+        return res;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return {
+                ok: false,
+                status: error.response.status,
+                statusText: error.response.statusText,
+                headers: error.response.headers,
+                config: error.response.config,
+                msg: error.response.data?.message || '请求失败',
+                data: error.response.data
+            };
+        }
+        return {
+            ok: false,
+            status: 0,
+            statusText: '',
+            headers: {} as AxiosResponseHeaders,
+            config: {} as InternalAxiosRequestConfig,
+            msg: '未知错误',
+            data: null
+        };
+    }
 }
 
 export const UserSelfFull = async (): Promise<AxiosResponse> => {
