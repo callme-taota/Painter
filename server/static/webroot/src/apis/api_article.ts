@@ -112,6 +112,14 @@ export const ArticleDelete = async (data: any): Promise<MyResponse> => {
     return res
 }
 
+export const ArticleUpdate = async (data: any): Promise<MyResponse> => {
+    const res = await AxiosPost({
+        url: "/article/update",
+        data: data
+    })
+    return res
+}
+
 export const ArticleLikeCreate = async (data: any): Promise<MyResponse> => {
     const res = await AxiosPost({
         url: "/article/like/create",

@@ -124,6 +124,7 @@ func LinkArticle() {
 	ArticleLoginGroup.POST("/update/status/dart", api.SetArticleStatusDart)
 	ArticleLoginGroup.POST("/update/status/public", api.SetArticleStatusPublic)
 	//ArticleLoginGroup.POST("/update/istop", api.UpdateArticleIsTop)
+	ArticleLoginGroup.POST("/update", api.UpdateArticle)
 	ArticleLoginGroup.POST("/delete", api.DeleteArticle)
 
 	ArticleLoginGroup.POST("/like/create", api.CreateArticleLike)

@@ -5,6 +5,8 @@ import (
 	"painter-server-new/models/APIs/Response"
 	"painter-server-new/tolog"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 func CreateArticle(title string, author int, summary string, categoryID int, content string, tags []int) (int, error) {
@@ -103,6 +105,30 @@ func UpdateArticleReadCount(articleID, count int) error {
 		tolog.Log().Infof("Error while UpdateArticleReadCount %e", result.Error).PrintAndWriteSafe()
 		return result.Error
 	}
+	return nil
+}
+
+func UpdateArticle(article models.ArticleTable, content models.ArticleContentTable, tagList []int) error {
+	tx := DbEngine.Begin()
+	result := tx.Model(&models.ArticleTable{}).Where("article_id = ?", article.ArticleID).Select("title", "summary", "category_id").UpdateColumns(article)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while UpdateArticle %e", result.Error).PrintAndWriteSafe()
+		tx.Rollback()
+		return result.Error
+	}
+	result = tx.Model(&models.ArticleContentTable{}).Where("article_id = ?", article.ArticleID).UpdateColumn("content", content.Content)
+	if result.Error != nil {
+		tolog.Log().Infof("Error while UpdateArticle %e", result.Error).PrintAndWriteSafe()
+		tx.Rollback()
+		return result.Error
+	}
+	err := UpdateArticleTagsWithDB(tx, article.ArticleID, tagList)
+	if err != nil {
+		tolog.Log().Infof("Error while UpdateArticle %e", result.Error).PrintAndWriteSafe()
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
 	return nil
 }
 
@@ -544,10 +570,10 @@ func DeleteArticleTag(articleID, tagID int) (bool, error) {
 	return true, nil
 }
 
-func UpdateArticleTags(articleID int, tagIDs []int) error {
+func UpdateArticleTagsWithDB(db *gorm.DB, articleID int, tagIDs []int) error {
 	// 查询当前文章已有的标签列表
 	var existingTagIDs []int
-	err := DbEngine.Model(&models.ArticleTagTable{}).Where("article_id = ?", articleID).Pluck("tag_id", &existingTagIDs).Error
+	err := db.Model(&models.ArticleTagTable{}).Where("article_id = ?", articleID).Pluck("tag_id", &existingTagIDs).Error
 	if err != nil {
 		tolog.Log().Infof("Error while querying existing tags for article %d: %e", articleID, err).PrintAndWriteSafe()
 		return err
@@ -585,7 +611,7 @@ func UpdateArticleTags(articleID int, tagIDs []int) error {
 
 	// 删除需要删除的标签记录
 	if len(tagsToDelete) > 0 {
-		err = DbEngine.Where("article_id = ? and tag_id in (?)", articleID, tagsToDelete).Delete(&models.ArticleTagTable{}).Error
+		err = db.Where("article_id = ? and tag_id in (?)", articleID, tagsToDelete).Delete(&models.ArticleTagTable{}).Error
 		if err != nil {
 			tolog.Log().Infof("Error while deleting tags for article %d: %e", articleID, err).PrintAndWriteSafe()
 			return err
@@ -598,7 +624,7 @@ func UpdateArticleTags(articleID int, tagIDs []int) error {
 			ArticleID: articleID,
 			TagID:     tagID,
 		}
-		err = DbEngine.Create(&articleTag).Error
+		err = db.Create(&articleTag).Error
 		if err != nil {
 			tolog.Log().Infof("Error while creating tag for article %d: %e", articleID, err).PrintAndWriteSafe()
 			return err
@@ -606,6 +632,10 @@ func UpdateArticleTags(articleID int, tagIDs []int) error {
 	}
 
 	return nil
+}
+
+func UpdateArticleTags(articleID int, tagIDs []int) error {
+	return UpdateArticleTagsWithDB(DbEngine, articleID, tagIDs)
 }
 
 func CheckArticleAuthor(articleID, author int) (bool, error) {

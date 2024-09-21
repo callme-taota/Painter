@@ -17,6 +17,7 @@ type UpdateArticleJSON struct {
 	Status     int    `json:"status"`
 	IsTop      bool   `json:"isTop"`
 	CategoryID int    `json:"categoryID"`
+	TagList    []int  `json:"tagList"`
 }
 
 type ArticleJSON struct {

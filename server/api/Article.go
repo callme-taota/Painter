@@ -1,11 +1,12 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CreateArticle handles the creation of a new article.
@@ -865,6 +866,61 @@ func DeleteArticleTag(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return
 	}
+	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
+	return
+}
+
+func UpdateArticle(c *gin.Context) {
+	var json Request.UpdateArticleJSON
+	if err := c.ShouldBind(&json); err != nil {
+		// Bad request
+		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Check for required fields
+	ok := models.ShouldCheckJSON(json, []string{"ArticleID", "Content", "Title", "CategoryID"})
+	if ok != true {
+		// Missing required fields
+		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Get userID from context
+	userID, flag := c.Get("userID")
+	if flag == false {
+		// Error getting userID
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	check, err := database.CanUserArticle(userID.(int))
+	if err != nil || !check {
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Check if user is the author of the article
+	flag, err = database.CheckArticleAuthor(json.ArticleID, userID.(int))
+	if flag == false || err != nil {
+		// Permission denied
+		c.JSON(http.StatusOK, models.R(models.KErrorPermissionDenied, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Update article in database
+	article := models.ArticleTable{
+		ArticleID:  json.ArticleID,
+		Title:      json.Title,
+		Summary:    json.Summary,
+		CategoryID: json.CategoryID,
+	}
+	articleContent := models.ArticleContentTable{
+		ArticleID: json.ArticleID,
+		Content:   json.Content,
+	}
+	err = database.UpdateArticle(article, articleContent, json.TagList)
+	if err != nil {
+		// Error updating article content
+		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
+		return
+	}
+	// Return success response
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{}))
 	return
 }

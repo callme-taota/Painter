@@ -11,7 +11,7 @@ import RequiredStar from '@/components/required_star.vue'
 //apis
 import { GetCategoriesList } from '@/apis/api_category';
 import { TagListFull } from '@/apis/api_tag';
-import { GetArticle, ArticleUpdateContent, ArticleUpdateSummary, ArticleUpdateTitle, UpdateArticleCategory, ArticleTagUpdate, CreateArticle, ArticleUpdateStatusPublic, ArticleUpdateStatusDart } from '@/apis/api_article';
+import { GetArticle, ArticleUpdateContent, ArticleUpdateSummary, ArticleUpdateTitle, UpdateArticleCategory, ArticleTagUpdate, CreateArticle, ArticleUpdateStatusPublic, ArticleUpdateStatusDart, ArticleUpdate } from '@/apis/api_article';
 //icons
 import { CircleEdit20Regular, ProtocolHandler16Regular, PreviewLink20Regular, TextBold16Regular, TextStrikethrough16Regular, AppsList20Regular, TextNumberListLtr20Regular, Comment48Regular, Star20Regular } from '@vicons/fluent';
 import { FormatItalicSharp } from '@vicons/material';
@@ -245,11 +245,14 @@ const addSomeContent = (add: string) => {
 
 const doUpdate = async (): Promise<boolean> => {
     let id = articleID.value
-    await ArticleUpdateContent({ "ArticleID": id, "Content": fullArticle.value.ArticleContentTable.Content })
-    await ArticleUpdateSummary({ "ArticleID": id, "Summary": fullArticle.value.ArticleTable.Summary })
-    await ArticleUpdateTitle({ "ArticleID": id, "Title": fullArticle.value.ArticleTable.Title })
-    await UpdateArticleCategory({ "ArticleID": id, "CategoryID": fullArticle.value.ArticleTable.CategoryID })
-    await ArticleTagUpdate({ "ArticleID": id, "TagList": tagSelect.value })
+    await ArticleUpdate({
+        "ArticleID": id,
+        "Title": fullArticle.value.ArticleTable.Title,
+        "Summary": fullArticle.value.ArticleTable.Summary,
+        "CategoryID": fullArticle.value.ArticleTable.CategoryID,
+        "TagList": tagSelect.value,
+        "Content": fullArticle.value.ArticleContentTable.Content,
+    })
     if (fullArticle.value.ArticleTable.Status == 0) {
         await ArticleUpdateStatusDart({ "ArticleID": id })
     } else {
