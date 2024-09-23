@@ -1,11 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CreateHistory(c *gin.Context) {
@@ -35,15 +37,9 @@ func CreateHistory(c *gin.Context) {
 
 func GetHistories(c *gin.Context) {
 	var json models.OnlyPageOption
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	Limit, Offset := json.Limit, json.Offset
-	if ok != true {
-		Limit, Offset = 20, 0
-	}
 	userID, flag := c.Get("userID")
 	if flag == false {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))

@@ -1,19 +1,16 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func SuggestTags(c *gin.Context) {
-	var json models.OnlyPageOption
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
 	tags, err := database.GetTags(20, 0)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -25,15 +22,10 @@ func SuggestTags(c *gin.Context) {
 
 func TagsList(c *gin.Context) {
 	var json models.OnlyPageOption
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
-	if ok != true {
-		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
-		return
-	}
+
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "1"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "20"))
+
 	limit, offset := json.Limit, json.Offset
 	tags, err := database.GetTags(limit, offset)
 	tagNumber := database.GetTagTotalNumber()

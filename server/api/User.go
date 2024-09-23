@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/cache"
 	"painter-server-new/database"
@@ -10,6 +9,9 @@ import (
 	"painter-server-new/models/APIs/Request"
 	"painter-server-new/server/mail"
 	"painter-server-new/utils"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CheckLogin(c *gin.Context) {
@@ -486,10 +488,7 @@ func GetUserSelfData(c *gin.Context) {
 
 func GetUserFullData(c *gin.Context) {
 	var json Request.UserIDJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.ID, _ = strconv.Atoi(c.DefaultQuery("ID", ""))
 	ok := models.ShouldCheckJSON(json, []string{"ID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))

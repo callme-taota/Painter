@@ -5,6 +5,7 @@ import (
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -319,19 +320,15 @@ func DeleteArticle(c *gin.Context) {
 
 func GetArticleByAuthor(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.Author, _ = strconv.Atoi(c.Query("Author"))
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	ok := models.ShouldCheckJSON(json, []string{"Author"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticlesByAuthor(json.Author, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -349,14 +346,9 @@ func GetArticleByAuthor(c *gin.Context) {
 
 func GetArticleSelf(c *gin.Context) {
 	var json models.OnlyPageOption
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	userid, ok := c.Get("userID")
 	if !ok {
 		c.JSON(http.StatusBadRequest, models.R(models.KErrorNoUser, models.KReturnFalse, models.RDC{}))
@@ -379,19 +371,15 @@ func GetArticleSelf(c *gin.Context) {
 
 func GetArticlesByTitle(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.Title = c.Query("title")
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	ok := models.ShouldCheckJSON(json, []string{"Title"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticlesByTitle(json.Title, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -408,19 +396,15 @@ func GetArticlesByTitle(c *gin.Context) {
 
 func GetArticlesByContent(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.Content = c.Query("Content")
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	ok := models.ShouldCheckJSON(json, []string{"Content"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticlesByContent(json.Content, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -437,19 +421,15 @@ func GetArticlesByContent(c *gin.Context) {
 
 func GetArticlesByCategory(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.CategoryID, _ = strconv.Atoi(c.Query("CategoryID"))
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	ok := models.ShouldCheckJSON(json, []string{"CategoryID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticlesByCategory(json.CategoryID, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -471,19 +451,15 @@ func GetArticlesByCategory(c *gin.Context) {
 
 func GetArticlesByCollection(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.Title = c.Query("userID")
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("offset", "0"))
 	ok := models.ShouldCheckJSON(json, []string{"UserID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticlesByCollection(json.UserID, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -505,19 +481,15 @@ func GetArticlesByCollection(c *gin.Context) {
 
 func GetArticlesByTag(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.TagID, _ = strconv.Atoi(c.Query("TagID"))
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	ok := models.ShouldCheckJSON(json, []string{"TagID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticlesByTag(json.TagID, Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -539,14 +511,9 @@ func GetArticlesByTag(c *gin.Context) {
 
 func GetArticlesByTime(c *gin.Context) {
 	var json Request.GetArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	Limit, Offset := json.Limit, json.Offset
-	if Limit == 0 {
-		Limit = 20
-	}
 	list, err := database.GetArticleIDsByTime(Limit, Offset)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
@@ -578,10 +545,7 @@ func GetArticlesCount(c *gin.Context) {
 
 func GetFullArticle(c *gin.Context) {
 	var json Request.ArticleJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.ArticleID, _ = strconv.Atoi(c.Query("ArticleID"))
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
