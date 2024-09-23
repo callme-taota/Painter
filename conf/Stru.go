@@ -51,6 +51,20 @@ type Conf struct {
 
 var RandomKey string
 
+var RunningStatus runningStatus
+
+type runningStatus struct {
+	Conf   bool
+	DB     bool
+	Cache  bool
+	Server bool
+	Daily  bool
+}
+
+func CheckHealth() bool {
+	return RunningStatus.DB && RunningStatus.Cache && RunningStatus.Conf && RunningStatus.Server
+}
+
 func NewConf() map[string]interface{} {
 	conf := Conf{
 		Server: server{

@@ -1,14 +1,15 @@
 package database
 
 import (
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"log"
 	"os"
 	conf "painter-server-new/conf"
 	"painter-server-new/tolog"
 	"time"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DbEngine *gorm.DB
@@ -45,6 +46,7 @@ func InitDB() error {
 	tolog.Log().Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	InitSettings()
 	InitRules()
+	conf.RunningStatus.DB = true
 	return nil
 }
 

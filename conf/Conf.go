@@ -29,6 +29,7 @@ func InitConf() error {
 	if Server.Model == "debug" {
 		SetRandomKey()
 	}
+	RunningStatus.Conf = true
 
 	return nil
 }

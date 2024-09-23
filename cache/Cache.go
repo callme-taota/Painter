@@ -2,10 +2,12 @@ package cache
 
 import (
 	"fmt"
-	"github.com/go-redis/redis"
 	conf "painter-server-new/conf"
 	"painter-server-new/tolog"
 	"strconv"
+	"time"
+
+	"github.com/go-redis/redis"
 )
 
 // RedisClient is a global variable representing the Redis client.
@@ -26,15 +28,25 @@ func InitCache() error {
 	// Set the global 'RedisClient' variable to the created client.
 	RedisClient = client
 
-	// Ping the Redis server to check the connection.
-	pong, err := client.Ping().Result()
-	if err != nil {
-		// Log an error if there is an issue with the connection.
-		tolog.Log().Errorf("Redis start in error%e", err).PrintAndWriteSafe()
-		return err
+	// Define the maximum number of retries and the delay between retries.
+	maxRetries := 5
+	retryDelay := 2 * time.Second
+
+	// Attempt to ping the Redis server with retries.
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		pong, err := client.Ping().Result()
+		if err == nil {
+			// Log a message indicating a successful connection to Redis.
+			tolog.Log().Infof("Connected to Redis: %s", pong).PrintLog()
+			conf.RunningStatus.DB = true
+			return nil
+		}
+		tolog.Log().Errorf("Failed to connect to Redis, attempt %d: %e", i+1, err).PrintAndWriteSafe()
+		time.Sleep(retryDelay)
 	}
 
-	// Log a message indicating a successful connection to Redis.
-	tolog.Log().Infof("Connected to Redis: %s", pong).PrintLog()
-	return nil
+	// Log an error if all attempts fail.
+	tolog.Log().Errorf("Could not connect to Redis after %d attempts: %e", maxRetries, err).PrintAndWriteSafe()
+	return err
 }

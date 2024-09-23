@@ -1,8 +1,11 @@
 package server
 
 import (
+	"net/http"
 	"painter-server-new/conf"
 	"painter-server-new/server/api"
+
+	"github.com/gin-gonic/gin"
 )
 
 func LinkUser() {
@@ -170,4 +173,24 @@ func LinkDebug() {
 	if conf.Server.Model == "debug" {
 		Server.GET("/"+conf.RandomKey, api.SetDebugKeyInCookie)
 	}
+}
+
+func LinkK8s() {
+	BaseServer.GET("/healthz", func(c *gin.Context) {
+		ok := conf.CheckHealth()
+		if ok {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "oops"})
+		}
+	})
+
+	BaseServer.GET("/ready", func(c *gin.Context) {
+		ok := conf.CheckHealth()
+		if ok {
+			c.JSON(http.StatusOK, gin.H{"status": "ready"})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"status": "not ready"})
+		}
+	})
 }

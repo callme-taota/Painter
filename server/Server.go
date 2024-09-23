@@ -2,13 +2,14 @@ package server
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	conf "painter-server-new/conf"
 	"painter-server-new/models"
 	"painter-server-new/server/mid"
 	"painter-server-new/tolog"
 	"painter-server-new/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Server represents the main Gin engine.
@@ -65,6 +66,7 @@ func InitServer() error {
 		tolog.Log().Errorf("Gin start in error %e", err).PrintAndWriteSafe()
 		return err
 	}
+	conf.RunningStatus.Server = true
 	return nil
 }
 
@@ -83,6 +85,7 @@ func LinkAPI() {
 	LinkSetting()
 	LinkFile()
 	LinkDebug()
+	LinkK8s()
 	StaticWeb()
 	StaticFiles()
 }

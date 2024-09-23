@@ -1,4 +1,4 @@
-cd ./server/static/webroot || exist
+cd ./server/static/webroot || exit
 
 if ! command -v node &> /dev/null; then
     echo "Node.js not found, please install Node.js."
