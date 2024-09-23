@@ -103,7 +103,7 @@ func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([
 		Joins("inner join user on comment.user_id = user.id").
 		Joins("left join comment_like cl on comment.comment_id = cl.comment_id").
 		Where("article_id = ?", articleID).
-		Group("comment.comment_id").
+		Group("comment.comment_id, user.nick_name, user.header_field, cl.user_id, comment.user_id").
 		Order("comment.create_time DESC").
 		Limit(limit).
 		Offset(offset).
