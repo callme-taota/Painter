@@ -1,11 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CreateCategory(c *gin.Context) {
@@ -90,15 +92,9 @@ func UpdateCategory(c *gin.Context) {
 
 func GetCategories(c *gin.Context) {
 	var json models.OnlyPageOption
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	ok := models.ShouldCheckJSON(json, []string{"Limit", "Offset"})
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", "20"))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", "0"))
 	Limit, Offset := json.Limit, json.Offset
-	if ok != true {
-		Limit, Offset = 20, 0
-	}
 	categories, err := database.GetCategories(Limit, Offset)
 	categoriesNumber := database.GetCategoriesNumber()
 	if err != nil {
@@ -111,15 +107,7 @@ func GetCategories(c *gin.Context) {
 
 func GetCategory(c *gin.Context) {
 	var json Request.CategoryIDJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
-	ok := models.ShouldCheckJSON(json, []string{"CategoryID"})
-	if ok != true {
-		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.CategoryID, _ = strconv.Atoi(c.Query("ID"))
 	category, err := database.GetCategory(json.CategoryID)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))

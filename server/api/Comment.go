@@ -1,11 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/database"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Request"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 const maxCommentLength = 100
@@ -121,10 +123,9 @@ func DeleteCommentLike(c *gin.Context) {
 
 func GetCommentsByArticleID(c *gin.Context) {
 	var json Request.GetCommentJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.ArticleID, _ = strconv.Atoi(c.DefaultQuery("ArticleID", ""))
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", ""))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", ""))
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
@@ -161,10 +162,9 @@ func GetCommentsByArticleID(c *gin.Context) {
 
 func GetCommentsByArticleIDWithLiked(c *gin.Context) {
 	var json Request.GetCommentJSON
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
-		return
-	}
+	json.ArticleID, _ = strconv.Atoi(c.DefaultQuery("ArticleID", ""))
+	json.Limit, _ = strconv.Atoi(c.DefaultQuery("Limit", ""))
+	json.Offset, _ = strconv.Atoi(c.DefaultQuery("Offset", ""))
 	ok := models.ShouldCheckJSON(json, []string{"ArticleID"})
 	if ok != true {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
