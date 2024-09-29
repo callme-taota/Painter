@@ -1,9 +1,10 @@
 package conf
 
 import (
-	"painter-server-new/tolog"
 	"painter-server-new/utils"
 	"reflect"
+
+	"github.com/callme-taota/tolog"
 )
 
 const confFilePath = "./conf/conf.json"
@@ -105,7 +106,7 @@ func CreateConf() {
 	conf := NewConf()
 	_, err := utils.JSONWriter(confFilePath, conf)
 	if err != nil {
-		tolog.Log().Errorf("Error while CreateConf %e", err).PrintAndWriteSafe()
+		tolog.Errorf("Error while CreateConf %e", err).PrintAndWriteSafe()
 		return
 	}
 }

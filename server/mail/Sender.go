@@ -1,13 +1,16 @@
 package mail
 
 import (
-	"gopkg.in/gomail.v2"
 	"math/rand"
 	"painter-server-new/cache"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
+
 	"strconv"
+
+	"gopkg.in/gomail.v2"
 )
 
 const subject = "Painter 验证"
@@ -21,33 +24,33 @@ func Sender(mail string) {
 	}
 	poster, err := database.GetMailSetting()
 	if err != nil {
-		tolog.Log().Infof("Can't post email: %e", err).PrintAndWriteSafe()
+		tolog.Infof("Can't post email: %e", err).PrintAndWriteSafe()
 		return
 	}
 	if !poster.Active {
-		tolog.Log().Infof("Can't post email: poster inactive").PrintAndWriteSafe()
+		tolog.Infof("Can't post email: poster inactive").PrintAndWriteSafe()
 		return
 	}
 	err = cache.CreateEmailCheck(mail, code)
 	if err != nil {
-		tolog.Log().Infof("Can't post email: can't create code").PrintAndWriteSafe()
+		tolog.Infof("Can't post email: can't create code").PrintAndWriteSafe()
 		return
 	}
 
-	tolog.Log().Infoln("Post mail:", poster.From, msg.To, msg.Subject, msg.Body).PrintAndWriteSafe()
+	tolog.Infoln("Post mail:", poster.From, msg.To, msg.Subject, msg.Body).PrintAndWriteSafe()
 	m := gomail.NewMessage()
 	m.SetHeader("From", poster.From)
 	m.SetHeader("To", msg.To)
 	m.SetHeader("Subject", msg.Subject)
 	m.SetBody("text/html", msg.Body)
 
-	tolog.Log().Infoln("Post mail:", poster.SmtpPort, poster.SmtpHost, poster.From, poster.Password).PrintAndWriteSafe()
+	tolog.Infoln("Post mail:", poster.SmtpPort, poster.SmtpHost, poster.From, poster.Password).PrintAndWriteSafe()
 	d := gomail.NewDialer(poster.SmtpHost, poster.SmtpPort, poster.From, poster.Password)
 	if err := d.DialAndSend(m); err != nil {
-		tolog.Log().Infof("Can't post email: post error, %e", err).PrintAndWriteSafe()
+		tolog.Infof("Can't post email: post error, %e", err).PrintAndWriteSafe()
 		return
 	}
-	tolog.Log().Infof("Post email success").PrintAndWriteSafe()
+	tolog.Infof("Post email success").PrintAndWriteSafe()
 	return
 }
 

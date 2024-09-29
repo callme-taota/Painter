@@ -2,11 +2,13 @@ package cache
 
 import (
 	"errors"
-	"github.com/redis/go-redis/v9"
-	"painter-server-new/tolog"
+
 	"painter-server-new/utils"
 	"strconv"
 	"time"
+
+	"github.com/callme-taota/tolog"
+	"github.com/redis/go-redis/v9"
 )
 
 // Constants for Redis hash keys
@@ -65,28 +67,28 @@ func DeleteUserBySession(session string) (bool, error) {
 	// Retrieve user ID associated with the session.
 	userID, err := GetUserIDByUserSession(session)
 	if err != nil {
-		tolog.Log().Errorf("DeleteUserBySession: %e", err)
+		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
 	}
 
 	// Remove session to user ID mapping.
 	err = RedisClient.HDel(reverseLookupHash, session).Err()
 	if err != nil {
-		tolog.Log().Errorf("DeleteUserBySession: %e", err)
+		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
 	}
 
 	// Remove user ID to session mapping.
 	err = RedisClient.HDel(forwardHash, userID).Err()
 	if err != nil {
-		tolog.Log().Errorf("DeleteUserBySession: %e", err)
+		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
 	}
 
 	// Delete the session key.
 	err = RedisClient.Del(session).Err()
 	if err != nil {
-		tolog.Log().Errorf("DeleteUserBySession: %e", err)
+		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
 	}
 
@@ -152,7 +154,7 @@ func GetPastHourLoginUserList() ([]int, error) {
 	//get list
 	userIDs, err := RedisClient.SMembers(redisKey).Result()
 	if err != nil {
-		tolog.Log().Infof("Error getting user IDs from Redis: %e", err).PrintAndWriteSafe()
+		tolog.Infof("Error getting user IDs from Redis: %e", err).PrintAndWriteSafe()
 		return nil, err
 	}
 	var userList []int

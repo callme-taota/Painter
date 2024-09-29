@@ -4,7 +4,9 @@ import (
 	"errors"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
+
 	"painter-server-new/utils"
 	"time"
 )
@@ -40,7 +42,7 @@ func HasUser(key string) (bool, error) {
 	var user []models.UserTable
 	res := DbEngine.Where("user_name = ? or email = ?", key, key).Find(&user)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while hasuser %e", res.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while hasuser %e", res.Error).PrintAndWriteSafe()
 		return false, res.Error
 	}
 	return res.RowsAffected > 0, nil
@@ -105,7 +107,7 @@ func UpdateUserPhoneNum(id int, number int) error {
 func UpdateUserHeaderField(id int, headerField string) error {
 	res := DbEngine.Model(&models.UserTable{}).Where("id = ?", id).Update("header_field", headerField)
 	if res.Error != nil {
-		tolog.Log().Errorf("Error while UpdateUserHeaderField %v", res.Error).PrintAndWriteSafe()
+		tolog.Errorf("Error while UpdateUserHeaderField %v", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	return nil
@@ -243,23 +245,23 @@ func GetUserFullInfo(id int) (Response.FullUser, error) {
 	var user Response.MiniUserFullInfo
 	result := DbEngine.Table("user").Select("id, email, nick_name, header_field, created_at, last_login").Where("id = ?", id).First(&user)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
 		return full, result.Error
 	}
 
 	articleNum, err := GetArticleCountByAuthor(id)
 	if err != nil {
-		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
 		return full, result.Error
 	}
 	list, err := GetArticlesByAuthor(id, articleNum, 0)
 	if err != nil {
-		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
 		return full, result.Error
 	}
 	art, err := GetArticleByIntList(list)
 	if err != nil {
-		tolog.Log().Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while GetUserFullInfo %e", result.Error).PrintAndWriteSafe()
 		return full, result.Error
 	}
 
@@ -288,13 +290,13 @@ func UpdateUserLoginTime(id int) (bool, error) {
 	user := models.UserTable{}
 	result := DbEngine.First(&user, id)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
 	}
 	user.LastLogin = time.Now().Add(-time.Hour)
 	result = DbEngine.Save(&user)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while UpdateUserLoginTime %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
 	}
 	return true, nil

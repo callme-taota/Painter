@@ -6,9 +6,9 @@ import (
 	conf "painter-server-new/conf"
 	"painter-server-new/models"
 	"painter-server-new/server/mid"
-	"painter-server-new/tolog"
 	"painter-server-new/utils"
 
+	"github.com/callme-taota/tolog"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,17 +56,17 @@ func InitServer() error {
 	}
 
 	// Log server initialization information.
-	tolog.Log().Info("Gin Main Server Start").PrintAndWriteSafe()
+	tolog.Info("Gin Main Server Start").PrintAndWriteSafe()
 	port := conf.Server.Port
 
-	tolog.Log().Infoln("Gin listening on:"+port, "host: http://127.0.0.1:"+port).PrintAndWriteSafe()
+	tolog.Infoln("Gin listening on:"+port, "host: http://127.0.0.1:"+port).PrintAndWriteSafe()
+	conf.RunningStatus.Server = true
 	// Run the Gin server on the specified port.
 	err := ginServer.Run(fmt.Sprintf(":%s", port))
 	if err != nil {
-		tolog.Log().Errorf("Gin start in error %e", err).PrintAndWriteSafe()
+		tolog.Errorf("Gin start in error %e", err).PrintAndWriteSafe()
 		return err
 	}
-	conf.RunningStatus.Server = true
 	return nil
 }
 
@@ -122,8 +122,8 @@ func TestHandler(c *gin.Context) {
 	stringmap2 := []string{"Name", "axsa"}
 	flag1 := models.ShouldCheckJSON(json, stringmap)
 	flag2 := models.ShouldCheckJSON(json, stringmap2)
-	tolog.Log().Infoln("JSON checking flag1", flag1).PrintLog()
-	tolog.Log().Infoln("JSON checking flag2", flag2).PrintLog()
+	tolog.Infoln("JSON checking flag1", flag1).PrintLog()
+	tolog.Infoln("JSON checking flag2", flag2).PrintLog()
 	return
 }
 

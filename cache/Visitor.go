@@ -4,35 +4,43 @@ import (
 	"fmt"
 	"painter-server-new/conf"
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
 	"time"
+
+	"github.com/callme-taota/tolog"
 )
 
 func AddVisRecord2Set(record models.VisitorRecord) error {
+	timezone := conf.Server.Timezone
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		return err
+	}
+
 	serverName := conf.Server.Name
-	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().Format("2006-01-02"))
+	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().In(loc).Format("2006-01-02"))
 	flag := CheckRecordExistInSet(record)
 	if flag {
 		return nil
 	}
 	visitorKey := fmt.Sprintf("%s:%s", record.UA, record.IP)
-	tolog.Log().Infof("New visitor : %s", visitorKey).PrintAndWriteSafe()
+	tolog.Infof("New visitor : %s", visitorKey).PrintAndWriteSafe()
 
 	added, err := RedisClient.SAdd(todayKey, visitorKey).Result()
 	if err != nil {
-		tolog.Log().Warningf("Failed to add visitor record to set: %v", err).PrintAndWriteSafe()
+		tolog.Warningf("Failed to add visitor record to set: %v", err).PrintAndWriteSafe()
 		return err
 	}
 
 	if added == 0 {
-		tolog.Log().Infof("Visitor record already exists").PrintAndWriteSafe()
+		tolog.Infof("Visitor record already exists").PrintAndWriteSafe()
 	}
 
 	// Set expiration time for the key
 	expiration := 48 * time.Hour
 	_, err = RedisClient.Expire(todayKey, expiration).Result()
 	if err != nil {
-		tolog.Log().Warningf("Failed to set expiration for key: %v", err).PrintAndWriteSafe()
+		tolog.Warningf("Failed to set expiration for key: %v", err).PrintAndWriteSafe()
 		return err
 	}
 
@@ -40,13 +48,19 @@ func AddVisRecord2Set(record models.VisitorRecord) error {
 }
 
 func CheckRecordExistInSet(record models.VisitorRecord) bool {
+	timezone := conf.Server.Timezone
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		return false
+	}
+
 	serverName := conf.Server.Name
-	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().Format("2006-01-02"))
+	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().In(loc).Format("2006-01-02"))
 	visitorKey := fmt.Sprintf("%s:%s", record.UA, record.IP)
 
 	exists, err := RedisClient.SIsMember(todayKey, visitorKey).Result()
 	if err != nil {
-		tolog.Log().Warningf("Failed to check visitor record existence: %v", err).PrintAndWriteSafe()
+		tolog.Warningf("Failed to check visitor record existence: %v", err).PrintAndWriteSafe()
 		return false
 	}
 

@@ -3,13 +3,14 @@ package cache
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/url"
 	conf "painter-server-new/conf"
-	"painter-server-new/tolog"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/callme-taota/tolog"
+	"github.com/gin-gonic/gin"
 )
 
 type AutoCacheStatus struct {
@@ -81,7 +82,7 @@ func AutoCache(c *gin.Context) (bool, error) {
 	ok := CheckContextMapExist()
 	if !ok {
 		err := errors.New("ContextMapManager doesn't exist. ")
-		tolog.Log().Errorf("Error while AutoCache: %e", err).PrintAndWriteSafe()
+		tolog.Errorf("Error while AutoCache: %e", err).PrintAndWriteSafe()
 		return false, err
 	}
 	context := CreateContext(c)
@@ -99,7 +100,7 @@ func CreateContext(c *gin.Context) *Context {
 
 	parsedURL, err := url.Parse(fullRequest)
 	if err != nil {
-		tolog.Log().Errorf("URL formatting error : %e", err).PrintAndWriteSafe()
+		tolog.Errorf("URL formatting error : %e", err).PrintAndWriteSafe()
 	}
 	request := parsedURL.Path
 	subRequest := parsedURL.RawQuery
