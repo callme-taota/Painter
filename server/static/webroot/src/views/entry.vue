@@ -88,23 +88,26 @@ const scrollToPage = (page: number) => {
 
 const atPage = (e: any) => {
   pageAt.value = e.target.scrollingElement.scrollTop / (pageHeight.value - 60);
-  fixPage(1,e);
-  fixPage(2,e);
+  fixPage(1, e);
+  fixPage(2, e);
 };
 
 const pagePosition = (page: number) => {
   return (pageHeight.value - 60) * page;
 };
 
-const fixPage = (page: number,e: any) => {
-  const range = 0.2;
+const fixPage = (page: number, e: any) => {
+  const range = 0.5;
   let atPage: number = pageAt.value;
   let distantTo = distantToFix(atPage, page, range);
+  let offset = e.target.scrollingElement.scrollTop - pagePosition(page);
   if (distantTo > 0.7) {
     distantTo = 1;
+  } else if (distantTo <= 0) {
+    offset = 0;
   }
   pageTranstion.value[page].opacity = distantTo;
-  pageTranstion.value[page].offset = e.target.scrollingElement.scrollTop - pagePosition(page) ;
+  pageTranstion.value[page].offset = offset;
 };
 
 const rangeAt = (at: number, fix: number, range: number): boolean => {
@@ -131,7 +134,7 @@ const goLink = (link: string) => {
 </script>
 <template>
   <div class="entry-cont">
-    <div class="entry-page">
+    <div class="entry-page" style="z-index: 100">
       <span class="entry-painter-text" @click="scrollToPage(2)">
         {{ titleName }}
       </span>
@@ -213,6 +216,24 @@ const goLink = (link: string) => {
         </div>
       </div>
     </div>
+
+    <div class="entry-side-page-number">
+      <div
+        class="entry-side-to-btn"
+        :style="{ background: pageAt < 0.5 ? '#ffffff80' : '' }"
+        @click="scrollToPage(1)"
+      ></div>
+      <div
+        class="entry-side-to-btn"
+        :style="{ background: pageAt < 1.5 && pageAt > 0.5 ? '#ffffff80' : '' }"
+        @click="scrollToPage(2)"
+      ></div>
+      <div
+        class="entry-side-to-btn"
+        :style="{ background: pageAt > 1.5 ? '#ffffff80' : '' }"
+        @click="scrollToPage(3)"
+      ></div>
+    </div>
   </div>
 </template>
 <style>
@@ -289,5 +310,29 @@ const goLink = (link: string) => {
 .entry-icon-cont:hover {
   background-color: var(--base-hover-background);
   color: var(--btn-hover-color);
+}
+
+.entry-side-page-number {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  width: 12px;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-50%);
+}
+
+.entry-side-to-btn {
+  border-radius: 50%;
+  background-color: #ffffff30;
+  width: 12px;
+  height: 12px;
+  margin: 4px 0;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.entry-side-to-btn:hover {
+  background-color: #ffffff80;
 }
 </style>
