@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"painter-server-new/tolog"
 	"path/filepath"
+
+	"github.com/callme-taota/tolog"
 )
 
 // JSONReader reads and parses JSON content from a file.
@@ -13,7 +14,7 @@ func JSONReader(filePath string) (map[string]interface{}, error) {
 	// Get the current working directory.
 	rootDir, err := os.Getwd()
 	if err != nil {
-		tolog.Log().Errorf("jsonReader %e", err).PrintAndWriteSafe()
+		tolog.Errorf("jsonReader %e", err).PrintAndWriteSafe()
 		return nil, err
 	}
 
@@ -21,12 +22,12 @@ func JSONReader(filePath string) (map[string]interface{}, error) {
 	absPath := filepath.Join(rootDir, filePath)
 
 	// Log the read JSON file path.
-	tolog.Log().Infof("read json file:%s", absPath).PrintLog()
+	tolog.Infof("read json file:%s", absPath).PrintLog()
 
 	// Read the file content.
 	fileContent, err := os.ReadFile(absPath)
 	if err != nil {
-		tolog.Log().Errorf("jsonReader %e", err).PrintAndWriteSafe()
+		tolog.Errorf("jsonReader %e", err).PrintAndWriteSafe()
 		return nil, err
 	}
 
@@ -34,7 +35,7 @@ func JSONReader(filePath string) (map[string]interface{}, error) {
 	var jsonData map[string]interface{}
 	err = json.Unmarshal(fileContent, &jsonData)
 	if err != nil {
-		tolog.Log().Errorf("jsonReader %e", err).PrintAndWriteSafe()
+		tolog.Errorf("jsonReader %e", err).PrintAndWriteSafe()
 		return nil, err
 	}
 
@@ -61,7 +62,7 @@ func JSONConvertToMapString(originalMap interface{}) map[string]string {
 		default:
 			// Handle other types as needed.
 			// Additional type conversion rules can be added here.
-			tolog.Log().Warningf("Unsupported type for key %s", key).PrintAndWriteSafe()
+			tolog.Warningf("Unsupported type for key %s", key).PrintAndWriteSafe()
 		}
 	}
 

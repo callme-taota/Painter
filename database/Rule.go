@@ -2,7 +2,8 @@ package database
 
 import (
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
 )
 
 var ruleMap = map[int]string{
@@ -30,7 +31,7 @@ func InitRules() {
 			Name: name,
 		}
 		if err := DbEngine.FirstOrCreate(&rule, models.RuleTable{ID: id}).Error; err != nil {
-			tolog.Log().Infof("Error while init rule %e", err).PrintAndWriteSafe()
+			tolog.Infof("Error while init rule %e", err).PrintAndWriteSafe()
 			panic(err)
 		}
 	}
@@ -41,7 +42,7 @@ func InitRules() {
 			Name: name,
 		}
 		if err := DbEngine.FirstOrCreate(&group, models.UserGroupTable{ID: id}).Error; err != nil {
-			tolog.Log().Infof("Error while init rule %e", err).PrintAndWriteSafe()
+			tolog.Infof("Error while init rule %e", err).PrintAndWriteSafe()
 			panic(err)
 		}
 	}
@@ -53,7 +54,7 @@ func InitRules() {
 				RuleID:  ruleID,
 			}
 			if err := DbEngine.FirstOrCreate(&groupRule, models.GroupRuleTable{GroupID: groupID, RuleID: ruleID}).Error; err != nil {
-				tolog.Log().Infof("Error while init rule %e", err).PrintAndWriteSafe()
+				tolog.Infof("Error while init rule %e", err).PrintAndWriteSafe()
 				panic(err)
 			}
 		}
@@ -64,13 +65,13 @@ func AssignGroupToUser(userID, groupID int) error {
 	user := models.UserTable{}
 	res := DbEngine.First(&user, userID)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while AssignGroupToUser %e", res.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while AssignGroupToUser %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	user.UserGroup = groupID
 	res = DbEngine.Save(&user)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while AssignGroupToUser %e", res.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while AssignGroupToUser %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	return nil
@@ -80,7 +81,7 @@ func CheckUsersPermission(userID, ruleID int) (bool, error) {
 	user := models.UserTable{}
 	res := DbEngine.Select("user_group").First(&user, userID)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while CheckUsersPermission %e", res.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while CheckUsersPermission %e", res.Error).PrintAndWriteSafe()
 		return false, res.Error
 	}
 	groupID := user.UserGroup

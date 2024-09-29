@@ -3,7 +3,9 @@ package database
 import (
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
+
 	"time"
 )
 
@@ -16,7 +18,7 @@ func CreateFollow(followerID, followingID int) error {
 
 	err := DbEngine.Create(&follow).Error
 	if err != nil {
-		tolog.Log().Infof("Error while create follow %e", err)
+		tolog.Infof("Error while create follow %e", err)
 		return err
 	}
 	return nil
@@ -25,7 +27,7 @@ func CreateFollow(followerID, followingID int) error {
 func DeleteFollow(followerID, followingID int) error {
 	err := DbEngine.Where("follower_id = ? AND following_id = ?", followerID, followingID).Delete(&models.FollowTable{}).Error
 	if err != nil {
-		tolog.Log().Infof("Error while delete follow %e", err)
+		tolog.Infof("Error while delete follow %e", err)
 		return err
 	}
 	return nil

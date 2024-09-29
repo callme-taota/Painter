@@ -1,13 +1,15 @@
 package mid
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"painter-server-new/cache"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
 	"strconv"
+
+	"github.com/callme-taota/tolog"
+	"github.com/gin-gonic/gin"
 )
 
 func SessionCheckMid() gin.HandlerFunc {
@@ -39,7 +41,7 @@ func SessionCheckMid() gin.HandlerFunc {
 			if userID != 0 {
 				err := cache.CreateUserAccess(userID)
 				if err != nil {
-					tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+					tolog.Infof("Can't update user login time %e", err).PrintAndWriteSafe()
 				}
 			}
 		}()
@@ -88,7 +90,7 @@ func CheckAdminMid() gin.HandlerFunc {
 			if userID != 0 {
 				err := cache.CreateUserAccess(userID)
 				if err != nil {
-					tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+					tolog.Infof("Can't update user login time %e", err).PrintAndWriteSafe()
 				}
 			}
 		}()
@@ -123,7 +125,7 @@ func BetterLogin() gin.HandlerFunc {
 			if userID != 0 {
 				err := cache.CreateUserAccess(userID)
 				if err != nil {
-					tolog.Log().Infof("Can't update user login time %e", err).PrintAndWriteSafe()
+					tolog.Infof("Can't update user login time %e", err).PrintAndWriteSafe()
 				}
 			}
 		}()

@@ -2,8 +2,10 @@ package database
 
 import (
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
 	"time"
+
+	"github.com/callme-taota/tolog"
 )
 
 func CreateCollection(userId, articleId int) error {
@@ -15,7 +17,7 @@ func CreateCollection(userId, articleId int) error {
 
 	result := DbEngine.Create(&collection)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while create collection %e", result.Error)
+		tolog.Infof("Error while create collection %e", result.Error)
 		return result.Error
 	}
 	return nil
@@ -24,7 +26,7 @@ func CreateCollection(userId, articleId int) error {
 func DeleteCollection(userId, articleId int) error {
 	result := DbEngine.Where("user_id = ? AND article_id = ?", userId, articleId).Delete(&models.CollectionTable{})
 	if result.Error != nil {
-		tolog.Log().Infof("Error while create collection %e", result.Error)
+		tolog.Infof("Error while create collection %e", result.Error)
 		return result.Error
 	}
 	return nil

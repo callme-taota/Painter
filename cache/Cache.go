@@ -3,10 +3,11 @@ package cache
 import (
 	"fmt"
 	conf "painter-server-new/conf"
-	"painter-server-new/tolog"
+
 	"strconv"
 	"time"
 
+	"github.com/callme-taota/tolog"
 	"github.com/go-redis/redis"
 )
 
@@ -38,15 +39,15 @@ func InitCache() error {
 		pong, err := client.Ping().Result()
 		if err == nil {
 			// Log a message indicating a successful connection to Redis.
-			tolog.Log().Infof("Connected to Redis: %s", pong).PrintLog()
-			conf.RunningStatus.DB = true
+			tolog.Infof("Connected to Redis: %s", pong).PrintLog()
+			conf.RunningStatus.Cache = true
 			return nil
 		}
-		tolog.Log().Errorf("Failed to connect to Redis, attempt %d: %e", i+1, err).PrintAndWriteSafe()
+		tolog.Errorf("Failed to connect to Redis, attempt %d: %e", i+1, err).PrintAndWriteSafe()
 		time.Sleep(retryDelay)
 	}
 
 	// Log an error if all attempts fail.
-	tolog.Log().Errorf("Could not connect to Redis after %d attempts: %e", maxRetries, err).PrintAndWriteSafe()
+	tolog.Errorf("Could not connect to Redis after %d attempts: %e", maxRetries, err).PrintAndWriteSafe()
 	return err
 }

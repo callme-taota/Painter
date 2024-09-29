@@ -2,41 +2,47 @@ package daily
 
 import (
 	"painter-server-new/cache"
+	"painter-server-new/conf"
 	"painter-server-new/database"
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
 	"time"
+
+	"github.com/callme-taota/tolog"
 )
 
 func ScheduleDailyVisitorAggregation() {
-	location, err := time.LoadLocation("Asia/Shanghai")
+	location, err := time.LoadLocation(conf.Server.Timezone)
 	if err != nil {
-		tolog.Log().Errorf("Failed to load location: %v", err).PrintAndWriteSafe()
+		tolog.Errorf("Failed to load location: %v", err).PrintAndWriteSafe()
 		return
 	}
-	// 获取昨天的日期
+	// Get the preview date.
 	yesterday := time.Now().In(location).AddDate(0, 0, -1)
 	yesterdayStr := yesterday.Format("2006-01-02")
 
-	// 获取昨天的访客记录
+	tolog.Debugf("Current time: %s", time.Now().In(location).Format("2006-01-02 15:04:05")).PrintAndWriteSafe()
+	tolog.Debugf("Calculated yesterday's date: %s", yesterdayStr).PrintAndWriteSafe()
+
+	// Get yesterday visitor record.
 	totalVisitors, err := cache.GetVisitorsByDate(yesterdayStr)
 	if err != nil {
-		tolog.Log().Errorf("Failed to get visitors for date %s: %v", yesterdayStr, err).PrintAndWriteSafe()
+		tolog.Errorf("Failed to get visitors for date %s: %v", yesterdayStr, err).PrintAndWriteSafe()
 		return
 	}
 
-	// 创建访客统计数据结构
+	// Create table row.
 	visitorStats := models.VisitorRecordTable{
 		Date:  yesterday,
 		Total: totalVisitors,
 	}
 
-	// 将访客统计数据存入MySQL数据库
+	// Save row into db.
 	err = database.SaveVisitorStats(visitorStats)
 	if err != nil {
-		tolog.Log().Errorf("Failed to save visitor stats for date %s: %v", yesterdayStr, err).PrintAndWriteSafe()
+		tolog.Errorf("Failed to save visitor stats for date %s: %v", yesterdayStr, err).PrintAndWriteSafe()
 		return
 	}
 
-	tolog.Log().Infof("Visitor stats for date %s saved successfully. Total visitors: %d", yesterdayStr, totalVisitors).PrintAndWriteSafe()
+	tolog.Infof("Visitor stats for date %s saved successfully. Total visitors: %d", yesterdayStr, totalVisitors).PrintAndWriteSafe()
 }

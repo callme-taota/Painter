@@ -1,10 +1,11 @@
 package mid
 
 import (
-	"github.com/gin-gonic/gin"
 	"painter-server-new/cache"
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
+	"github.com/gin-gonic/gin"
 )
 
 func VisitorRecorder() gin.HandlerFunc {
@@ -17,7 +18,7 @@ func VisitorRecorder() gin.HandlerFunc {
 		}
 		err := cache.AddVisRecord2Set(vr)
 		if err != nil {
-			tolog.Log().Warningf("Visitor recorder can't write recode into redis %e", err).PrintAndWriteSafe()
+			tolog.Warningf("Visitor recorder can't write recode into redis %e", err).PrintAndWriteSafe()
 		}
 		c.Next()
 	}

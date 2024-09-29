@@ -4,8 +4,10 @@ import (
 	"errors"
 	"math/rand"
 	"os"
-	"painter-server-new/tolog"
+
 	"painter-server-new/utils"
+
+	"github.com/callme-taota/tolog"
 )
 
 // InitConf initializes the configuration by reading from a JSON file.
@@ -17,7 +19,7 @@ func InitConf() error {
 	// Read configuration from the JSON file.
 	confJSON, err := ConfReader()
 	if err != nil {
-		tolog.Log().Warningf("Conf read %e", err).PrintAndWriteSafe()
+		tolog.Warningf("Conf read %e", err).PrintAndWriteSafe()
 		return err
 	}
 	Conf2Memory(confJSON)
@@ -37,7 +39,7 @@ func InitConf() error {
 func ConfReader() (map[string]interface{}, error) {
 	confJSON, err := utils.JSONReader(confFilePath)
 	if err != nil {
-		tolog.Log().Errorf("jsonReader%e", err).PrintAndWriteSafe()
+		tolog.Errorf("jsonReader%e", err).PrintAndWriteSafe()
 		return nil, err
 	}
 	return confJSON, nil
@@ -80,16 +82,16 @@ func SetRandomKey() {
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
-	tolog.Log().Warningf("You are running at debug model! This is your key to access server. Key: %s. Use /%s to make your frontend storage this key. ", string(b), string(b)).PrintAndWriteSafe()
+	tolog.Warningf("You are running at debug model! This is your key to access server. Key: %s. Use /%s to make your frontend storage this key. ", string(b), string(b)).PrintAndWriteSafe()
 	RandomKey = string(b)
 }
 
 func PrintConfWhileStart() {
 	// Print server configuration information.
-	tolog.Log().Infof("%s Conf Start", Server.Name).PrintAndWriteSafe()
-	tolog.Log().Infof("Server version: %s", Server.Version).PrintAndWriteSafe()
-	tolog.Log().Infof("Server port: %s", Server.Port).PrintAndWriteSafe()
-	tolog.Log().Infof("Running on model: %s", Server.Model).PrintAndWriteSafe()
+	tolog.Infof("%s Conf Start", Server.Name).PrintAndWriteSafe()
+	tolog.Infof("Server version: %s", Server.Version).PrintAndWriteSafe()
+	tolog.Infof("Server port: %s", Server.Port).PrintAndWriteSafe()
+	tolog.Infof("Running on model: %s", Server.Model).PrintAndWriteSafe()
 }
 
 // getEnv retrieves the value of an environment variable, using a default value if it doesn't exist.

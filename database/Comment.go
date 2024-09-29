@@ -3,7 +3,8 @@ package database
 import (
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
 )
 
 func CreateComment(articleID, userID int, content string) (int, error) {
@@ -14,7 +15,7 @@ func CreateComment(articleID, userID int, content string) (int, error) {
 	}
 	result := DbEngine.Create(&comment)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while CreateComment %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while CreateComment %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
 	}
 	commentID := comment.CommentID
@@ -25,7 +26,7 @@ func DeleteComment(userID, commentID int) (bool, error) {
 	var comment models.CommentTable
 	result := DbEngine.First(&comment, commentID)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
 	}
 	if comment.UserID != userID {
@@ -33,7 +34,7 @@ func DeleteComment(userID, commentID int) (bool, error) {
 	}
 	result = DbEngine.Delete(&comment, commentID)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while DeleteComment %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
 	}
 	return true, nil
@@ -46,7 +47,7 @@ func CreateCommentLike(commentID, userID int) (bool, error) {
 	}
 	result := DbEngine.Create(&commentLike)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while CreateCommentLike %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while CreateCommentLike %e", result.Error).PrintAndWriteSafe()
 		return false, result.Error
 	}
 	return true, nil
@@ -55,7 +56,7 @@ func CreateCommentLike(commentID, userID int) (bool, error) {
 func DeleteCommentLike(commentID, userID int) (bool, error) {
 	err := DbEngine.Where("comment_id = ? and user_id = ?", commentID, userID).Delete(&models.CommentLikeTable{}).Error
 	if err != nil {
-		tolog.Log().Infof("Error while DeleteArticleLike %e", err).PrintAndWriteSafe()
+		tolog.Infof("Error while DeleteArticleLike %e", err).PrintAndWriteSafe()
 		return false, err
 	}
 	return true, nil

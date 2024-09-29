@@ -1,14 +1,15 @@
 package daily
 
 import (
-	"painter-server-new/tolog"
 	"time"
+
+	"github.com/callme-taota/tolog"
 )
 
 func InitDaily() error {
 	ticker := time.NewTicker(1 * time.Hour)
 	done := make(chan bool)
-	tolog.Log().Infof("Init daily schedule").PrintAndWriteSafe()
+	tolog.Infof("Init daily schedule").PrintAndWriteSafe()
 	for {
 		select {
 		case <-ticker.C:

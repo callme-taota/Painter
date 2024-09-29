@@ -3,7 +3,8 @@ package database
 import (
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
 )
 
 func CreateTag(name, description string) (int, error) {
@@ -13,7 +14,7 @@ func CreateTag(name, description string) (int, error) {
 	}
 	err := DbEngine.Create(&tag).Error
 	if err != nil {
-		tolog.Log().Infof("Error while create tag %e", err).PrintAndWriteSafe()
+		tolog.Infof("Error while create tag %e", err).PrintAndWriteSafe()
 		return -1, err
 	}
 	id := tag.TagID
@@ -24,13 +25,13 @@ func UpdateTagName(id int, name string) error {
 	tag := &models.TagTable{}
 	res := DbEngine.First(&tag, id)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update tag name %e", res.Error)
+		tolog.Infof("Error while update tag name %e", res.Error)
 		return res.Error
 	}
 	tag.TagName = name
 	res = DbEngine.Save(&tag)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update tag name %e", res.Error)
+		tolog.Infof("Error while update tag name %e", res.Error)
 		return res.Error
 	}
 	return nil
@@ -40,13 +41,13 @@ func UpdateTagDesc(id int, description string) error {
 	tag := &models.TagTable{}
 	res := DbEngine.First(&tag, id)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update tag description %e", res.Error)
+		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
 	}
 	tag.Description = description
 	res = DbEngine.Save(&tag)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update tag description %e", res.Error)
+		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
 	}
 	return nil
@@ -56,14 +57,14 @@ func UpdateTag(id int, name, description string) error {
 	tag := &models.TagTable{}
 	res := DbEngine.First(&tag, id)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update tag description %e", res.Error)
+		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
 	}
 	tag.Description = description
 	tag.TagName = name
 	res = DbEngine.Where("tag_id = ?", id).Save(&tag)
 	if res.Error != nil {
-		tolog.Log().Infof("Error while update tag description %e", res.Error)
+		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
 	}
 	return nil
@@ -78,7 +79,7 @@ func GetTagID(name string) (int, error) {
 	var tag models.TagTable
 	result := DbEngine.Where("tag_name = ?", name).First(&tag)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while get tag id %e", result.Error)
+		tolog.Infof("Error while get tag id %e", result.Error)
 		return -1, result.Error
 	}
 	return tag.TagID, nil
@@ -136,7 +137,7 @@ func GetTagListByArticleTagTable(articleTagTable []models.ArticleTagTable) ([]mo
 	for _, item := range articleTagTable {
 		tag, err := GetTag(item.TagID)
 		if err != nil {
-			tolog.Log().Infof("Error while GetTagListByArticleTagTable %e ", err).PrintAndWriteSafe()
+			tolog.Infof("Error while GetTagListByArticleTagTable %e ", err).PrintAndWriteSafe()
 			return nil, err
 		}
 		tags = append(tags, tag)

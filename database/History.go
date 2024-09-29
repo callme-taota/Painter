@@ -2,7 +2,9 @@ package database
 
 import (
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
+
 	"time"
 )
 
@@ -15,7 +17,7 @@ func CreateHistory(userID, articleID int) (int, error) {
 
 	result := DbEngine.Create(&history)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while create history %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while create history %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
 	}
 	return history.HistoryID, nil
@@ -25,7 +27,7 @@ func GetUserHistories(userID, limit, offset int) ([]models.HistoryTable, error) 
 	var history []models.HistoryTable
 	result := DbEngine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&history)
 	if result.Error != nil {
-		tolog.Log().Infof("Error while get history %e", result.Error).PrintAndWriteSafe()
+		tolog.Infof("Error while get history %e", result.Error).PrintAndWriteSafe()
 		return nil, result.Error
 	}
 	return history, nil

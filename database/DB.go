@@ -4,9 +4,10 @@ import (
 	"log"
 	"os"
 	conf "painter-server-new/conf"
-	"painter-server-new/tolog"
+
 	"time"
 
+	"github.com/callme-taota/tolog"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -34,16 +35,16 @@ func InitDB() error {
 
 	db, err := gorm.Open(mysql.Open(dataSourceName), &config)
 	if err != nil {
-		tolog.Log().Errorf("Mysql init error %e", err).PrintAndWriteSafe()
+		tolog.Errorf("Mysql init error %e", err).PrintAndWriteSafe()
 		return err
 	}
 	DbEngine = db
 	err = Migrate()
 	if err != nil {
-		tolog.Log().Errorf("Migrate user table error %e:", err).PrintAndWriteSafe()
+		tolog.Errorf("Migrate user table error %e:", err).PrintAndWriteSafe()
 		return err
 	}
-	tolog.Log().Infof("Connect to mysql: Success").PrintAndWriteSafe()
+	tolog.Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	InitSettings()
 	InitRules()
 	conf.RunningStatus.DB = true

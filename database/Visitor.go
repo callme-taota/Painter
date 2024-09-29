@@ -3,14 +3,16 @@ package database
 import (
 	"painter-server-new/conf"
 	"painter-server-new/models"
-	"painter-server-new/tolog"
+
+	"github.com/callme-taota/tolog"
+
 	"time"
 )
 
 func SaveVisitorStats(v models.VisitorRecordTable) error {
 	res := DbEngine.Create(&v)
 	if res.Error != nil {
-		tolog.Log().Warningf("Can't saving visitor status %e", res.Error).PrintAndWriteSafe()
+		tolog.Warningf("Can't saving visitor status %e", res.Error).PrintAndWriteSafe()
 		return res.Error
 	}
 	return nil

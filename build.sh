@@ -52,4 +52,4 @@ echo "Build success"
 mv painter ./build/painter
 
 cd ./build || exit
-./painter
+. ./painter
