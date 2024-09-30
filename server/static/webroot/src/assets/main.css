@@ -66,6 +66,8 @@ a:visited {
   --login-border: 1px solid rgb(224, 224, 230);
   --scrollbar--hover: #ebebeb;
   --code-background: #6488ad10;
+  --base-dot: #00000030;
+  --base-dot-hover: #00000080;
 }
 
 [theme="dark"] {
@@ -89,6 +91,8 @@ a:visited {
   --login-border: 1px solid #67a7ec;
   --scrollbar--hover: #222222;
   --code-background: #7992ad10;
+  --base-dot: #ffffff30;
+  --base-dot-hover: #ffffff80;
 }
 
 .v-enter-active,
