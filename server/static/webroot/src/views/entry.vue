@@ -37,12 +37,12 @@ const getInfo = async () => {
 
 const imTag = [
   "Golang工程师",
-  "云原生小白",
+  "云原生工程师",
   "前端爱好者",
-  "学生",
   "币圈玩家",
   "摄影佬",
   "EDM制作人",
+  "学生",
 ];
 
 // 动态变化
@@ -72,8 +72,9 @@ const autoChangeName = () => {
 const pageTranstion = ref<{
   [key: number]: { opacity: number; offset: number };
 }>({
-  1: { opacity: 0, offset: 0 },
-  2: { opacity: 0, offset: 0 },
+  1: { opacity: 1, offset: 0 },
+  2: { opacity: 1, offset: 0 },
+  3: { opacity: 1, offset: 0 },
 });
 const pageAt = ref<number>(0);
 
@@ -134,42 +135,38 @@ const goLink = (link: string) => {
 </script>
 <template>
   <div class="entry-cont">
-    <div class="entry-page" style="z-index: 100">
+    <div class="entry-page">
       <span class="entry-painter-text" @click="scrollToPage(2)">
         {{ titleName }}
       </span>
     </div>
-    <div
-      class="entry-page entry-page-bold"
-      :style="{
-        opacity: pageTranstion[1].opacity,
-        transform: 'translateY(' + pageTranstion[1].offset + 'px)',
-      }"
-    >
-      <span class="second-highlight"> 你好, </span>
-      &nbsp;欢迎来到
-      <span> Painter 👋 </span>
-      <span style="vertical-align: super; margin: 0 5px">
-        <n-popover>
-          <template #trigger>
-            <n-icon size="18">
-              <QuestionCircleOutlined />
-            </n-icon>
-          </template>
-          <div>
-            <div>Painter是一个通过Golang与Vue进行搭建的 社区博客 框架</div>
-            <div>目的是为了建立一个分享技术笔记以及日常的地方</div>
-          </div>
-        </n-popover>
-      </span>
+    <div class="entry-page entry-page-bold" :style="{
+      opacity: pageTranstion[1].opacity,
+      transform: 'translateY(' + pageTranstion[1].offset + 'px)',
+    }">
+      <div>
+        <span class="second-highlight"> 你好, </span>
+        &nbsp;欢迎来到
+        <span> Painter 👋 </span>
+        <span style="vertical-align: super; margin: 0 5px">
+          <n-popover>
+            <template #trigger>
+              <n-icon size="18">
+                <QuestionCircleOutlined />
+              </n-icon>
+            </template>
+            <div>
+              <div>Painter是一个通过Golang与Vue进行搭建的 社区博客 框架</div>
+              <div>目的是为了建立一个分享技术笔记以及日常的地方</div>
+            </div>
+          </n-popover>
+        </span>
+      </div>
     </div>
-    <div
-      class="entry-page entry-page-bold"
-      :style="{
-        opacity: pageTranstion[2].opacity,
-        transform: 'translateY(' + pageTranstion[2].offset + 'px)',
-      }"
-    >
+    <div class="entry-page entry-page-bold" :style="{
+      opacity: pageTranstion[2].opacity,
+      transform: 'translateY(' + pageTranstion[2].offset + 'px)',
+    }">
       <div>
         <div style="display: flex; align-items: center">
           我是
@@ -181,34 +178,22 @@ const goLink = (link: string) => {
         </span>
         <div style="height: 10px"></div>
         <div class="entry-contact-me">
-          <div
-            class="entry-icon-cont"
-            @click="goLink('https://github.com/callme-taota')"
-          >
+          <div class="entry-icon-cont" @click="goLink('https://github.com/callme-taota')">
             <n-icon size="20">
               <logo-github />
             </n-icon>
           </div>
-          <div
-            class="entry-icon-cont"
-            @click="goLink('https://twitter.com/Taota_chen')"
-          >
+          <div class="entry-icon-cont" @click="goLink('https://twitter.com/Taota_chen')">
             <n-icon size="20">
               <logo-twitter />
             </n-icon>
           </div>
-          <div
-            class="entry-icon-cont"
-            @click="goLink('http://www.callmetaota.fun/wechat.jpeg')"
-          >
+          <div class="entry-icon-cont" @click="goLink('http://www.callmetaota.fun/wechat.jpeg')">
             <n-icon size="20">
               <logo-wechat />
             </n-icon>
           </div>
-          <div
-            class="entry-icon-cont"
-            @click="goLink('mailto:taota.chen@gmail.com')"
-          >
+          <div class="entry-icon-cont" @click="goLink('mailto:taota.chen@gmail.com')">
             <n-icon size="20">
               <mail />
             </n-icon>
@@ -217,22 +202,26 @@ const goLink = (link: string) => {
       </div>
     </div>
 
+    <!-- <div class="entry-page entry-page-bold" :style="{
+      opacity: pageTranstion[3].opacity,
+      transform: 'translateY(' + pageTranstion[3].offset + 'px)',
+    }"></div> -->
+
     <div class="entry-side-page-number">
-      <div
-        class="entry-side-to-btn"
-        :style="{ background: pageAt < 0.5 ? '#ffffff80' : '' }"
-        @click="scrollToPage(1)"
-      ></div>
-      <div
-        class="entry-side-to-btn"
-        :style="{ background: pageAt < 1.5 && pageAt > 0.5 ? '#ffffff80' : '' }"
-        @click="scrollToPage(2)"
-      ></div>
-      <div
-        class="entry-side-to-btn"
-        :style="{ background: pageAt > 1.5 ? '#ffffff80' : '' }"
-        @click="scrollToPage(3)"
-      ></div>
+      <div class="entry-side-to-btn" :style="{ background: pageAt < 0.5 ? 'var(--base-dot-hover)' : '' }"
+        @click="scrollToPage(1)"></div>
+      <div class="entry-side-to-btn" :style="{
+        background:
+          pageAt < 1.5 && pageAt > 0.5 ? 'var(--base-dot-hover)' : '',
+      }" @click="scrollToPage(2)"></div>
+      <div class="entry-side-to-btn" :style="{
+        background:
+          pageAt < 2.5 && pageAt > 1.5 ? 'var(--base-dot-hover)' : '',
+      }" @click="scrollToPage(3)"></div>
+      <!-- <div class="entry-side-to-btn" :style="{
+        background:
+          pageAt < 3.5 && pageAt > 2.5 ? 'var(--base-dot-hover)' : '',
+      }" @click="scrollToPage(4)"></div> -->
     </div>
   </div>
 </template>
@@ -324,7 +313,7 @@ const goLink = (link: string) => {
 
 .entry-side-to-btn {
   border-radius: 50%;
-  background-color: #ffffff30;
+  background-color: var(--base-dot);
   width: 12px;
   height: 12px;
   margin: 4px 0;
@@ -333,6 +322,6 @@ const goLink = (link: string) => {
 }
 
 .entry-side-to-btn:hover {
-  background-color: #ffffff80;
+  background-color: var(--base-dot-hover);
 }
 </style>
