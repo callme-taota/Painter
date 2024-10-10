@@ -2,9 +2,7 @@
 //base
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { marked, Marked } from 'marked';
-import { markedHighlight } from "marked-highlight";
-import hljs from "highlight.js";
+import { PainterMarkdown } from '@/utils/markdown';
 import 'highlight.js/styles/github.css'
 import { NIcon, NInput, NSelect, NButton, useMessage } from 'naive-ui';
 import RequiredStar from '@/components/required_star.vue'
@@ -189,33 +187,10 @@ const getArticle = async () => {
 
 const renderMarkdown = async () => {
     const content = fullArticle.value.ArticleContentTable.Content;
-    const renderer = new marked.Renderer();
 
-    let linkRenderer = renderer.link;
-    renderer.link = (href, title, text) => {
-        const html = linkRenderer.call(renderer, href, title, text)
-        return html.replace(/^<a /, '<a target="_blank" ')
-    }
+    const painterMD = new PainterMarkdown(content)
 
-    renderer.image = (href, title, text) => {
-        return `
-            <div class="md-image-container">
-                <img class="md-image" src="${href}" alt="${text}" ${title ? `title="${title}"` : ''} />
-            </div>
-        `;
-    };
-
-    const markedInstance = new Marked(
-        markedHighlight({
-            langPrefix: 'hljs language-',
-            highlight(code: string, lang: string, info: any) {
-                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
-            }
-        })
-    )
-    markedInstance.use({ renderer });
-    renderedMarkdown.value = await markedInstance.parse(content);
+    renderedMarkdown.value = painterMD.createHTML()
 }
 
 const handleContentChange = async (content: string) => {

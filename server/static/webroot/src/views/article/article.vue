@@ -3,9 +3,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NIcon, NAvatar, NPagination, NInput, NButton, NText } from 'naive-ui';
-import { marked, Marked } from 'marked';
-import { markedHighlight } from "marked-highlight";
-import hljs from "highlight.js";
+import { PainterMarkdown } from '@/utils/markdown';
 import 'highlight.js/styles/github.css'
 import { useTitleStore } from '@/stores/title';
 //icons
@@ -157,28 +155,10 @@ const delComment = async (c: CommentItem) => {
 
 const renderMarkdown = async () => {
     const content = fullArticle.value.ArticleContentTable.Content;
-    const renderer = new marked.Renderer();
 
-    // Custom image renderer
-    renderer.image = (href, title, text) => {
-        return `
-        <div class="md-image-container">
-            <img class="md-image" src="${href}" alt="${text}" ${title ? `title="${title}"` : ''} />
-        </div>
-    `;
-    };
+    const painterMD = new PainterMarkdown(content);
 
-    const markedInstance = new Marked(
-        markedHighlight({
-            langPrefix: 'hljs language-',
-            highlight(code: string, lang: string, info: any) {
-                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
-            }
-        })
-    )
-    markedInstance.use({ renderer });
-    renderedMarkdown.value = await markedInstance.parse(content);
+    renderedMarkdown.value = painterMD.createHTML()
 }
 
 const toCategoryPage = () => {
