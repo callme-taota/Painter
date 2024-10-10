@@ -12,16 +12,16 @@ import (
 )
 
 func main() {
+	tolog.SetLogPrefix("painter-blog")
 	err := conf.InitConf()
 	if err != nil {
 		conf.RunningStatus.Conf = false
 		return
 	}
 
-	tolog.SetLogPrefix("painter-blog")
 	loc, _ := time.LoadLocation(conf.Server.Timezone)
 	tolog.SetLogTimeZone(loc)
-	tolog.SetLogTimeFormat(tolog.RFC3339)
+	tolog.SetLogTimeFormat(tolog.DateTime)
 	tolog.SetLogFileDateFormat(tolog.DateOnly)
 
 	err = cache.InitCache()
