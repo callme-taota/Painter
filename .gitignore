@@ -25,5 +25,5 @@ painter-backend/server/static/webroot/node_modules
 painter-backend/server/static/webroot/dist
 painter-backend/server/static/upload/*
 painter-backend/build/*
-painter-backend//logs/*
+painter-backend/logs/*
 painter-backend/server/static/webroot/*
