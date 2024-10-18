@@ -89,7 +89,7 @@ const showSearch = () => {
         <div v-if="themeStore.headerDisplay" class="layout-header-cont"
             :class="{ 'layout-header-cont-after-scroll': isScrolled }">
             <div class="layout-header-left">
-                <img src="../../assets/logo.png" @click="goHome" alt="Taota-Logo" class="layout-logo" >
+                <img src="../../public/logo.png" @click="goHome" alt="Taota-Logo" class="layout-logo" >
                 <Transition>
                     <div class="layout-header-painter">{{ site_name }}</div>
                 </Transition>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useMessage } from "naive-ui"
 import LayoutHeader from "./components/layout-header.vue"
 import LayoutFooter from "./components/layout-footer.vue"
@@ -9,13 +8,11 @@ import Search from './components/search.vue'
 const Message = useMessage()
 
 onMounted(() => {
-    if (typeof window !== 'undefined') {
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'F12') {
-                Message.error('调皮！ 请遵守Apache-2.0 协议')
-            }
-        });
-    }
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'F12') {
+            Message.error('调皮！ 请遵守Apache-2.0 协议')
+        }
+    });
 })
 </script>
 <template>
@@ -23,7 +20,7 @@ onMounted(() => {
         <Search />
         <LayoutHeader />
         <div class="layout-router-cont">
-            <NuxtPage />
+            <slot></slot>
         </div>
         <LayoutFooter />
     </div>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import Layout from './layout/layout.vue'
 import { storeToRefs } from 'pinia'
 import { NConfigProvider, NMessageProvider, type GlobalThemeOverrides, darkTheme } from 'naive-ui'
 import { useThemeStore } from './stores/theme'
@@ -68,7 +67,9 @@ onMounted(() => {
 <template>
   <n-config-provider :theme="nDark" :theme-overrides="nDark === null ? lightThemeOverrides : darkThemeOverrides">
     <n-message-provider>
-      <layout></layout>
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
     </n-message-provider>
   </n-config-provider>
 </template>
