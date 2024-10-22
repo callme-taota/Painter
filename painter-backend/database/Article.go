@@ -432,7 +432,7 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 		tolog.Infof("Error while GetArticleByIntList %e", err).PrintAndWriteSafe()
 		return fullArticle, result.Error
 	}
-	err = ArticleReadCountAdd(articleID)
+	_ = ArticleReadCountAdd(articleID)
 	categoryName := category.CategoryName
 	fullArticle = Response.FullArticle{
 		ArticleTable:        article,

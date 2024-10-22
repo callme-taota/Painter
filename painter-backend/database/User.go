@@ -171,7 +171,7 @@ func CheckUserPassword(id int, password string) (bool, error) {
 	res := DbEngine.Where("ID = ?", id).First(&userpass)
 	hashPassword := userpass.Password
 	ok := utils.CheckPasswordHash(password, hashPassword)
-	if res.RowsAffected == 1 && ok == true {
+	if res.RowsAffected == 1 && ok {
 		return true, nil
 	}
 	return false, res.Error
@@ -188,7 +188,7 @@ func ResetPassWord(id int, oldpassword, newpassword string) error {
 		return err
 	}
 	if userpass.Password != old {
-		return errors.New("Password not correct! ")
+		return errors.New("password not correct! ")
 	}
 	userpass.Password = newpassword
 	DbEngine.Save(userpass)

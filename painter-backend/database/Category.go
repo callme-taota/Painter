@@ -10,8 +10,8 @@ import (
 
 func CreateCategory(name, description string) (int, error) {
 	flag := CheckCategoryExist(name)
-	if flag == true {
-		return -1, errors.New("Category is already exist ")
+	if flag {
+		return -1, errors.New("category is already exist ")
 	}
 	category := models.CategoryTable{
 		CategoryName: name,
