@@ -294,7 +294,7 @@ func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 
 func GetArticleCountByCategory(category int) (int, error) {
 	var count int64
-	result := DbEngine.Model(&models.ArticleTable{}).Where("category_id = ?", category).Count(&count)
+	result := DbEngine.Model(&models.ArticleTable{}).Where("category_id = ? and status = 1", category).Count(&count)
 	if result.Error != nil {
 		tolog.Infof("Error while GetArticleCountByCategory %e", result.Error).PrintAndWriteSafe()
 		return -1, result.Error
@@ -362,7 +362,7 @@ func GetArticleIDsByTime(limit, offset int) ([]int, error) {
 
 func GetArticleCount() (int, error) {
 	var count int64
-	result := DbEngine.Model(&models.ArticleTable{}).Count(&count)
+	result := DbEngine.Model(&models.ArticleTable{}).Where("status = 1").Count(&count)
 	if result.Error != nil {
 		tolog.Infof("Error while GetArticleCount %e", result.Error).PrintAndWriteSafe()
 		return 0, result.Error
@@ -372,7 +372,7 @@ func GetArticleCount() (int, error) {
 
 func GetArticlesCountByTag(tagID int) (int, error) {
 	var count int64
-	result := DbEngine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tagID).Count(&count)
+	result := DbEngine.Model(&models.ArticleTagTable{}).Where("tag_id = ? and status = 1", tagID).Count(&count)
 	if result.Error != nil {
 		tolog.Infof("Error while counting articles %e", result.Error).PrintAndWriteSafe()
 		return 0, result.Error
