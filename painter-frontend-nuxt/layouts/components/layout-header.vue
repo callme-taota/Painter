@@ -27,7 +27,7 @@ const isScrolled = ref(false)
 const themeChanger = ref(false)
 //hook
 onMounted(() => {
-    themeStore.SetThemeAuto()
+    themeStore.Mounted()
     window.addEventListener('scroll', handleScroll);
 });
 
