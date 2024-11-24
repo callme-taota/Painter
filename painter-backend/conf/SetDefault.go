@@ -14,17 +14,13 @@ func CheckExist() bool {
 	return utils.CheckJSONFileExist(confFilePath)
 }
 
-func CheckFirstInit() bool {
-	return Server.FirstInit == "0" || Server.FirstInit == ""
-}
-
 func writeFirstInit() {
-	if Server.FirstInit == "0" || Server.FirstInit == "" {
+	if Conf.Server.FirstInit == "0" || Conf.Server.FirstInit == "" {
 		timestamp := time.Now().Unix()
-		Server.FirstInit = strconv.Itoa(int(timestamp))
-		tolog.Infof("Server first init time %s", Server.FirstInit).PrintAndWriteSafe()
+		Conf.Server.FirstInit = strconv.Itoa(int(timestamp))
+		tolog.Infof("Server first init time %s", Conf.Server.FirstInit).PrintAndWriteSafe()
 		updateConfigFile()
-		tolog.Infof("First initialization completed at timestamp: %d", Server.FirstInit).PrintAndWriteSafe()
+		tolog.Infof("First initialization completed at timestamp: %s", Conf.Server.FirstInit).PrintAndWriteSafe()
 	}
 }
 
@@ -37,7 +33,7 @@ func updateConfigFile() {
 
 	serverMap := confJSON["Server"]
 	server := utils.JSONConvertToMapString(serverMap)
-	server["firstInit"] = fmt.Sprintf("%s", Server.FirstInit)
+	server["firstInit"] = fmt.Sprintf("%s", Conf.Server.FirstInit)
 	confJSON["Server"] = server
 
 	if _, err := utils.JSONWriter(confFilePath, confJSON); err != nil {

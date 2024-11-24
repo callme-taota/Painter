@@ -6,10 +6,37 @@ import (
 	"painter-server-new/models/APIs/Response"
 
 	"github.com/callme-taota/tolog"
+	"gorm.io/gorm"
 
 	"painter-server-new/utils"
 	"time"
 )
+
+const UserTableName = "user"
+
+type User struct {
+	ID          int    `gorm:"primaryKey;autoIncrement"`
+	UserName    string `gorm:"type:varchar(255);unique"`
+	Email       string `gorm:"type:varchar(255);unique"`
+	AdminFlag   int    `gorm:"type:tinyint"`
+	UserGroup   int
+	LastLogin   time.Time
+	NickName    string `gorm:"type:varchar(255)"`
+	PhoneNum    int    `gorm:"type:int"`
+	HeaderField string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt
+}
+
+func (u *User) TableName() string {
+	return UserTableName
+}
+
+func (u *User) Migrate(db *gorm.DB) error {
+	err := db.AutoMigrate(&User{})
+	return err
+}
 
 func CreateUser(username, email, nickname string, phoneNum int, headerField, password string) (int, error) {
 	user := models.UserTable{

@@ -1,8 +1,9 @@
 package mid
 
 import (
-	"github.com/gin-gonic/gin"
 	"painter-server-new/conf"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 func SetGinMode() {
-	switch conf.Server.Model {
+	switch conf.Conf.Server.Model {
 	case DebugMode:
 		gin.SetMode(DebugMode)
 		return

@@ -12,7 +12,7 @@ import (
 )
 
 func ScheduleDailyVisitorAggregation() {
-	location, err := time.LoadLocation(conf.Server.Timezone)
+	location, err := time.LoadLocation(conf.Conf.Server.Timezone)
 	if err != nil {
 		tolog.Errorf("Failed to load location: %v", err).PrintAndWriteSafe()
 		return

@@ -17,12 +17,12 @@ var RedisClient *redis.Client
 // InitCache initializes the Redis cache connection.
 func InitCache() error {
 	// Convert the cache DB string to an integer.
-	db, _ := strconv.Atoi(conf.CacheConf.DB)
+	db, _ := strconv.Atoi(conf.Conf.Redis.DB)
 
 	// Create a new Redis client using the configuration from the 'conf' package.
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", conf.CacheConf.Host, conf.CacheConf.Port),
-		Password: conf.CacheConf.Password,
+		Addr:     fmt.Sprintf("%s:%s", conf.Conf.Redis.Host, conf.Conf.Redis.Port),
+		Password: conf.Conf.Redis.Password,
 		DB:       db,
 	})
 

@@ -12,7 +12,7 @@ import (
 )
 
 func GetServerRunningTime(c *gin.Context) {
-	timeStamp := conf.Server.FirstInit
+	timeStamp := conf.Conf.Server.FirstInit
 	jsTimeStamp, _ := strconv.Atoi(timeStamp)
 	jsTimeStamp = jsTimeStamp * 1000
 	c.JSON(http.StatusOK, models.R(models.KReturnMsgSuccess, models.KReturnTrue, models.RDC{"TimeStamp": timeStamp, "JSTimeStamp": jsTimeStamp}))
@@ -112,7 +112,7 @@ func CheckUserAdmin(c *gin.Context) {
 }
 
 func GetEntryInfo(c *gin.Context) {
-	timeStamp := conf.Server.FirstInit
+	timeStamp := conf.Conf.Server.FirstInit
 	jsTimeStamp, _ := strconv.Atoi(timeStamp)
 	jsTimeStamp = jsTimeStamp * 1000
 	preDayCount, err := database.GetPreDayVisitors()

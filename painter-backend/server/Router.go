@@ -170,7 +170,7 @@ func LinkSetting() {
 }
 
 func LinkDebug() {
-	if conf.Server.Model == "debug" {
+	if conf.Conf.Server.Model == "debug" {
 		Server.GET("/"+conf.RandomKey, api.SetDebugKeyInCookie)
 	}
 }

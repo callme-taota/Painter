@@ -20,7 +20,7 @@ func SaveVisitorStats(v models.VisitorRecordTable) error {
 
 func GetMonthlyVisitors() (int, error) {
 	// Load the time zone
-	timezone := conf.Server.Timezone
+	timezone := conf.Conf.Server.Timezone
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		return 0, err
@@ -43,7 +43,7 @@ func GetMonthlyVisitors() (int, error) {
 
 func GetPreDayVisitors() (int, error) {
 	// Load the time zone
-	timezone := conf.Server.Timezone
+	timezone := conf.Conf.Server.Timezone
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		return 0, err

@@ -19,7 +19,7 @@ func main() {
 		return
 	}
 
-	loc, _ := time.LoadLocation(conf.Server.Timezone)
+	loc, _ := time.LoadLocation(conf.Conf.Server.Timezone)
 	tolog.SetLogTimeZone(loc)
 	tolog.SetLogTimeFormat(tolog.DateTime)
 	tolog.SetLogFileDateFormat(tolog.DateOnly)
