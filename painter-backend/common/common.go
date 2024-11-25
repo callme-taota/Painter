@@ -22,7 +22,7 @@ type Module interface {
 func StartModule() error {
 	for _, m := range Modules {
 		go func(module Module) {
-			module.Register(conf.Conf.Conf())
+			module.Register(conf.Conf)
 			err := module.Start()
 			if err != nil {
 				tolog.Errorf("start module %s error: %v", module.Name(), err).PrintAndWriteSafe()

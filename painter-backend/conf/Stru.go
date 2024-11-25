@@ -36,27 +36,17 @@ type mysqlConf struct {
 	Host     string `json:"host"`
 }
 
-type IConfig interface {
-	Conf() Config
-}
-
-type Config map[string]any
-
-type conf struct {
+type Config struct {
 	Server server    `json:"Server"`
 	Redis  cacheConf `json:"Redis"`
 	Mysql  mysqlConf `json:"Mysql"`
 }
 
-func (c *conf) Conf() Config {
-	return Config{
-		"server": c.Server,
-		"redis":  c.Redis,
-		"mysql":  c.Mysql,
-	}
+func (c *Config) Config() Config {
+	return *c
 }
 
-var Conf conf
+var Conf Config
 
 var RandomKey string
 
@@ -75,7 +65,7 @@ func CheckHealth() bool {
 }
 
 func DefaultConf() map[string]interface{} {
-	conf := conf{
+	conf := Config{
 		Server: server{
 			Author:    "",
 			FirstInit: "",

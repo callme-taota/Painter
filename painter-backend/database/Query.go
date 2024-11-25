@@ -1,19 +1,26 @@
 package database
 
-import "gorm.io/gorm"
+import (
+	"errors"
+	"reflect"
+
+	"gorm.io/gorm"
+)
 
 type Table interface {
 	Migrate(db *gorm.DB) error
 	TableName() string
 
-	Create(db *gorm.DB, row Row) error
-	Update(db *gorm.DB, condition func(Row) bool, updater func(Row) error) error
-	Delete(db *gorm.DB, condition func(Row) bool) error
-	Select(db *gorm.DB, condition func(Row) bool) ([]Row, error)
+	// CRUD
+	Create(db *gorm.DB, row Table) (*gorm.DB, error)
+	Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error
+	Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error
+	Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error)
+
+	BaseTable
 }
 
-// Row interface defines operations for a single row in a table.
-type Row interface {
+type BaseTable interface {
 	// GetValue retrieves the value of a specific column by name.
 	GetValue(column string) (interface{}, error)
 
@@ -23,6 +30,70 @@ type Row interface {
 	// GetColumns retrieves all column names for the row.
 	GetColumns() []string
 
+	// CheckColumnsExist check the columns exist in table or not.
+	CheckColumnsExist(columnName string) bool
+
 	// ToMap converts the row into a map of column names to values.
 	ToMap() map[string]interface{}
+}
+
+type BaseTableImplement struct {
+}
+
+func (b *BaseTableImplement) GetValue(column string) (interface{}, error) {
+	v := reflect.ValueOf(b).Elem()
+	field := v.FieldByName(column)
+	if !field.IsValid() {
+		return nil, errors.New("unknown column")
+	}
+	return field.Interface(), nil
+}
+
+func (b *BaseTableImplement) SetValue(column string, value interface{}) error {
+	v := reflect.ValueOf(b).Elem()
+	field := v.FieldByName(column)
+	if !field.IsValid() {
+		return errors.New("unknown column")
+	}
+	if !field.CanSet() {
+		return errors.New("field cannot be set")
+	}
+
+	val := reflect.ValueOf(value)
+	if !val.Type().AssignableTo(field.Type()) {
+		return errors.New("value type mismatch")
+	}
+
+	field.Set(val)
+	return nil
+}
+
+func (b *BaseTableImplement) GetColumns() []string {
+	t := reflect.TypeOf(*b)
+	columns := make([]string, 0, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		columns = append(columns, t.Field(i).Name)
+	}
+	return columns
+}
+
+func (b *BaseTableImplement) CheckColumnsExist(columnName string) bool {
+	t := reflect.TypeOf(*b)
+	for i := 0; i < t.NumField(); i++ {
+		if t.Field(i).Name == columnName {
+			return true
+		}
+	}
+	return false
+}
+
+func (b *BaseTableImplement) ToMap() map[string]interface{} {
+	v := reflect.ValueOf(b).Elem()
+	t := v.Type()
+	result := make(map[string]interface{})
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		result[field.Name] = v.Field(i).Interface()
+	}
+	return result
 }

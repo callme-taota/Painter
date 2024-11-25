@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"painter-server-new/models"
 	"painter-server-new/models/APIs/Response"
 
@@ -15,6 +16,8 @@ import (
 const UserTableName = "user"
 
 type User struct {
+	BaseTableImplement
+
 	ID          int    `gorm:"primaryKey;autoIncrement"`
 	UserName    string `gorm:"type:varchar(255);unique"`
 	Email       string `gorm:"type:varchar(255);unique"`
@@ -27,6 +30,63 @@ type User struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt
+}
+
+func newEmptyUser() *User {
+	return &User{}
+}
+
+func (u *User) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
+	user, ok := row.(*User)
+	if !ok {
+		return nil, errors.New("invalid row type")
+	}
+	return db.Create(user), nil
+}
+
+func (u *User) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
+	var users []User
+	if err := query(db).Find(&users).Error; err != nil {
+		return err
+	}
+
+	for i := range users {
+		if err := updater(&users[i]); err != nil {
+			return err
+		}
+		if err := db.Save(&users[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *User) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
+	var users []User
+	if err := query(db).Find(&users).Error; err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		if err := db.Delete(&user).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *User) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
+	var users []User
+	tx := query(db).Find(&users)
+	if tx.Error != nil {
+		return nil, tx, tx.Error
+	}
+
+	var result []Table
+	for i := range users {
+		result = append(result, &users[i])
+	}
+	return result, tx, nil
 }
 
 func (u *User) TableName() string {
@@ -65,6 +125,26 @@ func CreateUser(username, email, nickname string, phoneNum int, headerField, pas
 	return user.ID, nil
 }
 
+func CreateUserV2(kv map[string]interface{}) (int, error) {
+	user := newEmptyUser()
+	for k, v := range kv {
+		if user.CheckColumnsExist(k) {
+			if err := user.SetValue(k, v); err != nil {
+				tolog.Errorf("Set %s table cloumn %s faild: %v", UserTableName, k, err).PrintAndWriteSafe()
+			}
+		}
+	}
+	tx := db.GetTransaction()
+	_, err := db.UseTable(UserTableName).Create(tx, user)
+	if err != nil {
+		tx.Rollback()
+		return -1, err
+	}
+	tx.Commit()
+
+	return user.ID, err
+}
+
 func HasUser(key string) (bool, error) {
 	var user []models.UserTable
 	res := DbEngine.Where("user_name = ? or email = ?", key, key).Find(&user)
@@ -73,6 +153,19 @@ func HasUser(key string) (bool, error) {
 		return false, res.Error
 	}
 	return res.RowsAffected > 0, nil
+}
+
+func IsUserExist(key string) (bool, error) {
+	tx := db.GetTransaction()
+	res, _, err := db.UseTable(UserTableName).Select(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where("user_name = ? or email = ?", key, key)
+	})
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+	tx.Commit()
+	return len(res) > 0, err
 }
 
 func UpdateUserName(id int, name string) error {
@@ -157,6 +250,25 @@ func UpdateUserProfile(id int, username, email, nickname string, number int) err
 	return nil
 }
 
+func UpdateUser(id int, key string, value interface{}) error {
+	tx := db.GetTransaction()
+	tb := db.UseTable(UserTableName)
+	if !tb.CheckColumnsExist(key) {
+		tx.Rollback()
+		return fmt.Errorf("column %s does not exist", key)
+	}
+	err := tb.Update(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where("id = ?", id)
+	}, func(table Table) error {
+		return table.SetValue(key, value)
+	})
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
+}
+
 func GetUserIdUsingPhoneNum(phone string) (int, error) {
 	user := &models.UserTable{}
 	err := DbEngine.Where("phone_num = ?", phone).First(&user).Error
@@ -175,6 +287,43 @@ func GetUserIdUsingEmail(email string) (int, error) {
 	return user.ID, nil
 }
 
+func GetUserIDUsingUserName(username string) (int, error) {
+	user := &models.UserTable{}
+	err := DbEngine.Where("user_name = ?", username).First(&user).Error
+	if err != nil {
+		return -1, err
+	}
+	return user.ID, nil
+}
+
+func GetUserIDUsingIdentityKey(value string, keyType string) (int, error) {
+	whereClauses := "%s = ?"
+	switch keyType {
+	case "phone":
+		whereClauses = fmt.Sprintf(whereClauses, "phone")
+	case "email":
+		whereClauses = fmt.Sprintf(whereClauses, "email")
+	case "userName":
+		whereClauses = fmt.Sprintf(whereClauses, "userName")
+	}
+	tx := db.GetTransaction()
+	tb := db.UseTable(UserTableName)
+	res, _, err := tb.Select(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where(whereClauses, value)
+	})
+	if err != nil {
+		tx.Rollback()
+		return -1, err
+	}
+	if len(res) == 0 {
+		tx.Rollback()
+		return -2, errors.Join(err, errors.New("no result"))
+	}
+	id, err := res[0].GetValue("ID")
+	tx.Commit()
+	return id.(int), err
+}
+
 func GetUserEmailUsingUserName(userName string) (string, error) {
 	user := &models.UserTable{}
 	err := DbEngine.Where("user_name = ?", userName).First(&user).Error
@@ -184,13 +333,27 @@ func GetUserEmailUsingUserName(userName string) (string, error) {
 	return user.Email, nil
 }
 
-func GetUserIDUsingUserName(username string) (int, error) {
-	user := &models.UserTable{}
-	err := DbEngine.Where("user_name = ?", username).First(&user).Error
+func GetUserEmailUsingUserNameV2(userName string) (string, error) {
+	tx := db.GetTransaction()
+	tb := db.UseTable(UserTableName)
+	res, _, err := tb.Select(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where("user_name = ?", userName)
+	})
 	if err != nil {
-		return -1, err
+		tx.Rollback()
+		return "", err
 	}
-	return user.ID, nil
+	if len(res) == 0 {
+		tx.Rollback()
+		return "", errors.Join(err, errors.New("no result"))
+	}
+	email, err := res[0].GetValue("Email")
+	tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return "", err
+	}
+	return email.(string), nil
 }
 
 func CheckUserPassword(id int, password string) (bool, error) {

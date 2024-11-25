@@ -17,13 +17,16 @@ import (
 
 var DbEngine *gorm.DB
 
+var db *DBImplement
+
 const connTemplate = `%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true`
 
 func init() {
-	common.Register(&DBInplement{})
+	db = newDBImplement()
+	common.Register(db)
 }
 
-type DBInplement struct {
+type DBImplement struct {
 	db *gorm.DB
 
 	tables map[string]Table
@@ -31,22 +34,23 @@ type DBInplement struct {
 	conn string
 }
 
-func (db *DBInplement) Register(c conf.Config) (common.Module, error) {
-	db.conn = fmt.Sprintf(connTemplate, conf.Conf.Mysql.User, conf.Conf.Mysql.Password, conf.Conf.Mysql.Host, conf.Conf.Mysql.Port, conf.Conf.Mysql.Database)
+func newDBImplement() *DBImplement {
+	return &DBImplement{}
+}
 
-	configLog := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second, // 慢 SQL 阈值
-			LogLevel:                  logger.Info, // 日志级别
-			IgnoreRecordNotFoundError: true,        // 忽略ErrRecordNotFound（记录未找到）错误
-		},
-	)
+func (db *DBImplement) Register(c conf.Config) (common.Module, error) {
+	db.conn = fmt.Sprintf(connTemplate, c.Mysql.User, c.Mysql.Password, c.Mysql.Host, c.Mysql.Port, c.Mysql.Database)
 
 	config := gorm.Config{}
-
-	if conf.Conf.Server.Model == "debug" {
-		config.Logger = configLog
+	if c.Server.Model == "debug" {
+		config.Logger = logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second, // 慢 SQL 阈值
+				LogLevel:                  logger.Info, // 日志级别
+				IgnoreRecordNotFoundError: true,        // 忽略ErrRecordNotFound（记录未找到）错误
+			},
+		)
 	}
 
 	gormDB, err := gorm.Open(mysql.Open(db.conn), &config)
@@ -70,77 +74,47 @@ func (db *DBInplement) Register(c conf.Config) (common.Module, error) {
 	return db, nil
 }
 
-func (db *DBInplement) Start() error {
+func (db *DBImplement) Start() error {
 	return nil
 }
 
-func (db *DBInplement) Get() DBInplement {
+func (db *DBImplement) Get() DBImplement {
 	return *db
 }
 
-func (db *DBInplement) AddTable(table Table) {
+func (db *DBImplement) GetTransaction() *gorm.DB {
+	return db.db.Begin()
+}
+
+func (db *DBImplement) AddTable(table Table) {
 	if _, ok := db.tables[table.TableName()]; ok {
 		return
 	}
 	db.tables[table.TableName()] = table
 }
 
-func (db *DBInplement) Migrate() {
+func (db *DBImplement) Migrate() {
 	for _, table := range db.tables {
 		table.Migrate(db.db)
 	}
 }
 
-func (db *DBInplement) UseTable(tableName string) Table {
+func (db *DBImplement) UseTable(tableName string) Table {
 	if table, ok := db.tables[tableName]; ok {
 		return table
 	}
 	return nil
 }
 
-func (db *DBInplement) Name() string {
+func (db *DBImplement) Name() string {
 	return common.DB_MODULE
 }
 
 type DB interface {
-	Start()
+	Start() error
 	Migrate()
-	Get() DBInplement
-	UseTable()
-}
-
-func InitDB() error {
-	dataSourceName := conf.Conf.Mysql.User + ":" + conf.Conf.Mysql.Password + "@tcp(" + conf.Conf.Mysql.Host + ":" + conf.Conf.Mysql.Port + ")/" + conf.Conf.Mysql.Database + "?charset=utf8mb4&parseTime=true"
-
-	configLog := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second, // 慢 SQL 阈值
-			LogLevel:                  logger.Info, // 日志级别
-			IgnoreRecordNotFoundError: true,        // 忽略ErrRecordNotFound（记录未找到）错误
-		},
-	)
-
-	config := gorm.Config{}
-
-	if conf.Conf.Server.Model == "debug" {
-		config.Logger = configLog
-	}
-
-	db, err := gorm.Open(mysql.Open(dataSourceName), &config)
-	if err != nil {
-		tolog.Errorf("Mysql init error %e", err).PrintAndWriteSafe()
-		return err
-	}
-	DbEngine = db
-	err = Migrate()
-	if err != nil {
-		tolog.Errorf("Migrate user table error %e:", err).PrintAndWriteSafe()
-		return err
-	}
-	tolog.Infof("Connect to mysql: Success").PrintAndWriteSafe()
-	InitSettings()
-	InitRules()
-	conf.RunningStatus.DB = true
-	return nil
+	Get() DBImplement
+	GetTransaction() *gorm.DB
+	AddTable(table Table)
+	UseTable(tableName string) Table
 }
