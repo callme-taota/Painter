@@ -1,28 +1,40 @@
 package database
 
 import (
-	"painter-server-new/conf"
+	"painter-server-new/database/repository"
 	"painter-server-new/models"
 
 	"github.com/callme-taota/tolog"
+	"gorm.io/gorm"
 
 	"time"
 )
 
 func SaveVisitorStats(v models.VisitorRecordTable) error {
-	res := DbEngine.Create(&v)
-	if res.Error != nil {
-		tolog.Warningf("Can't saving visitor status %e", res.Error).PrintAndWriteSafe()
-		return res.Error
+	return SaveVisitorStatsV2(repository.GetDB(), repository.VisitorRecord{
+		BaseTableImplement: repository.BaseTableImplement{},
+		Date:               v.Date,
+		Total:              v.Total,
+	})
+}
+
+func SaveVisitorStatsV2(db *repository.DBImplement, v repository.VisitorRecord) error {
+	tx := db.GetTransaction()
+	tb := db.UseTable(repository.VisitorRecordTableName)
+	_, err := tb.Create(tx, &v)
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 	return nil
 }
 
-func GetMonthlyVisitors() (int, error) {
-	// Load the time zone
-	timezone := conf.Conf.Server.Timezone
-	loc, err := time.LoadLocation(timezone)
+func GetVisitors(y, m, d int) (int, error) {
+	db := repository.GetDB()
+	timeZone := db.Config.Server.Timezone
+	loc, err := time.LoadLocation(timeZone)
 	if err != nil {
+		tolog.Infof("Location load error: %v", err)
 		return 0, err
 	}
 
@@ -31,39 +43,25 @@ func GetMonthlyVisitors() (int, error) {
 
 	// Build the query conditions
 	startDate := time.Date(year, month, 1, 0, 0, 0, 0, loc)
-	endDate := startDate.AddDate(0, 1, 0)
-
+	endDate := startDate.AddDate(y*-1, m*-1, d*-1)
 	var total int64
-	DbEngine.Model(&models.VisitorRecordTable{}).
-		Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
-		Select("COALESCE(SUM(total), 0)").
-		Scan(&total)
-	return int(total), nil
-}
-
-func GetPreDayVisitors() (int, error) {
-	// Load the time zone
-	timezone := conf.Conf.Server.Timezone
-	loc, err := time.LoadLocation(timezone)
+	tx := db.GetTransaction()
+	tb := db.UseTable(repository.VisitorRecordTableName)
+	_, _, err = tb.Select(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
+			Select("COALESCE(SUM(total), 0)").
+			Scan(&total)
+	})
 	if err != nil {
 		return 0, err
 	}
-
-	// Get the current year, month, and day
-	year, month, day := time.Now().In(loc).Date()
-
-	// Calculate the date of the previous day
-	currentDay := time.Date(year, month, day, 0, 0, 0, 0, loc)
-	previousDay := currentDay.AddDate(0, 0, -1)
-
-	// Construct the query conditions
-	startDate := time.Date(previousDay.Year(), previousDay.Month(), previousDay.Day(), 0, 0, 0, 0, loc)
-	endDate := time.Date(year, month, day, 0, 0, 0, 0, loc)
-
-	var total int64
-	DbEngine.Model(&models.VisitorRecordTable{}).
-		Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
-		Select("COALESCE(SUM(total), 0)").
-		Scan(&total)
 	return int(total), nil
+}
+
+func GetMonthlyVisitors() (int, error) {
+	return GetVisitors(0, 1, 0)
+}
+
+func GetPreDayVisitors() (int, error) {
+	return GetVisitors(0, 0, 1)
 }

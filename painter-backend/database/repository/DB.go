@@ -1,12 +1,12 @@
-package database
+package repository
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"painter-server-new/common"
 	conf "painter-server-new/conf"
-
 	"time"
 
 	"github.com/callme-taota/tolog"
@@ -15,23 +15,26 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var DbEngine *gorm.DB
-
 var db *DBImplement
 
 const connTemplate = `%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true`
 
 func init() {
 	db = newDBImplement()
+	db.AddTable(NewEmptyUser())
+	db.AddTable(NewEmptyUserPassword())
+	db.AddTable(NewEmptyVisitorRecord())
 	common.Register(db)
 }
 
 type DBImplement struct {
-	db *gorm.DB
+	db       *gorm.DB
+	dbConfig gorm.Config
 
 	tables map[string]Table
 
-	conn string
+	conn   string
+	Config conf.Config
 }
 
 func newDBImplement() *DBImplement {
@@ -53,28 +56,31 @@ func (db *DBImplement) Register(c conf.Config) (common.Module, error) {
 		)
 	}
 
-	gormDB, err := gorm.Open(mysql.Open(db.conn), &config)
+	db.dbConfig = config
+	db.config = c
+
+	return db, nil
+}
+
+func (db *DBImplement) Start() error {
+	gormDB, err := gorm.Open(mysql.Open(db.conn), &db.dbConfig)
 	if err != nil {
 		tolog.Errorf("Mysql init error %e", err).PrintAndWriteSafe()
-		return nil, err
+		return err
 	}
 
 	db.db = gormDB
 
-	err = Migrate()
+	err = db.Migrate()
 	if err != nil {
 		tolog.Errorf("Migrate user table error %e:", err).PrintAndWriteSafe()
-		return nil, err
+		return err
 	}
 	tolog.Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	InitSettings()
 	InitRules()
 	conf.RunningStatus.DB = true
 
-	return db, nil
-}
-
-func (db *DBImplement) Start() error {
 	return nil
 }
 
@@ -86,6 +92,10 @@ func (db *DBImplement) GetTransaction() *gorm.DB {
 	return db.db.Begin()
 }
 
+func (db *DBImplement) GetDB() *gorm.DB {
+	return db.db
+}
+
 func (db *DBImplement) AddTable(table Table) {
 	if _, ok := db.tables[table.TableName()]; ok {
 		return
@@ -93,10 +103,13 @@ func (db *DBImplement) AddTable(table Table) {
 	db.tables[table.TableName()] = table
 }
 
-func (db *DBImplement) Migrate() {
+func (db *DBImplement) Migrate() error {
+	errs := errors.Join()
 	for _, table := range db.tables {
-		table.Migrate(db.db)
+		err := table.Migrate(db.db)
+		errs = errors.Join(errs, err)
 	}
+	return errs
 }
 
 func (db *DBImplement) UseTable(tableName string) Table {
@@ -112,9 +125,14 @@ func (db *DBImplement) Name() string {
 
 type DB interface {
 	Start() error
-	Migrate()
+	Migrate() error
 	Get() DBImplement
 	GetTransaction() *gorm.DB
+	GetDB() *gorm.DB
 	AddTable(table Table)
 	UseTable(tableName string) Table
+}
+
+func GetDB() *DBImplement {
+	return db
 }

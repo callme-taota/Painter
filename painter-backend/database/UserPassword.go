@@ -2,76 +2,15 @@ package database
 
 import (
 	"errors"
+	"painter-server-new/database/repository"
 	"painter-server-new/utils"
 
 	"gorm.io/gorm"
 )
 
-const UserPasswordTableName = "userpass"
-
-type UserPassword struct {
-	BaseTableImplement
-
-	ID       int
-	Password string `gorm:"type:varchar(255)"`
-}
-
-func (u *UserPassword) Migrate(db *gorm.DB) error {
-	err := db.AutoMigrate(&UserPassword{})
-	return err
-}
-
-func (u *UserPassword) TableName() string {
-	return UserPasswordTableName
-}
-
-func (u *UserPassword) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
-	userPwd, ok := row.(*UserPassword)
-	if !ok {
-		return nil, errors.New("invalid row type")
-	}
-
-	return db.Create(userPwd), nil
-}
-
-func (u *UserPassword) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var userPwd UserPassword
-	if err := query(db).First(&userPwd).Error; err != nil {
-		return err
-	}
-
-	if err := updater(&userPwd); err != nil {
-		return err
-	}
-	if err := db.Save(&userPwd).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *UserPassword) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var userPwd UserPassword
-	if err := query(db).First(&userPwd).Error; err != nil {
-		return err
-	}
-
-	return db.Delete(&userPwd).Error
-}
-
-func (u *UserPassword) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
-	var userPwd UserPassword
-	tx := query(db).First(&userPwd)
-	if tx.Error != nil {
-		return nil, tx, err
-	}
-
-	result := []Table{&userPwd}
-	return result, tx, nil
-}
-
 func CheckUserPasswordV2(id int, password string) (bool, error) {
 	tx := db.GetTransaction()
-	tb := db.UseTable(UserPasswordTableName)
+	tb := db.UseTable(repository.UserPasswordTableName)
 	res, t, err := tb.Select(tx, func(g *gorm.DB) *gorm.DB {
 		return g.Where("id = ?", id)
 	})
@@ -94,7 +33,45 @@ func CheckUserPasswordV2(id int, password string) (bool, error) {
 	}
 	ok := utils.CheckPasswordHash(password, hashPassword.(string))
 	if t.RowsAffected == 1 && ok {
+		tx.Rollback()
 		return true, nil
 	}
+	tx.Commit()
 	return false, t.Error
+}
+
+func ResetPasswordV2(id int, oldPsw, newPsw string) error {
+	tx := db.GetTransaction()
+	tb := db.UseTable(repository.UserPasswordTableName)
+	res, t, err := tb.Select(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where("id = ?", id)
+	})
+	if t.Error != nil || err != nil || len(res) != 1 {
+		tx.Rollback()
+		return t.Error
+	}
+	old, err := utils.HashPassword(oldPsw)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	userPassword, err := res[0].GetValue("Password")
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	if userPassword != old {
+		return errors.New("password not correct! ")
+	}
+	err = tb.Update(tx, func(g *gorm.DB) *gorm.DB {
+		return g.Where("id = ?", id)
+	}, func(table Table) error {
+		return table.SetValue("Password", newPsw)
+	})
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }

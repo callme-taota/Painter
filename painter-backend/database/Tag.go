@@ -5,7 +5,53 @@ import (
 	"painter-server-new/models/APIs/Response"
 
 	"github.com/callme-taota/tolog"
+	"gorm.io/gorm"
 )
+
+const TagTableName = "tag"
+
+type Tag struct {
+	BaseTable
+
+	TagID       int    `gorm:"primaryKey;not null,"`
+	TagName     string `gorm:"type:varchar(255);unique"`
+	Description string
+}
+
+func newEmptyTag() *Tag {
+	return &Tag{
+		BaseTable: &BaseTableImplement{},
+	}
+}
+
+func (t *Tag) Migrate(db *gorm.DB) error {
+	err := db.AutoMigrate(&Tag{})
+	return err
+}
+
+func (t *Tag) TableName() string {
+	return TagTableName
+}
+
+func (t *Tag) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t *Tag) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t *Tag) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t *Tag) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func CreateTag(name, description string) (int, error) {
 	tag := models.TagTable{
