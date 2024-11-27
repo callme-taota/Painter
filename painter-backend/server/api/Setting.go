@@ -2,10 +2,11 @@ package api
 
 import (
 	"net/http"
-	"painter-server-new/database"
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Request"
 	"strconv"
+
+	"github.com/callme-taota/painter/painter-backend/database"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Request"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,10 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
-	conf "painter-server-new/conf"
-	"painter-server-new/models"
-	"painter-server-new/server/mid"
-	"painter-server-new/utils"
+
+	conf "github.com/callme-taota/painter/painter-backend/conf"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/server/mid"
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/callme-taota/tolog"
 	"github.com/gin-gonic/gin"

@@ -1,24 +1,19 @@
 package database
 
 import (
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Request"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Request"
 
 	"github.com/callme-taota/tolog"
 
-	"painter-server-new/utils"
 	"strconv"
+
+	"github.com/callme-taota/painter/painter-backend/utils"
 )
 
-var settingKey = []string{"mail_from", "mail_password", "mail_smtphost", "mail_smtpport", "mail_active", "site_name", "github_href", "icp_code", "can_register", "entry_article"}
-
-func InitSettings() {
-	for _, setting := range settingKey {
-		CheckKeyExistOrCreate(setting)
-	}
-}
-
 func CheckKeyExistOrCreate(key string) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	s := models.PainterSettingTable{}
 	res := DbEngine.Where("name = ?", key).First(&s)
 	if res.RowsAffected == 0 {
@@ -36,6 +31,7 @@ func CheckKeyExistOrCreate(key string) (bool, error) {
 }
 
 func GetMailSetting() (models.MailSetting, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	mailSetting := models.MailSetting{}
 	//from
 	mailFrom := models.PainterSettingTable{}
@@ -81,6 +77,7 @@ func GetMailSetting() (models.MailSetting, error) {
 }
 
 func GetGithubHref() (string, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	setting := models.PainterSettingTable{}
 	res := DbEngine.Where("name = 'github_href'").First(&setting)
 	if res.Error != nil {
@@ -91,6 +88,7 @@ func GetGithubHref() (string, error) {
 }
 
 func GetICPCode() (string, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	setting := models.PainterSettingTable{}
 	res := DbEngine.Where("name = 'icp_code'").First(&setting)
 	if res.Error != nil {
@@ -101,6 +99,7 @@ func GetICPCode() (string, error) {
 }
 
 func CanRegister() (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	setting := models.PainterSettingTable{}
 	res := DbEngine.Where("name = 'can_register'").First(&setting)
 	if res.Error != nil {
@@ -111,6 +110,7 @@ func CanRegister() (bool, error) {
 }
 
 func GetSiteName() (string, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	setting := models.PainterSettingTable{}
 	res := DbEngine.Where("name = 'site_name'").First(&setting)
 	if res.Error != nil {
@@ -121,6 +121,7 @@ func GetSiteName() (string, error) {
 }
 
 func SetSetting(json Request.SetSettingJSON) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	settingItems := []models.PainterSettingTable{
 		{Name: "site_name", Value: json.SiteName},
 		{Name: "icp_code", Value: json.ICPCode},
@@ -144,6 +145,7 @@ func SetSetting(json Request.SetSettingJSON) error {
 }
 
 func GetUserList(limit, offset int) ([]models.UserTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var userList []models.UserTable
 	res := DbEngine.Select("id, user_name, nick_name, header_field, user_group").Limit(limit).Offset(offset).Find(&userList)
 	if res.Error != nil {
@@ -154,6 +156,7 @@ func GetUserList(limit, offset int) ([]models.UserTable, error) {
 }
 
 func GetUserCount() (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	res := DbEngine.Model(&models.UserTable{}).Count(&count)
 	if res.Error != nil {

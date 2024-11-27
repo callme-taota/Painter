@@ -1,7 +1,7 @@
 package mid
 
 import (
-	"painter-server-new/conf"
+	"github.com/callme-taota/painter/painter-backend/conf"
 
 	"github.com/gin-gonic/gin"
 )

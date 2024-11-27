@@ -3,9 +3,10 @@ package conf
 import (
 	"fmt"
 
-	"painter-server-new/utils"
 	"strconv"
 	"time"
+
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/callme-taota/tolog"
 )

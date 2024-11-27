@@ -1,8 +1,9 @@
 package conf
 
 import (
-	"painter-server-new/utils"
 	"reflect"
+
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/callme-taota/tolog"
 )

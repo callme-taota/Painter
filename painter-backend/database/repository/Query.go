@@ -27,6 +27,9 @@ type BaseTable interface {
 	// SetValue sets the value of a specific column by name.
 	SetValue(column string, value interface{}) error
 
+	// SetValues sets the value of some column by name.
+	SetValues(values map[string]interface{}) error
+
 	// GetColumns retrieves all column names for the row.
 	GetColumns() []string
 
@@ -65,6 +68,17 @@ func (b *BaseTableImplement) SetValue(column string, value interface{}) error {
 	}
 
 	field.Set(val)
+	return nil
+}
+
+func (b *BaseTableImplement) SetValues(values map[string]interface{}) error {
+	errs := errors.Join()
+	for k, v := range values {
+		err := b.SetValue(k, v)
+		if err != nil {
+			errors.Join(errs, err)
+		}
+	}
 	return nil
 }
 

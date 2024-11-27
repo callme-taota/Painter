@@ -1,12 +1,14 @@
 package database
 
 import (
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"github.com/callme-taota/tolog"
 )
 
 func Migrate() error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	err := DbEngine.AutoMigrate(&models.UserTable{})
 	if err != nil {
 		tolog.Errorf("Migrate table user %e:", err).PrintAndWriteSafe()

@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	conf "painter-server-new/conf"
 	"strings"
 	"sync"
 	"time"
+
+	conf "github.com/callme-taota/painter/painter-backend/conf"
 
 	"github.com/callme-taota/tolog"
 	"github.com/gin-gonic/gin"

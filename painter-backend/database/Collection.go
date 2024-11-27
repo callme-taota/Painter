@@ -1,7 +1,8 @@
 package database
 
 import (
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"time"
 
@@ -9,6 +10,7 @@ import (
 )
 
 func CreateCollection(userId, articleId int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	collection := models.CollectionTable{
 		UserID:         userId,
 		ArticleID:      articleId,
@@ -24,6 +26,7 @@ func CreateCollection(userId, articleId int) error {
 }
 
 func DeleteCollection(userId, articleId int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	result := DbEngine.Where("user_id = ? AND article_id = ?", userId, articleId).Delete(&models.CollectionTable{})
 	if result.Error != nil {
 		tolog.Infof("Error while create collection %e", result.Error)
@@ -33,6 +36,7 @@ func DeleteCollection(userId, articleId int) error {
 }
 
 func GetCollections(userId, limit, offset int) ([]models.CollectionTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var collections []models.CollectionTable
 	result := DbEngine.Where("user_id = ?", userId).Limit(limit).Offset(offset).Find(&collections)
 	if result.Error != nil {
@@ -42,6 +46,7 @@ func GetCollections(userId, limit, offset int) ([]models.CollectionTable, error)
 }
 
 func GetCollectionsNumber(userId int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	result := DbEngine.Model(&models.CollectionTable{}).Where("user_id = ?", userId).Count(&count)
 	if result.Error != nil {
@@ -67,6 +72,7 @@ func CollectionArticle(articleID, userID int) error {
 }
 
 func HasCollection(articleID, userID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var existingCollection models.CollectionTable
 	res := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingCollection)
 	if res.RowsAffected <= 0 {

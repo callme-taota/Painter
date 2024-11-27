@@ -2,13 +2,16 @@ package database
 
 import (
 	"errors"
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Response"
+
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Response"
 
 	"github.com/callme-taota/tolog"
 )
 
 func CreateCategory(name, description string) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	flag := CheckCategoryExist(name)
 	if flag {
 		return -1, errors.New("category is already exist ")
@@ -27,6 +30,7 @@ func CreateCategory(name, description string) (int, error) {
 }
 
 func UpdateCategoryName(id int, name string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	category := &models.CategoryTable{}
 	res := DbEngine.First(&category, id)
 	if res.Error != nil {
@@ -57,6 +61,7 @@ func UpdateCategoryNameByName(oldName, newName string) error {
 }
 
 func UpdateCategoryDesc(id int, description string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	category := &models.CategoryTable{}
 	res := DbEngine.First(&category, id)
 	if res.Error != nil {
@@ -87,6 +92,7 @@ func UpdateCategoryDescByName(name, desc string) error {
 }
 
 func UpdateCategory(id int, name, desc string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	cate := models.CategoryTable{}
 	res := DbEngine.First(&cate, id)
 	if res.Error != nil {
@@ -104,12 +110,14 @@ func UpdateCategory(id int, name, desc string) error {
 }
 
 func CheckCategoryExist(name string) bool {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var category models.CategoryTable
 	result := DbEngine.Where("category_name = ?", name).First(&category)
 	return result.RowsAffected > 0
 }
 
 func GetCategoryID(name string) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var category models.CategoryTable
 	result := DbEngine.Where("category_name = ?", name).First(&category)
 	if result.Error != nil {
@@ -120,6 +128,7 @@ func GetCategoryID(name string) (int, error) {
 }
 
 func GetCategory(id int) (models.CategoryTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var category models.CategoryTable
 	result := DbEngine.First(&category, id)
 	if result.Error != nil {
@@ -129,6 +138,7 @@ func GetCategory(id int) (models.CategoryTable, error) {
 }
 
 func GetCategories(limit, offset int) ([]models.CategoryTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var category []models.CategoryTable
 	result := DbEngine.Limit(limit).Offset(offset).Find(&category)
 	if result.Error != nil {
@@ -138,6 +148,7 @@ func GetCategories(limit, offset int) ([]models.CategoryTable, error) {
 }
 
 func GetCategoriesWithCount(limit, offset int) ([]Response.CategoryWithCount, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var categories []models.CategoryTable
 	var categoriesWithCount []Response.CategoryWithCount
 
@@ -160,12 +171,14 @@ func GetCategoriesWithCount(limit, offset int) ([]Response.CategoryWithCount, er
 }
 
 func GetCategoriesNumber() int {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	DbEngine.Model(&models.CategoryTable{}).Count(&count)
 	return int(count)
 }
 
 func UpdateArticleCategory(articleID, categoryID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
@@ -191,6 +204,7 @@ func DeleteArticleCategory(articleID int) error {
 }
 
 func GetArticleCategoryByArticleID(articleID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
@@ -202,6 +216,7 @@ func GetArticleCategoryByArticleID(articleID int) (int, error) {
 }
 
 func GetArticlesByCategoryID(categoryID, limit, offset int) ([]models.ArticleTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []models.ArticleTable
 	result := DbEngine.Limit(limit).Offset(offset).Find(&articles)
 	if result.Error != nil {

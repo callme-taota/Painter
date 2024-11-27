@@ -2,8 +2,9 @@ package server
 
 import (
 	"net/http"
-	"painter-server-new/conf"
-	"painter-server-new/server/api"
+
+	"github.com/callme-taota/painter/painter-backend/conf"
+	"github.com/callme-taota/painter/painter-backend/server/api"
 
 	"github.com/gin-gonic/gin"
 )

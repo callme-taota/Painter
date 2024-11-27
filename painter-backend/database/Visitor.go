@@ -1,8 +1,8 @@
 package database
 
 import (
-	"painter-server-new/database/repository"
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"github.com/callme-taota/tolog"
 	"gorm.io/gorm"
@@ -11,7 +11,7 @@ import (
 )
 
 func SaveVisitorStats(v models.VisitorRecordTable) error {
-	return SaveVisitorStatsV2(repository.GetDB(), repository.VisitorRecord{
+	return SaveVisitorStatsV2(repository.GetDBImplement(), repository.VisitorRecord{
 		BaseTableImplement: repository.BaseTableImplement{},
 		Date:               v.Date,
 		Total:              v.Total,
@@ -30,7 +30,7 @@ func SaveVisitorStatsV2(db *repository.DBImplement, v repository.VisitorRecord) 
 }
 
 func GetVisitors(y, m, d int) (int, error) {
-	db := repository.GetDB()
+	db := repository.GetDBImplement()
 	timeZone := db.Config.Server.Timezone
 	loc, err := time.LoadLocation(timeZone)
 	if err != nil {

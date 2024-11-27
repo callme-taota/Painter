@@ -1,8 +1,9 @@
 package database
 
 import (
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Response"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Response"
 
 	"time"
 
@@ -11,6 +12,7 @@ import (
 )
 
 func CreateArticle(title string, author int, summary string, categoryID int, content string, tags []int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	tx := DbEngine.Begin()
 
 	article := &models.ArticleTable{
@@ -59,6 +61,7 @@ func CreateArticle(title string, author int, summary string, categoryID int, con
 }
 
 func UpdateArticleContent(articleID int, content string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articleContent models.ArticleContentTable
 	result := DbEngine.First(&articleContent, articleID)
 	if result.Error != nil {
@@ -80,6 +83,7 @@ func UpdateArticleContent(articleID int, content string) error {
 }
 
 func UpdateArticleSummary(articleID int, summary string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
@@ -101,6 +105,7 @@ func UpdateArticleSummary(articleID int, summary string) error {
 }
 
 func UpdateArticleReadCount(articleID, count int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	result := DbEngine.Model(&models.ArticleTable{}).Where("article_id = ?", articleID).UpdateColumn("read_count", count)
 	if result.Error != nil {
 		tolog.Infof("Error while UpdateArticleReadCount %e", result.Error).PrintAndWriteSafe()
@@ -110,6 +115,7 @@ func UpdateArticleReadCount(articleID, count int) error {
 }
 
 func UpdateArticle(article models.ArticleTable, content models.ArticleContentTable, tagList []int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	tx := DbEngine.Begin()
 	result := tx.Model(&models.ArticleTable{}).Where("article_id = ?", article.ArticleID).Select("title", "summary", "category_id").UpdateColumns(article)
 	if result.Error != nil {
@@ -134,6 +140,7 @@ func UpdateArticle(article models.ArticleTable, content models.ArticleContentTab
 }
 
 func ArticleReadCountAdd(articleID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var readCount int
 	result := DbEngine.Model(&models.ArticleTable{}).Where("article_id = ?", articleID).Pluck("read_count", &readCount)
 	if result.Error != nil {
@@ -150,6 +157,7 @@ func ArticleReadCountAdd(articleID int) error {
 }
 
 func UpdateArticleTitle(articleID int, title string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
@@ -166,6 +174,7 @@ func UpdateArticleTitle(articleID int, title string) error {
 }
 
 func UpdateArticleStatus(articleID int, status int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
@@ -187,6 +196,7 @@ func UpdateArticleStatus(articleID int, status int) error {
 }
 
 func UpdateArticleUpdateTime(articleID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.First(&article, articleID)
 	if result.Error != nil {
@@ -203,6 +213,7 @@ func UpdateArticleUpdateTime(articleID int) error {
 }
 
 func DeleteArticle(articleID, author int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	err := DbEngine.Where("article_id = ? and author = ?", articleID, author).Delete(&models.ArticleTable{}).Error
 	if err != nil {
 		tolog.Infof("Error while delete article %e", err).PrintAndWriteSafe()
@@ -212,6 +223,7 @@ func DeleteArticle(articleID, author int) error {
 }
 
 func GetArticlesByAuthor(userID, limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []models.ArticleTable
 	result := DbEngine.
 		Where("author = ? and status = 1", userID).
@@ -232,6 +244,7 @@ func GetArticlesByAuthor(userID, limit, offset int) ([]int, error) {
 }
 
 func GetArticleCountByAuthor(userID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	result := DbEngine.Model(&models.ArticleTable{}).Where("author = ?", userID).Count(&count)
 	if result.Error != nil {
@@ -242,6 +255,7 @@ func GetArticleCountByAuthor(userID int) (int, error) {
 }
 
 func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []models.ArticleTable
 	result := DbEngine.Where("title like and status = 1", "%"+title+"%").Limit(limit).Offset(offset).
 		Order("updated_at DESC").
@@ -259,6 +273,7 @@ func GetArticlesByTitle(title string, limit, offset int) ([]int, error) {
 }
 
 func GetArticlesByContent(content string, limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []models.ArticleContentTable
 	result := DbEngine.Where("content like and status = 1", "%"+content+"%").Limit(limit).Offset(offset).
 		Order("updated_at DESC").
@@ -276,6 +291,7 @@ func GetArticlesByContent(content string, limit, offset int) ([]int, error) {
 }
 
 func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []models.ArticleTable
 	result := DbEngine.Where("category_id = ? and status = 1", category).Limit(limit).Offset(offset).
 		Order("updated_at DESC").
@@ -293,6 +309,7 @@ func GetArticlesByCategory(category, limit, offset int) ([]int, error) {
 }
 
 func GetArticleCountByCategory(category int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	result := DbEngine.Model(&models.ArticleTable{}).Where("category_id = ? and status = 1", category).Count(&count)
 	if result.Error != nil {
@@ -303,6 +320,7 @@ func GetArticleCountByCategory(category int) (int, error) {
 }
 
 func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var collections []models.CollectionTable
 	result := DbEngine.Where("user_id = ? and status = 1", userID).Limit(limit).Offset(offset).
 		Find(&collections)
@@ -319,6 +337,7 @@ func GetArticlesByCollection(userID, limit, offset int) ([]int, error) {
 }
 
 func GetCollectionCountByUser(userID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	result := DbEngine.Model(&models.CollectionTable{}).Where("user_id = ?", userID).Count(&count)
 	if result.Error != nil {
@@ -329,6 +348,7 @@ func GetCollectionCountByUser(userID int) (int, error) {
 }
 
 func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []models.ArticleTagTable
 	result := DbEngine.Where("tag_id = ?", tagID).Limit(limit).Offset(offset).
 		Find(&articles)
@@ -345,6 +365,7 @@ func GetArticlesByTag(tagID, limit, offset int) ([]int, error) {
 }
 
 func GetArticleIDsByTime(limit, offset int) ([]int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articleIDs []int
 	result := DbEngine.Model(&models.ArticleTable{}).
 		Select("article_id").
@@ -361,6 +382,7 @@ func GetArticleIDsByTime(limit, offset int) ([]int, error) {
 }
 
 func GetArticleCount() (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	result := DbEngine.Model(&models.ArticleTable{}).Where("status = 1").Count(&count)
 	if result.Error != nil {
@@ -371,6 +393,7 @@ func GetArticleCount() (int, error) {
 }
 
 func GetArticlesCountByTag(tagID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	result := DbEngine.Model(&models.ArticleTagTable{}).Where("tag_id = ? and status = 1", tagID).Count(&count)
 	if result.Error != nil {
@@ -381,6 +404,7 @@ func GetArticlesCountByTag(tagID int) (int, error) {
 }
 
 func GetFullArticle(articleID int) (Response.FullArticle, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var fullArticle Response.FullArticle
 	var article models.ArticleTable
 	var articleContent models.ArticleContentTable
@@ -450,6 +474,7 @@ func GetFullArticle(articleID int) (Response.FullArticle, error) {
 }
 
 func CreateArticleLike(articleID, userID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	articleLike := &models.ArticleLikeTable{
 		ArticleID: articleID,
 		UserID:    userID,
@@ -464,6 +489,7 @@ func CreateArticleLike(articleID, userID int) error {
 }
 
 func DeleteArticleLike(articleID, userID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	err := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).Delete(&models.ArticleLikeTable{}).Error
 	if err != nil {
 		tolog.Infof("Error while DeleteArticleLike %e", err).PrintAndWriteSafe()
@@ -473,6 +499,7 @@ func DeleteArticleLike(articleID, userID int) error {
 }
 
 func ToggleArticleLike(articleID, userID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var existingLike models.ArticleLikeTable
 	res := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
 	if res.RowsAffected > 0 {
@@ -492,6 +519,7 @@ func ToggleArticleLike(articleID, userID int) error {
 }
 
 func HasLikedArticle(articleID, userID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var existingLike models.ArticleLikeTable
 	res := DbEngine.Where("article_id = ? and user_id = ?", articleID, userID).First(&existingLike)
 	if res.Error != nil || res.RowsAffected <= 0 {
@@ -502,6 +530,7 @@ func HasLikedArticle(articleID, userID int) (bool, error) {
 }
 
 func GetArticleByIntList(list []int) ([]Response.ArticleInfo, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var articles []Response.ArticleInfo
 	for _, articleID := range list {
 		var article models.ArticleTable
@@ -550,6 +579,7 @@ func GetArticleByIntList(list []int) ([]Response.ArticleInfo, error) {
 }
 
 func CreateArticleTag(articleID, tagID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	articleTag := &models.ArticleTagTable{
 		ArticleID: articleID,
 		TagID:     tagID,
@@ -563,6 +593,7 @@ func CreateArticleTag(articleID, tagID int) (bool, error) {
 }
 
 func DeleteArticleTag(articleID, tagID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	err := DbEngine.Where("article_id = ? and tag_id = ?", articleID, tagID).Delete(&models.ArticleTagTable{}).Error
 	if err != nil {
 		tolog.Infof("Error while DeleteArticleTag %e", err).PrintAndWriteSafe()
@@ -636,10 +667,12 @@ func UpdateArticleTagsWithDB(db *gorm.DB, articleID int, tagIDs []int) error {
 }
 
 func UpdateArticleTags(articleID int, tagIDs []int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	return UpdateArticleTagsWithDB(DbEngine, articleID, tagIDs)
 }
 
 func CheckArticleAuthor(articleID, author int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var article models.ArticleTable
 	result := DbEngine.Where("article_id = ? and author = ?", articleID, author).First(&article)
 	if result.Error != nil {

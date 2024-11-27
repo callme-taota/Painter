@@ -2,7 +2,8 @@ package cache
 
 import (
 	"fmt"
-	conf "painter-server-new/conf"
+
+	conf "github.com/callme-taota/painter/painter-backend/conf"
 
 	"strconv"
 	"time"

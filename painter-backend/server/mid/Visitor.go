@@ -1,8 +1,8 @@
 package mid
 
 import (
-	"painter-server-new/cache"
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/cache"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"github.com/callme-taota/tolog"
 	"github.com/gin-gonic/gin"

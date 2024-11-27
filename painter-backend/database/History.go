@@ -1,7 +1,8 @@
 package database
 
 import (
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"github.com/callme-taota/tolog"
 
@@ -9,6 +10,7 @@ import (
 )
 
 func CreateHistory(userID, articleID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	history := models.HistoryTable{
 		UserID:      userID,
 		ArticleID:   articleID,
@@ -24,6 +26,7 @@ func CreateHistory(userID, articleID int) (int, error) {
 }
 
 func GetUserHistories(userID, limit, offset int) ([]models.HistoryTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var history []models.HistoryTable
 	result := DbEngine.Where("user_id = ?", userID).Limit(limit).Offset(offset).Find(&history)
 	if result.Error != nil {
@@ -34,12 +37,14 @@ func GetUserHistories(userID, limit, offset int) ([]models.HistoryTable, error) 
 }
 
 func UpdateHistoryTime(historyID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	result := DbEngine.Model(&models.HistoryTable{}).Where("history_id = ?", historyID).
 		Update("history_time", time.Now())
 	return result.Error
 }
 
 func GetHistoryByUserIDAndArticleID(userID, articleID int) (models.HistoryTable, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var history models.HistoryTable
 	result := DbEngine.Where("user_id = ? AND article_id = ?", userID, articleID).First(&history)
 	if result.Error != nil {
@@ -62,6 +67,7 @@ func UpdateHistoryTimeByUserIDAndArticleID(userID, articleID int) error {
 }
 
 func CheckHistoryExist(userID, articleID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var history models.HistoryTable
 	result := DbEngine.Where("user_id = ? AND article_id = ?", userID, articleID).First(&history)
 	if result.Error != nil {

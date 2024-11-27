@@ -2,13 +2,15 @@ package database
 
 import (
 	"errors"
-	"painter-server-new/database/repository"
-	"painter-server-new/utils"
+
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"gorm.io/gorm"
 )
 
 func CheckUserPasswordV2(id int, password string) (bool, error) {
+	db := repository.GetDBImplement()
 	tx := db.GetTransaction()
 	tb := db.UseTable(repository.UserPasswordTableName)
 	res, t, err := tb.Select(tx, func(g *gorm.DB) *gorm.DB {
@@ -41,6 +43,7 @@ func CheckUserPasswordV2(id int, password string) (bool, error) {
 }
 
 func ResetPasswordV2(id int, oldPsw, newPsw string) error {
+	db := repository.GetDBImplement()
 	tx := db.GetTransaction()
 	tb := db.UseTable(repository.UserPasswordTableName)
 	res, t, err := tb.Select(tx, func(g *gorm.DB) *gorm.DB {
@@ -65,7 +68,7 @@ func ResetPasswordV2(id int, oldPsw, newPsw string) error {
 	}
 	err = tb.Update(tx, func(g *gorm.DB) *gorm.DB {
 		return g.Where("id = ?", id)
-	}, func(table Table) error {
+	}, func(table repository.Table) error {
 		return table.SetValue("Password", newPsw)
 	})
 	if err != nil {
@@ -73,5 +76,22 @@ func ResetPasswordV2(id int, oldPsw, newPsw string) error {
 		return err
 	}
 	tx.Commit()
+	return nil
+}
+
+func CreateUserPassword(db *gorm.DB, id int, psw string) error {
+	userPassword := repository.NewEmptyUserPassword()
+	err := userPassword.SetValue("ID", id)
+	if err != nil {
+		return err
+	}
+	err = userPassword.SetValue("Password", psw)
+	if err != nil {
+		return err
+	}
+	_, err = userPassword.Create(db, userPassword)
+	if err != nil {
+		return err
+	}
 	return nil
 }

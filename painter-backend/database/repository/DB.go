@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"painter-server-new/common"
-	conf "painter-server-new/conf"
 	"time"
+
+	"github.com/callme-taota/painter/painter-backend/common"
+	conf "github.com/callme-taota/painter/painter-backend/conf"
 
 	"github.com/callme-taota/tolog"
 	"gorm.io/driver/mysql"
@@ -15,16 +16,16 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var db *DBImplement
+var dbImplement *DBImplement
 
 const connTemplate = `%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true`
 
 func init() {
-	db = newDBImplement()
-	db.AddTable(NewEmptyUser())
-	db.AddTable(NewEmptyUserPassword())
-	db.AddTable(NewEmptyVisitorRecord())
-	common.Register(db)
+	dbImplement = newDBImplement()
+	dbImplement.AddTable(NewEmptyUser())
+	dbImplement.AddTable(NewEmptyUserPassword())
+	dbImplement.AddTable(NewEmptyVisitorRecord())
+	common.Register(dbImplement)
 }
 
 type DBImplement struct {
@@ -57,7 +58,7 @@ func (db *DBImplement) Register(c conf.Config) (common.Module, error) {
 	}
 
 	db.dbConfig = config
-	db.config = c
+	db.Config = c
 
 	return db, nil
 }
@@ -78,7 +79,7 @@ func (db *DBImplement) Start() error {
 	}
 	tolog.Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	InitSettings()
-	InitRules()
+	//InitRules()
 	conf.RunningStatus.DB = true
 
 	return nil
@@ -133,6 +134,6 @@ type DB interface {
 	UseTable(tableName string) Table
 }
 
-func GetDB() *DBImplement {
-	return db
+func GetDBImplement() *DBImplement {
+	return dbImplement
 }

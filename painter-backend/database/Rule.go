@@ -1,7 +1,8 @@
 package database
 
 import (
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"github.com/callme-taota/tolog"
 )
@@ -25,6 +26,7 @@ var groupRuleMap = map[int][]int{
 }
 
 func InitRules() {
+	DbEngine := repository.GetDBImplement().GetDB()
 	for id, name := range ruleMap {
 		rule := models.RuleTable{
 			ID:   id,
@@ -62,6 +64,7 @@ func InitRules() {
 }
 
 func AssignGroupToUser(userID, groupID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	user := models.UserTable{}
 	res := DbEngine.First(&user, userID)
 	if res.Error != nil {
@@ -78,6 +81,7 @@ func AssignGroupToUser(userID, groupID int) error {
 }
 
 func CheckUsersPermission(userID, ruleID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	user := models.UserTable{}
 	res := DbEngine.Select("user_group").First(&user, userID)
 	if res.Error != nil {

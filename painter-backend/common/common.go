@@ -1,12 +1,12 @@
 package common
 
 import (
-	"painter-server-new/conf"
+	"github.com/callme-taota/painter/painter-backend/conf"
 
 	"github.com/callme-taota/tolog"
 )
 
-var Modules []Module
+var Modules map[string]Module
 
 const (
 	DB_MODULE    = "db"
@@ -33,5 +33,9 @@ func StartModule() error {
 }
 
 func Register(m Module) {
-	Modules = append(Modules, m)
+	Modules[m.Name()] = m
+}
+
+func UseModule(moduleName string) Module {
+	return Modules[moduleName]
 }
