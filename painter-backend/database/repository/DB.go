@@ -25,6 +25,16 @@ func init() {
 	dbImplement.AddTable(NewEmptyUser())
 	dbImplement.AddTable(NewEmptyUserPassword())
 	dbImplement.AddTable(NewEmptyVisitorRecord())
+	dbImplement.AddTable(NewEmptyArticle())
+	dbImplement.AddTable(NewEmptyCategory())
+	dbImplement.AddTable(NewEmptyCollection())
+	dbImplement.AddTable(NewEmptyComment())
+	dbImplement.AddTable(NewEmptyFileStorage())
+	dbImplement.AddTable(NewEmptyFollow())
+	dbImplement.AddTable(NewEmptyHistory())
+	dbImplement.AddTable(newEmptyPainterSetting())
+	dbImplement.AddTable(NewEmptyRule())
+	dbImplement.AddTable(NewEmptyTag())
 	common.Register(dbImplement)
 }
 
@@ -39,7 +49,9 @@ type DBImplement struct {
 }
 
 func newDBImplement() *DBImplement {
-	return &DBImplement{}
+	return &DBImplement{
+		tables: make(map[string]Table),
+	}
 }
 
 func (db *DBImplement) Register(c conf.Config) (common.Module, error) {
@@ -79,7 +91,7 @@ func (db *DBImplement) Start() error {
 	}
 	tolog.Infof("Connect to mysql: Success").PrintAndWriteSafe()
 	InitSettings()
-	//InitRules()
+	InitRules()
 	conf.RunningStatus.DB = true
 
 	return nil

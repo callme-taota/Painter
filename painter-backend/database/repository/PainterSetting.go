@@ -28,7 +28,7 @@ const (
 var settingKey = []SettingKey{MailFrom, MailPassword, MailSmtpHost, MailSmtpPort, MailActive, SiteName, GithubHref, ICPCode, CanRegister, EntryArticle}
 
 type PainterSetting struct {
-	BaseTable
+	BaseTable `gorm:"-"`
 
 	ID          int    `gorm:"primaryKey;autoIncrement"`
 	Name        string `gorm:"type:varchar(255);unique"`

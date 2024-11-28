@@ -12,9 +12,9 @@ import (
 
 func SaveVisitorStats(v models.VisitorRecordTable) error {
 	return SaveVisitorStatsV2(repository.GetDBImplement(), repository.VisitorRecord{
-		BaseTableImplement: repository.BaseTableImplement{},
-		Date:               v.Date,
-		Total:              v.Total,
+		BaseTable: &repository.BaseTableImplement{},
+		Date:      v.Date,
+		Total:     v.Total,
 	})
 }
 

@@ -10,7 +10,7 @@ import (
 const VisitorRecordTableName = "visitor_record"
 
 type VisitorRecord struct {
-	BaseTableImplement
+	BaseTable `gorm:"-"`
 
 	ID    int `gorm:"primaryKey;autoIncrement"`
 	Date  time.Time
@@ -18,7 +18,9 @@ type VisitorRecord struct {
 }
 
 func NewEmptyVisitorRecord() *VisitorRecord {
-	return &VisitorRecord{}
+	return &VisitorRecord{
+		BaseTable: &BaseTableImplement{},
+	}
 }
 
 func (v *VisitorRecord) Migrate(db *gorm.DB) error {

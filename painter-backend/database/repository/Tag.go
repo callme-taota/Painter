@@ -9,7 +9,7 @@ import (
 const TagTableName = "tag"
 
 type Tag struct {
-	BaseTable
+	BaseTable `gorm:"-"`
 
 	TagID       int    `gorm:"primaryKey;not null,"`
 	TagName     string `gorm:"type:varchar(255);unique"`

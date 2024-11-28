@@ -36,14 +36,14 @@ func InitConf() error {
 	return nil
 }
 
-func readConfig() (*conf, error) {
+func readConfig() (*Config, error) {
 	file, err := os.Open(confFilePath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var config *conf
+	var config *Config
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
@@ -53,7 +53,7 @@ func readConfig() (*conf, error) {
 	return config, err
 }
 
-func CacheConfig(data *conf) {
+func CacheConfig(data *Config) {
 	Conf = *data
 }
 

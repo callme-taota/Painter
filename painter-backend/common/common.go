@@ -6,7 +6,7 @@ import (
 	"github.com/callme-taota/tolog"
 )
 
-var Modules map[string]Module
+var Modules = map[string]Module{}
 
 const (
 	DB_MODULE    = "db"

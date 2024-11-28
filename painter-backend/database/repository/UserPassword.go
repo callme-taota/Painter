@@ -9,7 +9,7 @@ import (
 const UserPasswordTableName = "userpass"
 
 type UserPassword struct {
-	BaseTable
+	BaseTable `gorm:"-"`
 
 	ID       int
 	Password string `gorm:"type:varchar(255)"`

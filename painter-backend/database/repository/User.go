@@ -10,7 +10,7 @@ import (
 const UserTableName = "user"
 
 type User struct {
-	BaseTable
+	BaseTable `gorm:"-"`
 
 	ID          int    `gorm:"primaryKey;autoIncrement"`
 	UserName    string `gorm:"type:varchar(255);unique"`
@@ -30,6 +30,15 @@ func NewEmptyUser() *User {
 	return &User{
 		BaseTable: &BaseTableImplement{},
 	}
+}
+
+func (u *User) Migrate(db *gorm.DB) error {
+	err := db.AutoMigrate(&User{})
+	return err
+}
+
+func (u *User) TableName() string {
+	return UserTableName
 }
 
 func (u *User) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
@@ -83,13 +92,4 @@ func (u *User) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gor
 		result = append(result, &users[i])
 	}
 	return result, tx, nil
-}
-
-func (u *User) TableName() string {
-	return UserTableName
-}
-
-func (u *User) Migrate(db *gorm.DB) error {
-	err := db.AutoMigrate(&User{})
-	return err
 }
