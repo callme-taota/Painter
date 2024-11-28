@@ -14,3 +14,11 @@ func GetProjectDirRoot() (string, error) {
 	}
 	return rootDir, nil
 }
+
+func ProjectDirRoot() string {
+	s, err := GetProjectDirRoot()
+	if err != nil {
+		return ""
+	}
+	return s
+}

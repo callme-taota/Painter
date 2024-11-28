@@ -1,11 +1,14 @@
 package database
 
 import (
-	"painter-server-new/models"
 	"time"
+
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 )
 
 func CreateFileRecord(fileName, filePath string, fileSize int64, fileType string) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	fileRecord := models.FileStorageTable{
 		FileName:  fileName,
 		FilePath:  filePath,

@@ -1,13 +1,15 @@
 package database
 
 import (
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Response"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Response"
 
 	"github.com/callme-taota/tolog"
 )
 
 func CreateComment(articleID, userID int, content string) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	comment := &models.CommentTable{
 		Content:   content,
 		UserID:    userID,
@@ -23,6 +25,7 @@ func CreateComment(articleID, userID int, content string) (int, error) {
 }
 
 func DeleteComment(userID, commentID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var comment models.CommentTable
 	result := DbEngine.First(&comment, commentID)
 	if result.Error != nil {
@@ -41,6 +44,7 @@ func DeleteComment(userID, commentID int) (bool, error) {
 }
 
 func CreateCommentLike(commentID, userID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	commentLike := &models.CommentLikeTable{
 		CommentID: commentID,
 		UserID:    userID,
@@ -54,6 +58,7 @@ func CreateCommentLike(commentID, userID int) (bool, error) {
 }
 
 func DeleteCommentLike(commentID, userID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	err := DbEngine.Where("comment_id = ? and user_id = ?", commentID, userID).Delete(&models.CommentLikeTable{}).Error
 	if err != nil {
 		tolog.Infof("Error while DeleteArticleLike %e", err).PrintAndWriteSafe()
@@ -63,6 +68,7 @@ func DeleteCommentLike(commentID, userID int) (bool, error) {
 }
 
 func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var comments []Response.FullComment
 	res := DbEngine.Select("comment.*, user.nick_name, user.header_field, COUNT(comment_like.comment_id) AS like_count").
 		Joins("INNER JOIN user ON comment.user_id = user.id").
@@ -80,6 +86,7 @@ func GetCommentByArticleID(articleID, limit, offset int) ([]Response.FullComment
 }
 
 func GetCommentCountByArticleID(articleID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	res := DbEngine.Model(&models.CommentTable{}).Where("article_id = ?", articleID).Count(&count)
 	if res.Error != nil {
@@ -89,6 +96,7 @@ func GetCommentCountByArticleID(articleID int) (int, error) {
 }
 
 func GetCommentLikeCount(commentID int) (int, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var count int64
 	res := DbEngine.Model(&models.CommentLikeTable{}).Where("comment_id = ?", commentID).Count(&count)
 	if res.Error != nil {
@@ -98,6 +106,7 @@ func GetCommentLikeCount(commentID int) (int, error) {
 }
 
 func GetCommentsWithLikeInfoByArticleID(articleID, limit, offset, userID int) ([]Response.FullCommentWithLike, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	var comments []Response.FullCommentWithLike
 	res := DbEngine.Select("comment.*, user.nick_name, user.header_field, COUNT(cl.comment_id) as like_count, cl.user_id = ? as liked, comment.user_id = ? as is_self",
 		userID, userID).

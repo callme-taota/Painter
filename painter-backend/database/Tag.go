@@ -1,18 +1,20 @@
 package database
 
 import (
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Response"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Response"
 
 	"github.com/callme-taota/tolog"
 )
 
 func CreateTag(name, description string) (int, error) {
+	db := repository.GetDBImplement().GetDB()
 	tag := models.TagTable{
 		TagName:     name,
 		Description: description,
 	}
-	err := DbEngine.Create(&tag).Error
+	err := db.Create(&tag).Error
 	if err != nil {
 		tolog.Infof("Error while create tag %e", err).PrintAndWriteSafe()
 		return -1, err
@@ -22,14 +24,15 @@ func CreateTag(name, description string) (int, error) {
 }
 
 func UpdateTagName(id int, name string) error {
+	db := repository.GetDBImplement().GetDB()
 	tag := &models.TagTable{}
-	res := DbEngine.First(&tag, id)
+	res := db.First(&tag, id)
 	if res.Error != nil {
 		tolog.Infof("Error while update tag name %e", res.Error)
 		return res.Error
 	}
 	tag.TagName = name
-	res = DbEngine.Save(&tag)
+	res = db.Save(&tag)
 	if res.Error != nil {
 		tolog.Infof("Error while update tag name %e", res.Error)
 		return res.Error
@@ -38,14 +41,15 @@ func UpdateTagName(id int, name string) error {
 }
 
 func UpdateTagDesc(id int, description string) error {
+	db := repository.GetDBImplement().GetDB()
 	tag := &models.TagTable{}
-	res := DbEngine.First(&tag, id)
+	res := db.First(&tag, id)
 	if res.Error != nil {
 		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
 	}
 	tag.Description = description
-	res = DbEngine.Save(&tag)
+	res = db.Save(&tag)
 	if res.Error != nil {
 		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
@@ -54,15 +58,16 @@ func UpdateTagDesc(id int, description string) error {
 }
 
 func UpdateTag(id int, name, description string) error {
+	db := repository.GetDBImplement().GetDB()
 	tag := &models.TagTable{}
-	res := DbEngine.First(&tag, id)
+	res := db.First(&tag, id)
 	if res.Error != nil {
 		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
 	}
 	tag.Description = description
 	tag.TagName = name
-	res = DbEngine.Where("tag_id = ?", id).Save(&tag)
+	res = db.Where("tag_id = ?", id).Save(&tag)
 	if res.Error != nil {
 		tolog.Infof("Error while update tag description %e", res.Error)
 		return res.Error
@@ -70,14 +75,16 @@ func UpdateTag(id int, name, description string) error {
 	return nil
 }
 func CheckTagExist(name string) bool {
+	db := repository.GetDBImplement().GetDB()
 	var tag models.TagTable
-	result := DbEngine.Where("tag_name = ?", name).First(&tag)
+	result := db.Where("tag_name = ?", name).First(&tag)
 	return result.RowsAffected > 0
 }
 
 func GetTagID(name string) (int, error) {
+	db := repository.GetDBImplement().GetDB()
 	var tag models.TagTable
-	result := DbEngine.Where("tag_name = ?", name).First(&tag)
+	result := db.Where("tag_name = ?", name).First(&tag)
 	if result.Error != nil {
 		tolog.Infof("Error while get tag id %e", result.Error)
 		return -1, result.Error
@@ -86,8 +93,9 @@ func GetTagID(name string) (int, error) {
 }
 
 func GetTag(id int) (models.TagTable, error) {
+	db := repository.GetDBImplement().GetDB()
 	var tag models.TagTable
-	result := DbEngine.First(&tag, id)
+	result := db.First(&tag, id)
 	if result.Error != nil {
 		return tag, result.Error
 	}
@@ -95,8 +103,9 @@ func GetTag(id int) (models.TagTable, error) {
 }
 
 func GetTags(limit, offset int) ([]models.TagTable, error) {
+	db := repository.GetDBImplement().GetDB()
 	var tags []models.TagTable
-	result := DbEngine.Limit(limit).Offset(offset).Find(&tags)
+	result := db.Limit(limit).Offset(offset).Find(&tags)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -104,17 +113,18 @@ func GetTags(limit, offset int) ([]models.TagTable, error) {
 }
 
 func GetTagsWithCount(limit, offset int) ([]Response.TagWithCount, error) {
+	db := repository.GetDBImplement().GetDB()
 	var tags []models.TagTable
 	var tagsWithCount []Response.TagWithCount
 
-	result := DbEngine.Limit(limit).Offset(offset).Find(&tags)
+	result := db.Limit(limit).Offset(offset).Find(&tags)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
 	for _, tag := range tags {
 		var count int64
-		DbEngine.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tag.TagID).Count(&count)
+		db.Model(&models.ArticleTagTable{}).Where("tag_id = ?", tag.TagID).Count(&count)
 
 		tagWithCount := Response.TagWithCount{
 			TagTable:     tag,
@@ -127,8 +137,9 @@ func GetTagsWithCount(limit, offset int) ([]Response.TagWithCount, error) {
 }
 
 func GetTagTotalNumber() int {
+	db := repository.GetDBImplement().GetDB()
 	var count int64
-	DbEngine.Model(&models.TagTable{}).Count(&count)
+	db.Model(&models.TagTable{}).Count(&count)
 	return int(count)
 }
 

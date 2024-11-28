@@ -3,9 +3,10 @@ package cache
 import (
 	"errors"
 
-	"painter-server-new/utils"
 	"strconv"
 	"time"
+
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/callme-taota/tolog"
 	"github.com/redis/go-redis/v9"

@@ -1,4 +1,4 @@
-module painter-server-new
+module github.com/callme-taota/painter/painter-backend
 
 go 1.22
 

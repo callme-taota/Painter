@@ -1,6 +1,6 @@
 package Response
 
-import "painter-server-new/models"
+import "github.com/callme-taota/painter/painter-backend/models"
 
 type FullComment struct {
 	models.CommentTable

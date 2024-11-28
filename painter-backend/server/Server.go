@@ -3,10 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
-	conf "painter-server-new/conf"
-	"painter-server-new/models"
-	"painter-server-new/server/mid"
-	"painter-server-new/utils"
+
+	conf "github.com/callme-taota/painter/painter-backend/conf"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/server/mid"
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/callme-taota/tolog"
 	"github.com/gin-gonic/gin"
@@ -51,13 +52,13 @@ func InitServer() error {
 	BaseServer = ginServer
 	Server = apiServer
 	LinkAPI()
-	if conf.Server.Model == mid.TestMode {
+	if conf.Conf.Server.Model == mid.TestMode {
 		ginServer.POST("/test", TestHandler)
 	}
 
 	// Log server initialization information.
 	tolog.Info("Gin Main Server Start").PrintAndWriteSafe()
-	port := conf.Server.Port
+	port := conf.Conf.Server.Port
 
 	tolog.Infoln("Gin listening on:"+port, "host: http://127.0.0.1:"+port).PrintAndWriteSafe()
 	conf.RunningStatus.Server = true
@@ -91,7 +92,7 @@ func LinkAPI() {
 }
 
 func StaticWeb() {
-	if conf.Server.Model == "release" {
+	if conf.Conf.Server.Model == "release" {
 		webRootDir := http.Dir(dirRoot + StaticWebRootAssets)
 		BaseServer.StaticFS("/assets", webRootDir)
 		BaseServer.StaticFile("/favicon.ico", dirRoot+StaticIconRoot)
@@ -105,7 +106,7 @@ func StaticWeb() {
 }
 
 func StaticFiles() {
-	if conf.Server.Model == "debug" {
+	if conf.Conf.Server.Model == "debug" {
 		fileRootDir := http.Dir(dirRoot + StaticFileRoot)
 		BaseServer.StaticFS("/f", fileRootDir)
 	}

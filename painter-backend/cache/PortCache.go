@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	conf "painter-server-new/conf"
 	"strings"
 	"sync"
 	"time"
+
+	conf "github.com/callme-taota/painter/painter-backend/conf"
 
 	"github.com/callme-taota/tolog"
 	"github.com/gin-gonic/gin"
@@ -240,7 +241,7 @@ func (c *ContextMapManager) ContextUnlock(context Context) {
 }
 
 func (c *Context) PutContext2Redis(m any) error {
-	key := conf.Server.Name + c.FullRequest
+	key := conf.Conf.Server.Name + c.FullRequest
 	value, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -254,7 +255,7 @@ func (c *Context) PutContext2Redis(m any) error {
 }
 
 func (c *Context) DelContext2Redis() error {
-	key := conf.Server.Name + c.FullRequest
+	key := conf.Conf.Server.Name + c.FullRequest
 	err := RedisClient.Del(key).Err()
 	if err != nil {
 		return err
@@ -264,7 +265,7 @@ func (c *Context) DelContext2Redis() error {
 }
 
 func (c *Context) GetContextContentFromRedis() (string, error) {
-	key := conf.Server.Name + c.FullRequest
+	key := conf.Conf.Server.Name + c.FullRequest
 	value, err := RedisClient.Get(key).Result()
 	if err != nil {
 		return "", err
@@ -273,7 +274,7 @@ func (c *Context) GetContextContentFromRedis() (string, error) {
 }
 
 func (c *Context) GetContextContentByJSONFromRedis() (any, error) {
-	key := conf.Server.Name + c.FullRequest
+	key := conf.Conf.Server.Name + c.FullRequest
 	value, err := RedisClient.Get(key).Result()
 	if err != nil {
 		return "", err

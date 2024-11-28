@@ -1,14 +1,15 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
-	"painter-server-new/database"
-	"painter-server-new/models"
-	"painter-server-new/utils"
 	"strings"
 	"time"
+
+	"github.com/callme-taota/painter/painter-backend/database"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/utils"
+	"github.com/gin-gonic/gin"
 )
 
 // upload

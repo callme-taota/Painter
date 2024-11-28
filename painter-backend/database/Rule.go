@@ -1,67 +1,14 @@
 package database
 
 import (
-	"painter-server-new/models"
+	"github.com/callme-taota/painter/painter-backend/database/repository"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"github.com/callme-taota/tolog"
 )
 
-var ruleMap = map[int]string{
-	1: "管理权限",
-	2: "文章权限",
-	3: "评论权限",
-}
-
-var groupMap = map[int]string{
-	1: "管理员",
-	2: "普通用户",
-	3: "限制用户",
-}
-
-var groupRuleMap = map[int][]int{
-	1: {1, 2, 3},
-	2: {2, 3},
-	3: {3},
-}
-
-func InitRules() {
-	for id, name := range ruleMap {
-		rule := models.RuleTable{
-			ID:   id,
-			Name: name,
-		}
-		if err := DbEngine.FirstOrCreate(&rule, models.RuleTable{ID: id}).Error; err != nil {
-			tolog.Infof("Error while init rule %e", err).PrintAndWriteSafe()
-			panic(err)
-		}
-	}
-
-	for id, name := range groupMap {
-		group := models.UserGroupTable{
-			ID:   id,
-			Name: name,
-		}
-		if err := DbEngine.FirstOrCreate(&group, models.UserGroupTable{ID: id}).Error; err != nil {
-			tolog.Infof("Error while init rule %e", err).PrintAndWriteSafe()
-			panic(err)
-		}
-	}
-
-	for groupID, rules := range groupRuleMap {
-		for _, ruleID := range rules {
-			groupRule := models.GroupRuleTable{
-				GroupID: groupID,
-				RuleID:  ruleID,
-			}
-			if err := DbEngine.FirstOrCreate(&groupRule, models.GroupRuleTable{GroupID: groupID, RuleID: ruleID}).Error; err != nil {
-				tolog.Infof("Error while init rule %e", err).PrintAndWriteSafe()
-				panic(err)
-			}
-		}
-	}
-}
-
 func AssignGroupToUser(userID, groupID int) error {
+	DbEngine := repository.GetDBImplement().GetDB()
 	user := models.UserTable{}
 	res := DbEngine.First(&user, userID)
 	if res.Error != nil {
@@ -78,6 +25,7 @@ func AssignGroupToUser(userID, groupID int) error {
 }
 
 func CheckUsersPermission(userID, ruleID int) (bool, error) {
+	DbEngine := repository.GetDBImplement().GetDB()
 	user := models.UserTable{}
 	res := DbEngine.Select("user_group").First(&user, userID)
 	if res.Error != nil {

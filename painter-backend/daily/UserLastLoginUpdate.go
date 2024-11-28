@@ -1,8 +1,8 @@
 package daily
 
 import (
-	"painter-server-new/cache"
-	"painter-server-new/database"
+	"github.com/callme-taota/painter/painter-backend/cache"
+	"github.com/callme-taota/painter/painter-backend/database"
 
 	"github.com/callme-taota/tolog"
 )

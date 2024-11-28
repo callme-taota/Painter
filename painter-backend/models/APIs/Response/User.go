@@ -1,8 +1,9 @@
 package Response
 
 import (
-	"painter-server-new/models"
 	"time"
+
+	"github.com/callme-taota/painter/painter-backend/models"
 )
 
 type SelfFullUser struct {

@@ -2,8 +2,9 @@ package cache
 
 import (
 	"fmt"
-	"painter-server-new/conf"
-	"painter-server-new/models"
+
+	"github.com/callme-taota/painter/painter-backend/conf"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"time"
 
@@ -11,13 +12,13 @@ import (
 )
 
 func AddVisRecord2Set(record models.VisitorRecord) error {
-	timezone := conf.Server.Timezone
+	timezone := conf.Conf.Server.Timezone
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		return err
 	}
 
-	serverName := conf.Server.Name
+	serverName := conf.Conf.Server.Name
 	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().In(loc).Format("2006-01-02"))
 	flag := CheckRecordExistInSet(record)
 	if flag {
@@ -48,13 +49,13 @@ func AddVisRecord2Set(record models.VisitorRecord) error {
 }
 
 func CheckRecordExistInSet(record models.VisitorRecord) bool {
-	timezone := conf.Server.Timezone
+	timezone := conf.Conf.Server.Timezone
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		return false
 	}
 
-	serverName := conf.Server.Name
+	serverName := conf.Conf.Server.Name
 	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().In(loc).Format("2006-01-02"))
 	visitorKey := fmt.Sprintf("%s:%s", record.UA, record.IP)
 
@@ -68,7 +69,7 @@ func CheckRecordExistInSet(record models.VisitorRecord) bool {
 }
 
 func GetVisitorsByDate(date string) (int, error) {
-	serverName := conf.Server.Name
+	serverName := conf.Conf.Server.Name
 	key := fmt.Sprintf("%s-visitors-%s", serverName, date)
 
 	members, err := RedisClient.SMembers(key).Result()

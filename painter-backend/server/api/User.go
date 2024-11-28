@@ -3,13 +3,14 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"painter-server-new/cache"
-	"painter-server-new/database"
-	"painter-server-new/models"
-	"painter-server-new/models/APIs/Request"
-	"painter-server-new/server/mail"
-	"painter-server-new/utils"
 	"strconv"
+
+	"github.com/callme-taota/painter/painter-backend/cache"
+	"github.com/callme-taota/painter/painter-backend/database"
+	"github.com/callme-taota/painter/painter-backend/models"
+	"github.com/callme-taota/painter/painter-backend/models/APIs/Request"
+	"github.com/callme-taota/painter/painter-backend/server/mail"
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,13 +1,14 @@
 package conf
 
 import (
-	"painter-server-new/utils"
 	"reflect"
+
+	"github.com/callme-taota/painter/painter-backend/utils"
 
 	"github.com/callme-taota/tolog"
 )
 
-const confFilePath = "./conf/conf.json"
+var confFilePath = utils.ProjectDirRoot() + "/conf/conf.json"
 
 // The server struct defines the configuration options for the server.
 type server struct {
@@ -20,9 +21,6 @@ type server struct {
 	Timezone  string `json:"timezone"`
 }
 
-// Server is a global variable to store server configuration.
-var Server server
-
 // The cacheConf struct defines the configuration options for the cache.
 type cacheConf struct {
 	Host     string `json:"host"`     // Cache host
@@ -30,9 +28,6 @@ type cacheConf struct {
 	Password string `json:"password"` // Cache password
 	DB       string `json:"DB"`       // Cache database
 }
-
-// CacheConf is a global variable to store cache configuration.
-var CacheConf cacheConf
 
 type mysqlConf struct {
 	User     string `json:"user"`
@@ -42,13 +37,17 @@ type mysqlConf struct {
 	Host     string `json:"host"`
 }
 
-var MysqlConf mysqlConf
-
-type Conf struct {
-	Server server    `json:"server"`
-	Redis  cacheConf `json:"redis"`
-	Mysql  mysqlConf `json:"mysql"`
+type Config struct {
+	Server server    `json:"Server"`
+	Redis  cacheConf `json:"Redis"`
+	Mysql  mysqlConf `json:"Mysql"`
 }
+
+func (c *Config) Config() Config {
+	return *c
+}
+
+var Conf Config
 
 var RandomKey string
 
@@ -66,8 +65,8 @@ func CheckHealth() bool {
 	return RunningStatus.DB && RunningStatus.Cache && RunningStatus.Conf && RunningStatus.Server
 }
 
-func NewConf() map[string]interface{} {
-	conf := Conf{
+func DefaultConf() map[string]interface{} {
+	conf := Config{
 		Server: server{
 			Author:    "",
 			FirstInit: "",
@@ -103,7 +102,7 @@ func NewConf() map[string]interface{} {
 }
 
 func CreateConf() {
-	conf := NewConf()
+	conf := DefaultConf()
 	_, err := utils.JSONWriter(confFilePath, conf)
 	if err != nil {
 		tolog.Errorf("Error while CreateConf %e", err).PrintAndWriteSafe()

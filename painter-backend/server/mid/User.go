@@ -2,9 +2,10 @@ package mid
 
 import (
 	"net/http"
-	"painter-server-new/cache"
-	"painter-server-new/database"
-	"painter-server-new/models"
+
+	"github.com/callme-taota/painter/painter-backend/cache"
+	"github.com/callme-taota/painter/painter-backend/database"
+	"github.com/callme-taota/painter/painter-backend/models"
 
 	"strconv"
 
