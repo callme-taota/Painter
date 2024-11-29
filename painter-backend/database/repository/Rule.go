@@ -9,17 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const RuleTableName = "rule"
-
-type Rule struct {
-	BaseTable `gorm:"-"`
-
-	ID        int       `gorm:"primaryKey;autoIncrement"`
-	Name      string    `gorm:"notNull"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-}
-
 var ruleMap = map[int]string{
 	1: "管理权限",
 	2: "文章权限",
@@ -36,6 +25,17 @@ var groupRuleMap = map[int][]int{
 	1: {1, 2, 3},
 	2: {2, 3},
 	3: {3},
+}
+
+const RuleTableName = "rule"
+
+type Rule struct {
+	BaseTable `gorm:"-"`
+
+	ID        int       `gorm:"primaryKey;autoIncrement"`
+	Name      string    `gorm:"notNull"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
 func NewEmptyRule() *Rule {
@@ -101,6 +101,148 @@ func (r *Rule) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gor
 	var result []Table
 	for i := range rules {
 		result = append(result, &rules[i])
+	}
+	return result, tx, nil
+}
+
+const GroupTableName = "user_group"
+
+type Group struct {
+	BaseTable `gorm:"-"`
+
+	ID        int       `gorm:"primaryKey;autoIncrement"`
+	Name      string    `gorm:"notNull"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+func (g *Group) Migrate(db *gorm.DB) error {
+	return db.AutoMigrate(&Group{})
+}
+
+func (g *Group) TableName() string {
+	return GroupTableName
+}
+
+func (g *Group) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
+	group, ok := row.(*Group)
+	if !ok {
+		return nil, errors.New("invalid row type")
+	}
+	return db.Create(group), nil
+}
+
+func (g *Group) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
+	var groups []Group
+	if err := query(db).Find(&groups).Error; err != nil {
+		return err
+	}
+
+	for i := range groups {
+		if err := updater(&groups[i]); err != nil {
+			return err
+		}
+		if err := db.Save(&groups[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *Group) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
+	var groups []Group
+	if err := query(db).Find(&groups).Error; err != nil {
+		return err
+	}
+
+	for _, group := range groups {
+		if err := db.Delete(&group).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *Group) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
+	var groups []Group
+	tx := query(db).Find(&groups)
+	if tx.Error != nil {
+		return nil, tx, tx.Error
+	}
+
+	var result []Table
+	for i := range groups {
+		result = append(result, &groups[i])
+	}
+	return result, tx, nil
+}
+
+const GroupRuleTableName = "group_rule"
+
+type GroupRule struct {
+	BaseTable `gorm:"-"`
+
+	GroupID int
+	RuleID  int
+}
+
+func (g *GroupRule) Migrate(db *gorm.DB) error {
+	return db.AutoMigrate(&GroupRule{})
+}
+
+func (g *GroupRule) TableName() string {
+	return GroupRuleTableName
+}
+
+func (g *GroupRule) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
+	groupRule, ok := row.(*GroupRule)
+	if !ok {
+		return nil, errors.New("invalid row type")
+	}
+	return db.Create(groupRule), nil
+}
+
+func (g *GroupRule) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
+	var groupRules []GroupRule
+	if err := query(db).Find(&groupRules).Error; err != nil {
+		return err
+	}
+
+	for i := range groupRules {
+		if err := updater(&groupRules[i]); err != nil {
+			return err
+		}
+		if err := db.Save(&groupRules[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *GroupRule) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
+	var groupRules []GroupRule
+	if err := query(db).Find(&groupRules).Error; err != nil {
+		return err
+	}
+
+	for _, groupRule := range groupRules {
+		if err := db.Delete(&groupRule).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *GroupRule) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
+	var groupRules []GroupRule
+	tx := query(db).Find(&groupRules)
+	if tx.Error != nil {
+		return nil, tx, tx.Error
+	}
+
+	var result []Table
+	for i := range groupRules {
+		result = append(result, &groupRules[i])
 	}
 	return result, tx, nil
 }
