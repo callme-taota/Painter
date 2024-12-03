@@ -3,6 +3,7 @@ package cache
 import (
 	"fmt"
 
+	"github.com/callme-taota/painter/painter-backend/common"
 	conf "github.com/callme-taota/painter/painter-backend/conf"
 
 	"strconv"
@@ -12,32 +13,47 @@ import (
 	"github.com/go-redis/redis"
 )
 
-// RedisClient is a global variable representing the Redis client.
-var RedisClient *redis.Client
+const maxRetries = 5
+const retryDelay = 2 * time.Second
 
-// InitCache initializes the Redis cache connection.
-func InitCache() error {
-	// Convert the cache DB string to an integer.
-	db, _ := strconv.Atoi(conf.Conf.Redis.DB)
+var Cache *cache
 
-	// Create a new Redis client using the configuration from the 'conf' package.
-	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", conf.Conf.Redis.Host, conf.Conf.Redis.Port),
-		Password: conf.Conf.Redis.Password,
+type cache struct {
+	client *redis.Client
+	opt    *redis.Options
+}
+
+func init() {
+	Cache = newCache()
+	common.Register(Cache)
+}
+func newCache() *cache {
+	return &cache{}
+}
+
+func (c *cache) Name() string {
+	return common.CACHE_MODULE
+}
+
+func (c *cache) Register(conf conf.Config) (common.Module, error) {
+	db, _ := strconv.Atoi(conf.Redis.DB)
+
+	opt := &redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", conf.Redis.Host, conf.Redis.Port),
+		Password: conf.Redis.Password,
 		DB:       db,
-	})
+	}
 
-	// Set the global 'RedisClient' variable to the created client.
-	RedisClient = client
+	c.opt = opt
+	return c, nil
+}
 
-	// Define the maximum number of retries and the delay between retries.
-	maxRetries := 5
-	retryDelay := 2 * time.Second
+func (c *cache) Start() error {
+	c.client = redis.NewClient(c.opt)
 
-	// Attempt to ping the Redis server with retries.
 	var err error
-	for i := 0; i < maxRetries; i++ {
-		pong, err := client.Ping().Result()
+	for i := range maxRetries {
+		pong, err := c.client.Ping().Result()
 		if err == nil {
 			// Log a message indicating a successful connection to Redis.
 			tolog.Infof("Connected to Redis: %s", pong).PrintLog()
@@ -47,8 +63,6 @@ func InitCache() error {
 		tolog.Errorf("Failed to connect to Redis, attempt %d: %e", i+1, err).PrintAndWriteSafe()
 		time.Sleep(retryDelay)
 	}
-
-	// Log an error if all attempts fail.
 	tolog.Errorf("Could not connect to Redis after %d attempts: %e", maxRetries, err).PrintAndWriteSafe()
 	return err
 }
