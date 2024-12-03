@@ -25,13 +25,13 @@ func AddUser(userID string) (string, error) {
 	}
 
 	// Set the user ID to session mapping in the forward hash.
-	err = RedisClient.HSet(forwardHash, userID, session).Err()
+	err = Cache.client.HSet(forwardHash, userID, session).Err()
 	if err != nil {
 		return "", err
 	}
 
 	// Set the session to user ID mapping in the reverse lookup hash.
-	err = RedisClient.HSet(reverseLookupHash, session, userID).Err()
+	err = Cache.client.HSet(reverseLookupHash, session, userID).Err()
 	if err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func AddUser(userID string) (string, error) {
 
 // GetUserSessionByID retrieves the session associated with a user ID from Redis.
 func GetUserSessionByID(userID string) (string, error) {
-	session, err := RedisClient.HGet(forwardHash, userID).Result()
+	session, err := Cache.client.HGet(forwardHash, userID).Result()
 	if err == redis.Nil {
 		// Return nil error if the user ID is not found.
 		return "", nil
@@ -53,7 +53,7 @@ func GetUserSessionByID(userID string) (string, error) {
 
 // GetUserIDByUserSession retrieves the user ID associated with a session from Redis.
 func GetUserIDByUserSession(session string) (string, error) {
-	userID, err := RedisClient.HGet(reverseLookupHash, session).Result()
+	userID, err := Cache.client.HGet(reverseLookupHash, session).Result()
 	if err == redis.Nil {
 		// Return nil error if the session is not found.
 		return "", errors.New("no user")
@@ -73,21 +73,21 @@ func DeleteUserBySession(session string) (bool, error) {
 	}
 
 	// Remove session to user ID mapping.
-	err = RedisClient.HDel(reverseLookupHash, session).Err()
+	err = Cache.client.HDel(reverseLookupHash, session).Err()
 	if err != nil {
 		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
 	}
 
 	// Remove user ID to session mapping.
-	err = RedisClient.HDel(forwardHash, userID).Err()
+	err = Cache.client.HDel(forwardHash, userID).Err()
 	if err != nil {
 		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
 	}
 
 	// Delete the session key.
-	err = RedisClient.Del(session).Err()
+	err = Cache.client.Del(session).Err()
 	if err != nil {
 		tolog.Errorf("DeleteUserBySession: %e", err)
 		return false, err
@@ -97,7 +97,7 @@ func DeleteUserBySession(session string) (bool, error) {
 }
 
 func CreateEmailCheck(mail string, code int) error {
-	res := RedisClient.Set(
+	res := Cache.client.Set(
 		"painter_verification_code:"+mail,
 		code,
 		5*time.Minute,
@@ -110,7 +110,7 @@ func CreateEmailCheck(mail string, code int) error {
 
 func CheckEmailPass(mail string, code int) (bool, error) {
 	key := "painter_verification_code:" + mail
-	val, err := RedisClient.Get(key).Result()
+	val, err := Cache.client.Get(key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return false, nil // 验证码不存在
@@ -131,7 +131,7 @@ func CreateUserAccess(userID int) error {
 	redisKey := "painter-connect" + now.Format("2006-01-02-15")
 
 	// put user ID into redis set
-	_, err := RedisClient.SAdd(redisKey, userID).Result()
+	_, err := Cache.client.SAdd(redisKey, userID).Result()
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func CreateUserAccess(userID int) error {
 	expire := time.Hour * 2
 
 	// set key expire
-	_, err = RedisClient.Expire(redisKey, expire).Result()
+	_, err = Cache.client.Expire(redisKey, expire).Result()
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func GetPastHourLoginUserList() ([]int, error) {
 	// redis key，with yyyy-MM-dd-HH
 	redisKey := "painter-connect" + now.Format("2006-01-02-15")
 	//get list
-	userIDs, err := RedisClient.SMembers(redisKey).Result()
+	userIDs, err := Cache.client.SMembers(redisKey).Result()
 	if err != nil {
 		tolog.Infof("Error getting user IDs from Redis: %e", err).PrintAndWriteSafe()
 		return nil, err

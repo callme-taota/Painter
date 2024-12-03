@@ -27,7 +27,7 @@ func AddVisRecord2Set(record models.VisitorRecord) error {
 	visitorKey := fmt.Sprintf("%s:%s", record.UA, record.IP)
 	tolog.Infof("New visitor : %s", visitorKey).PrintAndWriteSafe()
 
-	added, err := RedisClient.SAdd(todayKey, visitorKey).Result()
+	added, err := Cache.client.SAdd(todayKey, visitorKey).Result()
 	if err != nil {
 		tolog.Warningf("Failed to add visitor record to set: %v", err).PrintAndWriteSafe()
 		return err
@@ -39,7 +39,7 @@ func AddVisRecord2Set(record models.VisitorRecord) error {
 
 	// Set expiration time for the key
 	expiration := 48 * time.Hour
-	_, err = RedisClient.Expire(todayKey, expiration).Result()
+	_, err = Cache.client.Expire(todayKey, expiration).Result()
 	if err != nil {
 		tolog.Warningf("Failed to set expiration for key: %v", err).PrintAndWriteSafe()
 		return err
@@ -59,7 +59,7 @@ func CheckRecordExistInSet(record models.VisitorRecord) bool {
 	todayKey := fmt.Sprintf("%s-visitors-%s", serverName, time.Now().In(loc).Format("2006-01-02"))
 	visitorKey := fmt.Sprintf("%s:%s", record.UA, record.IP)
 
-	exists, err := RedisClient.SIsMember(todayKey, visitorKey).Result()
+	exists, err := Cache.client.SIsMember(todayKey, visitorKey).Result()
 	if err != nil {
 		tolog.Warningf("Failed to check visitor record existence: %v", err).PrintAndWriteSafe()
 		return false
@@ -72,7 +72,7 @@ func GetVisitorsByDate(date string) (int, error) {
 	serverName := conf.Conf.Server.Name
 	key := fmt.Sprintf("%s-visitors-%s", serverName, date)
 
-	members, err := RedisClient.SMembers(key).Result()
+	members, err := Cache.client.SMembers(key).Result()
 	if err != nil {
 		return -1, err
 	}

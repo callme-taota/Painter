@@ -11,6 +11,7 @@ var Modules = map[string]Module{}
 const (
 	DB_MODULE    = "db"
 	CACHE_MODULE = "cache"
+	TASK_MODULE  = "task"
 )
 
 type Module interface {
