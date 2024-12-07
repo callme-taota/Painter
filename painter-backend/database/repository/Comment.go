@@ -48,6 +48,7 @@ func (c *Comment) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater fun
 	}
 
 	for i := range comments {
+		comments[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&comments[i]); err != nil {
 			return err
 		}
@@ -81,7 +82,12 @@ func (c *Comment) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *
 
 	var result []Table
 	for i := range comments {
+		comments[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &comments[i])
 	}
 	return result, tx, nil
+}
+
+func (c *Comment) Constructor() Table {
+	return NewEmptyComment()
 }

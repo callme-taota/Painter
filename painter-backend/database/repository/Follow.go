@@ -67,7 +67,12 @@ func (f *Follow) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *g
 
 	var result []Table
 	for i := range follows {
+		follows[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &follows[i])
 	}
 	return result, tx, nil
+}
+
+func (f *Follow) Constructor() Table {
+	return NewEmptyFollow()
 }

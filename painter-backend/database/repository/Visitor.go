@@ -42,12 +42,12 @@ func (v *VisitorRecord) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (v *VisitorRecord) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var recd VisitorRecord
+	var recd = NewEmptyVisitorRecord()
 	if err := query(db).First(&recd).Error; err != nil {
 		return err
 	}
 
-	if err := updater(&recd); err != nil {
+	if err := updater(recd); err != nil {
 		return err
 	}
 	if err := db.Save(&recd).Error; err != nil {
@@ -61,12 +61,16 @@ func (v *VisitorRecord) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error
 }
 
 func (v *VisitorRecord) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
-	var recd VisitorRecord
+	var recd = NewEmptyVisitorRecord()
 	tx := query(db).First(&recd)
 	if tx.Error != nil {
 		return nil, tx, tx.Error
 	}
 
-	result := []Table{&recd}
+	result := []Table{recd}
 	return result, tx, nil
+}
+
+func (v *VisitorRecord) Constructor() Table {
+	return NewEmptyVisitorRecord()
 }

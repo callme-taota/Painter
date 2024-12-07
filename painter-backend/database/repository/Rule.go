@@ -67,6 +67,7 @@ func (r *Rule) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(T
 	}
 
 	for i := range rules {
+		rules[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&rules[i]); err != nil {
 			return err
 		}
@@ -100,9 +101,14 @@ func (r *Rule) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gor
 
 	var result []Table
 	for i := range rules {
+		rules[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &rules[i])
 	}
 	return result, tx, nil
+}
+
+func (r *Rule) Constructor() Table {
+	return NewEmptyRule()
 }
 
 const GroupTableName = "user_group"
@@ -114,6 +120,12 @@ type Group struct {
 	Name      string    `gorm:"notNull"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+func NewEmptyGroup() *Group {
+	return &Group{
+		BaseTable: &BaseTableImplement{},
+	}
 }
 
 func (g *Group) Migrate(db *gorm.DB) error {
@@ -139,6 +151,7 @@ func (g *Group) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(
 	}
 
 	for i := range groups {
+		groups[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&groups[i]); err != nil {
 			return err
 		}
@@ -172,9 +185,14 @@ func (g *Group) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *go
 
 	var result []Table
 	for i := range groups {
+		groups[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &groups[i])
 	}
 	return result, tx, nil
+}
+
+func (g *Group) Constructor() Table {
+	return NewEmptyGroup()
 }
 
 const GroupRuleTableName = "group_rule"
@@ -184,6 +202,12 @@ type GroupRule struct {
 
 	GroupID int
 	RuleID  int
+}
+
+func NewEmptyGroupRule() *GroupRule {
+	return &GroupRule{
+		BaseTable: &BaseTableImplement{},
+	}
 }
 
 func (g *GroupRule) Migrate(db *gorm.DB) error {
@@ -209,6 +233,7 @@ func (g *GroupRule) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater f
 	}
 
 	for i := range groupRules {
+		groupRules[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&groupRules[i]); err != nil {
 			return err
 		}
@@ -242,9 +267,14 @@ func (g *GroupRule) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table,
 
 	var result []Table
 	for i := range groupRules {
+		groupRules[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &groupRules[i])
 	}
 	return result, tx, nil
+}
+
+func (g *GroupRule) Constructor() Table {
+	return NewEmptyGroupRule()
 }
 
 func InitRules() {

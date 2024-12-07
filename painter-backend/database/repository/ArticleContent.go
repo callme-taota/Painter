@@ -44,6 +44,7 @@ func (a *ArticleContent) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, upda
 	}
 
 	for i := range articles {
+		articles[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&articles[i]); err != nil {
 			return err
 		}
@@ -77,7 +78,12 @@ func (a *ArticleContent) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]T
 
 	var result []Table
 	for i := range articles {
+		articles[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &articles[i])
 	}
 	return result, tx, nil
+}
+
+func (a *ArticleContent) Constructor() Table {
+	return NewEmptyArticleContent()
 }

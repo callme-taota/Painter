@@ -10,7 +10,7 @@ import (
 const ArticleLikeTableName = "article_like"
 
 type ArticleLike struct {
-	BaseTable
+	BaseTable `gorm:"-"`
 
 	ArticleID int `gorm:"uniqueIndex:art_like"`
 	UserID    int `gorm:"uniqueIndex:art_like"`
@@ -46,6 +46,7 @@ func (a *ArticleLike) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater
 	}
 
 	for i := range articles {
+		articles[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&articles[i]); err != nil {
 			return err
 		}
@@ -79,7 +80,12 @@ func (a *ArticleLike) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Tabl
 
 	var result []Table
 	for i := range articles {
+		articles[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &articles[i])
 	}
 	return result, tx, nil
+}
+
+func (a *ArticleLike) Constructor() Table {
+	return NewEmptyArticleLikeTable()
 }

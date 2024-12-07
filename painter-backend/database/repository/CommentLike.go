@@ -62,7 +62,12 @@ func (c *CommentLike) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Tabl
 
 	var result []Table
 	for i := range likes {
+		likes[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &likes[i])
 	}
 	return result, tx, nil
+}
+
+func (c *CommentLike) Constructor() Table {
+	return NewEmptyCommentLike()
 }

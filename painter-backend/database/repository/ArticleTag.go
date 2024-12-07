@@ -9,7 +9,7 @@ import (
 const ArticleTagTableName = "article_tag"
 
 type ArticleTag struct {
-	BaseTable
+	BaseTable `gorm:"-"`
 
 	ArticleID int `gorm:"uniqueIndex:art_tag"`
 	TagID     int `gorm:"uniqueIndex:art_tag"`
@@ -44,6 +44,7 @@ func (a *ArticleTag) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater 
 	}
 
 	for i := range articleTags {
+		articleTags[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&articleTags[i]); err != nil {
 			return err
 		}
@@ -77,7 +78,12 @@ func (a *ArticleTag) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table
 
 	var result []Table
 	for i := range articleTags {
+		articleTags[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &articleTags[i])
 	}
 	return result, tx, nil
+}
+
+func (a *ArticleTag) Constructor() Table {
+	return NewEmptyArticleTag()
 }

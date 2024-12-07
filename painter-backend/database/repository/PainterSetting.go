@@ -67,12 +67,12 @@ func (p PainterSetting) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (p PainterSetting) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var setting PainterSetting
+	var setting = newEmptyPainterSetting()
 	if err := query(db).First(&setting).Error; err != nil {
 		return err
 	}
 
-	if err := updater(&setting); err != nil {
+	if err := updater(setting); err != nil {
 		return err
 	}
 	if err := db.Save(&setting).Error; err != nil {
@@ -86,14 +86,18 @@ func (p PainterSetting) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error
 }
 
 func (p PainterSetting) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
-	var setting PainterSetting
+	var setting = newEmptyPainterSetting()
 	tx := query(db).First(&setting)
 	if tx.Error != nil {
 		return nil, tx, tx.Error
 	}
 
-	result := []Table{&setting}
+	result := []Table{setting}
 	return result, tx, nil
+}
+
+func (p PainterSetting) Constructor() Table {
+	return newEmptyPainterSetting()
 }
 
 func checkKeyExistOrCreate(key string) (bool, error) {
@@ -111,7 +115,7 @@ func checkKeyExistOrCreate(key string) (bool, error) {
 		err := setting.SetValues(map[string]interface{}{
 			"Name":  key,
 			"Value": "0",
-		})
+		}, setting)
 		if err != nil {
 			return false, err
 		}

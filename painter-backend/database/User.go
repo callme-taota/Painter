@@ -31,8 +31,8 @@ func CreateUserV2(kv map[string]interface{}, password string) (int, error) {
 	db := repository.GetDBImplement()
 	user := repository.NewEmptyUser()
 	for k, v := range kv {
-		if user.CheckColumnsExist(k) {
-			if err := user.SetValue(k, v); err != nil {
+		if user.CheckColumnsExist(k, user) {
+			if err := user.SetValue(k, v, user); err != nil {
 				tolog.Errorf("Set %s table cloumn %s faild: %v", repository.UserTableName, k, err).PrintAndWriteSafe()
 			}
 		}
@@ -127,14 +127,14 @@ func UpdateUser(id int, key string, value interface{}) error {
 
 func UpdateUserUnix(db *gorm.DB, id int, key string, value interface{}) error {
 	tb := repository.GetDBImplement().UseTable(repository.UserTableName)
-	if !tb.CheckColumnsExist(key) {
+	if !tb.CheckColumnsExist(key, tb) {
 		db.Rollback()
 		return fmt.Errorf("column %s does not exist", key)
 	}
 	err := tb.Update(db, func(g *gorm.DB) *gorm.DB {
 		return g.Where("id = ?", id)
 	}, func(table repository.Table) error {
-		return table.SetValue(key, value)
+		return table.SetValue(key, value, tb)
 	})
 	if err != nil {
 		db.Rollback()
@@ -164,7 +164,7 @@ func GetUserIDUsingIdentityKey(value string, keyType string) (int, error) {
 	case "email":
 		whereClauses = fmt.Sprintf(whereClauses, "email")
 	case "userName":
-		whereClauses = fmt.Sprintf(whereClauses, "userName")
+		whereClauses = fmt.Sprintf(whereClauses, "user_name")
 	}
 	tx := db.GetTransaction()
 	tb := db.UseTable(repository.UserTableName)
@@ -179,7 +179,10 @@ func GetUserIDUsingIdentityKey(value string, keyType string) (int, error) {
 		tx.Rollback()
 		return -2, errors.Join(err, errors.New("no result"))
 	}
-	id, err := res[0].GetValue("ID")
+	id, err := res[0].GetValue("ID", res[0])
+	if err != nil {
+		fmt.Println(err)
+	}
 	tx.Commit()
 	return id.(int), err
 }
@@ -203,7 +206,7 @@ func GetUserEmailUsingUserNameV2(userName string) (string, error) {
 		tx.Rollback()
 		return "", errors.Join(err, errors.New("no result"))
 	}
-	email, err := res[0].GetValue("Email")
+	email, err := res[0].GetValue("Email", res[0])
 	tx.Commit()
 	if err != nil {
 		tx.Rollback()

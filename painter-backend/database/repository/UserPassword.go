@@ -16,7 +16,9 @@ type UserPassword struct {
 }
 
 func NewEmptyUserPassword() *UserPassword {
-	return &UserPassword{}
+	return &UserPassword{
+		BaseTable: &BaseTableImplement{},
+	}
 }
 
 func (u *UserPassword) Migrate(db *gorm.DB) error {
@@ -40,12 +42,12 @@ func (u *UserPassword) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (u *UserPassword) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var userPwd UserPassword
+	var userPwd = NewEmptyUserPassword()
 	if err := query(db).First(&userPwd).Error; err != nil {
 		return err
 	}
 
-	if err := updater(&userPwd); err != nil {
+	if err := updater(userPwd); err != nil {
 		return err
 	}
 	if err := db.Save(&userPwd).Error; err != nil {
@@ -55,7 +57,7 @@ func (u *UserPassword) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, update
 }
 
 func (u *UserPassword) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var userPwd UserPassword
+	var userPwd = NewEmptyUserPassword()
 	if err := query(db).First(&userPwd).Error; err != nil {
 		return err
 	}
@@ -64,12 +66,16 @@ func (u *UserPassword) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error 
 }
 
 func (u *UserPassword) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
-	var userPwd UserPassword
+	var userPwd = NewEmptyUserPassword()
 	tx := query(db).First(&userPwd)
 	if tx.Error != nil {
 		return nil, tx, tx.Error
 	}
 
-	result := []Table{&userPwd}
+	result := []Table{userPwd}
 	return result, tx, nil
+}
+
+func (u *UserPassword) Constructor() Table {
+	return NewEmptyUserPassword()
 }

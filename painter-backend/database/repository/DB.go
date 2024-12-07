@@ -22,19 +22,29 @@ const connTemplate = `%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true`
 
 func init() {
 	dbImplement = newDBImplement()
-	dbImplement.AddTable(NewEmptyUser())
-	dbImplement.AddTable(NewEmptyUserPassword())
-	dbImplement.AddTable(NewEmptyVisitorRecord())
-	dbImplement.AddTable(NewEmptyArticle())
-	dbImplement.AddTable(NewEmptyCategory())
-	dbImplement.AddTable(NewEmptyCollection())
-	dbImplement.AddTable(NewEmptyComment())
-	dbImplement.AddTable(NewEmptyFileStorage())
-	dbImplement.AddTable(NewEmptyFollow())
-	dbImplement.AddTable(NewEmptyHistory())
-	dbImplement.AddTable(newEmptyPainterSetting())
-	dbImplement.AddTable(NewEmptyRule())
-	dbImplement.AddTable(NewEmptyTag())
+
+	{
+		dbImplement.AddTable(NewEmptyUser())
+		dbImplement.AddTable(NewEmptyUserPassword())
+		dbImplement.AddTable(NewEmptyVisitorRecord())
+		dbImplement.AddTable(NewEmptyArticle())
+		dbImplement.AddTable(NewEmptyArticleLikeTable())
+		dbImplement.AddTable(NewEmptyArticleContent())
+		dbImplement.AddTable(NewEmptyArticleTag())
+		dbImplement.AddTable(NewEmptyCategory())
+		dbImplement.AddTable(NewEmptyCollection())
+		dbImplement.AddTable(NewEmptyComment())
+		dbImplement.AddTable(NewEmptyCommentLike())
+		dbImplement.AddTable(NewEmptyFileStorage())
+		dbImplement.AddTable(NewEmptyFollow())
+		dbImplement.AddTable(NewEmptyHistory())
+		dbImplement.AddTable(newEmptyPainterSetting())
+		dbImplement.AddTable(NewEmptyRule())
+		dbImplement.AddTable(NewEmptyGroup())
+		dbImplement.AddTable(NewEmptyGroupRule())
+		dbImplement.AddTable(NewEmptyTag())
+	}
+
 	common.Register(dbImplement)
 }
 
@@ -128,6 +138,13 @@ func (db *DBImplement) Migrate() error {
 func (db *DBImplement) UseTable(tableName string) Table {
 	if table, ok := db.tables[tableName]; ok {
 		return table
+	}
+	return nil
+}
+
+func (db *DBImplement) TableConstructor(tableName string) Table {
+	if table, ok := db.tables[tableName]; ok {
+		return table.Constructor()
 	}
 	return nil
 }
