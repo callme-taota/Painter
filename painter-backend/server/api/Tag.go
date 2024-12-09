@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/callme-taota/painter/painter-backend/database"
+	"github.com/callme-taota/painter/painter-backend/database/storage"
 	"github.com/callme-taota/painter/painter-backend/models"
 	"github.com/callme-taota/painter/painter-backend/models/APIs/Request"
 
@@ -141,7 +142,7 @@ func UpdateTag(c *gin.Context) {
 		c.JSON(http.StatusOK, models.R(models.KErrorMissing, models.KReturnFalse, models.RDC{}))
 		return
 	}
-	err := database.UpdateTag(json.TagID, json.Name, json.Description)
+	err := storage.UpdateTag(json.TagID, json.Name, json.Description)
 	if err != nil {
 		c.JSON(http.StatusOK, models.R(models.KReturnMsgError, models.KReturnFalse, models.RDC{}))
 		return

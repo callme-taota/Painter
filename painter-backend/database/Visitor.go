@@ -48,7 +48,7 @@ func GetVisitors(y, m, d int) (int, error) {
 	tx := db.GetTransaction()
 	tb := db.UseTable(repository.VisitorRecordTableName)
 	_, _, err = tb.Select(tx, func(g *gorm.DB) *gorm.DB {
-		return g.Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
+		return g.Model(tb).Where("date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
 			Select("COALESCE(SUM(total), 0)").
 			Scan(&total)
 	})

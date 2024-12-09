@@ -30,7 +30,7 @@ func (c *Category) TableName() string {
 	return CategoryTableName
 }
 
-func (u *Category) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
+func (c *Category) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 	category, ok := row.(*Category)
 	if !ok {
 		return nil, errors.New("invalid row type")
@@ -38,13 +38,14 @@ func (u *Category) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 	return db.Create(category), nil
 }
 
-func (u *Category) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
+func (c *Category) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
 	var categories []Category
 	if err := query(db).Find(&categories).Error; err != nil {
 		return err
 	}
 
 	for i := range categories {
+		categories[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&categories[i]); err != nil {
 			return err
 		}
@@ -55,7 +56,7 @@ func (u *Category) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater fu
 	return nil
 }
 
-func (u *Category) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
+func (c *Category) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
 	var categories []Category
 	if err := query(db).Find(&categories).Error; err != nil {
 		return err
@@ -69,7 +70,7 @@ func (u *Category) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
 	return nil
 }
 
-func (u *Category) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
+func (c *Category) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
 	var categories []Category
 	tx := query(db).Find(&categories)
 	if tx.Error != nil {
@@ -78,7 +79,12 @@ func (u *Category) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, 
 
 	var result []Table
 	for i := range categories {
+		categories[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &categories[i])
 	}
 	return result, tx, nil
+}
+
+func (c *Category) Constructor() Table {
+	return NewEmptyCategory()
 }

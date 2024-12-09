@@ -24,11 +24,11 @@ func CheckUserPasswordV2(id int, password string) (bool, error) {
 		tx.Rollback()
 		return false, err
 	}
-	if !res[0].CheckColumnsExist("Password") {
+	if !res[0].CheckColumnsExist("Password", res[0]) {
 		tx.Rollback()
 		return false, err
 	}
-	hashPassword, err := res[0].GetValue("Password")
+	hashPassword, err := res[0].GetValue("Password", res[0])
 	if err != nil {
 		tx.Rollback()
 		return false, err
@@ -58,7 +58,7 @@ func ResetPasswordV2(id int, oldPsw, newPsw string) error {
 		tx.Rollback()
 		return err
 	}
-	userPassword, err := res[0].GetValue("Password")
+	userPassword, err := res[0].GetValue("Password", res[0])
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -69,7 +69,7 @@ func ResetPasswordV2(id int, oldPsw, newPsw string) error {
 	err = tb.Update(tx, func(g *gorm.DB) *gorm.DB {
 		return g.Where("id = ?", id)
 	}, func(table repository.Table) error {
-		return table.SetValue("Password", newPsw)
+		return table.SetValue("Password", newPsw, table)
 	})
 	if err != nil {
 		tx.Rollback()
@@ -81,11 +81,11 @@ func ResetPasswordV2(id int, oldPsw, newPsw string) error {
 
 func CreateUserPassword(db *gorm.DB, id int, psw string) error {
 	userPassword := repository.NewEmptyUserPassword()
-	err := userPassword.SetValue("ID", id)
+	err := userPassword.SetValue("ID", id, userPassword)
 	if err != nil {
 		return err
 	}
-	err = userPassword.SetValue("Password", psw)
+	err = userPassword.SetValue("Password", psw, userPassword)
 	if err != nil {
 		return err
 	}

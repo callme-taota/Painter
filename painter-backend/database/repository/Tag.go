@@ -40,12 +40,12 @@ func (t *Tag) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (t *Tag) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var tag Tag
+	var tag = NewEmptyTag()
 	if err := query(db).First(&tag).Error; err != nil {
 		return err
 	}
 
-	if err := updater(&tag); err != nil {
+	if err := updater(tag); err != nil {
 		return err
 	}
 	if err := db.Save(&tag).Error; err != nil {
@@ -75,4 +75,8 @@ func (t *Tag) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm
 		result = append(result, &tags[i])
 	}
 	return result, tx, nil
+}
+
+func (t *Tag) Constructor() Table {
+	return NewEmptyTag()
 }

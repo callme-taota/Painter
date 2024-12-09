@@ -46,6 +46,7 @@ func (c *Collection) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater 
 	}
 
 	for i := range collections {
+		collections[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&collections[i]); err != nil {
 			return err
 		}
@@ -79,7 +80,12 @@ func (c *Collection) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table
 
 	var result []Table
 	for i := range collections {
+		collections[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &collections[i])
 	}
 	return result, tx, nil
+}
+
+func (c *Collection) Constructor() Table {
+	return NewEmptyCollection()
 }

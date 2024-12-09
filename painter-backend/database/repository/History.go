@@ -42,12 +42,12 @@ func (h *History) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (h *History) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var history History
+	var history = NewEmptyHistory()
 	if err := query(db).First(&history).Error; err != nil {
 		return err
 	}
 
-	if err := updater(&history); err != nil {
+	if err := updater(history); err != nil {
 		return err
 	}
 	if err := db.Save(&history).Error; err != nil {
@@ -79,7 +79,12 @@ func (h *History) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *
 
 	var result []Table
 	for i := range history {
+		history[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &history[i])
 	}
 	return result, tx, nil
+}
+
+func (h *History) Constructor() Table {
+	return NewEmptyHistory()
 }

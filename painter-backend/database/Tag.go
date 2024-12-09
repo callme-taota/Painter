@@ -74,6 +74,7 @@ func UpdateTag(id int, name, description string) error {
 	}
 	return nil
 }
+
 func CheckTagExist(name string) bool {
 	db := repository.GetDBImplement().GetDB()
 	var tag models.TagTable

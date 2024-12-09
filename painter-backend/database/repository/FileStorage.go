@@ -69,7 +69,12 @@ func (f *FileStorage) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Tabl
 
 	var result []Table
 	for i := range storages {
+		storages[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &storages[i])
 	}
 	return result, tx, nil
+}
+
+func (f *FileStorage) Constructor() Table {
+	return NewEmptyFileStorage()
 }

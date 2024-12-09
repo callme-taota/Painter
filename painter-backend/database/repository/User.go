@@ -56,6 +56,7 @@ func (u *User) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(T
 	}
 
 	for i := range users {
+		users[i].BaseTable = &BaseTableImplement{}
 		if err := updater(&users[i]); err != nil {
 			return err
 		}
@@ -89,7 +90,12 @@ func (u *User) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gor
 
 	var result []Table
 	for i := range users {
+		users[i].BaseTable = &BaseTableImplement{}
 		result = append(result, &users[i])
 	}
 	return result, tx, nil
+}
+
+func (u *User) Constructor() Table {
+	return NewEmptyUser()
 }
