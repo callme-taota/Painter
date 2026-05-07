@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  api-gateway:
+    image: golang:1.23
+    working_dir: /workspace/services/api-gateway
+    command: sh -c "go run ./cmd/gateway"
+    volumes:
+      - ../:/workspace
+    ports:
+      - "18080:18080"
+
+  identity-service:
+    image: golang:1.23
+    working_dir: /workspace/services/identity-service
+    command: sh -c "go run ./cmd/identity"
+    volumes:
+      - ../:/workspace
+    ports:
+      - "18081:18081"
+
+  content-service:
+    image: golang:1.23
+    working_dir: /workspace/services/content-service
+    command: sh -c "go run ./cmd/content"
+    volumes:
+      - ../:/workspace
+    ports:
+      - "18082:18082"
+
+  system-service:
+    image: golang:1.23
+    working_dir: /workspace/services/system-service
+    command: sh -c "go run ./cmd/system"
+    volumes:
+      - ../:/workspace
+    ports:
+      - "18083:18083"
+
+  analytics-service:
+    image: golang:1.23
+    working_dir: /workspace/services/analytics-service
+    command: sh -c "go run ./cmd/analytics"
+    volumes:
+      - ../:/workspace
+    ports:
+      - "18084:18084"

@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: Painter 2026 Legacy Compatibility API
+  version: 1.0.0
+  description: Legacy endpoint compatibility layer for 1:1 migration.
+servers:
+  - url: /api
+paths:
+  /user/create: { post: { responses: { '200': { description: ok } } } }
+  /user/login/email: { post: { responses: { '200': { description: ok } } } }
+  /user/login/email/pass: { post: { responses: { '200': { description: ok } } } }
+  /user/login/uname: { post: { responses: { '200': { description: ok } } } }
+  /user/login/uname/pass: { post: { responses: { '200': { description: ok } } } }
+  /user/login/check: { post: { responses: { '200': { description: ok } } } }
+  /user/login/exist: { post: { responses: { '200': { description: ok } } } }
+  /user/login/send: { post: { responses: { '200': { description: ok } } } }
+  /user/login/mailcheck: { post: { responses: { '200': { description: ok } } } }
+  /user/self: { get: { responses: { '200': { description: ok } } } }
+  /user/self/full: { get: { responses: { '200': { description: ok } } } }
+  /user/logout: { post: { responses: { '200': { description: ok } } } }
+  /user/update/name: { post: { responses: { '200': { description: ok } } } }
+  /user/update/email: { post: { responses: { '200': { description: ok } } } }
+  /user/update/nickname: { post: { responses: { '200': { description: ok } } } }
+  /user/update/phone: { post: { responses: { '200': { description: ok } } } }
+  /user/update/headerfield: { post: { responses: { '200': { description: ok } } } }
+  /user/update/passwd: { post: { responses: { '200': { description: ok } } } }
+  /user/update: { post: { responses: { '200': { description: ok } } } }
+  /user/info: { get: { responses: { '200': { description: ok } } } }
+  /tag/suggest: { get: { responses: { '200': { description: ok } } } }
+  /tag/list: { get: { responses: { '200': { description: ok } } } }
+  /tag/list/full: { get: { responses: { '200': { description: ok } } } }
+  /tag/create: { post: { responses: { '200': { description: ok } } } }
+  /tag/update/name: { post: { responses: { '200': { description: ok } } } }
+  /tag/update/desc: { post: { responses: { '200': { description: ok } } } }
+  "/tag/update/": { post: { responses: { '200': { description: ok } } } }
+  /history/list: { get: { responses: { '200': { description: ok } } } }
+  /follow/followers: { get: { responses: { '200': { description: ok } } } }
+  /follow/followings: { get: { responses: { '200': { description: ok } } } }
+  /follow/follow: { post: { responses: { '200': { description: ok } } } }
+  /follow/unfollow: { post: { responses: { '200': { description: ok } } } }
+  /comment/list: { get: { responses: { '200': { description: ok } } } }
+  /comment/list/l: { get: { responses: { '200': { description: ok } } } }
+  /comment/create: { post: { responses: { '200': { description: ok } } } }
+  /comment/delete: { post: { responses: { '200': { description: ok } } } }
+  /comment/like: { post: { responses: { '200': { description: ok } } } }
+  /comment/dislike: { post: { responses: { '200': { description: ok } } } }
+  /collection/delete: { post: { responses: { '200': { description: ok } } } }
+  /collection/list: { post: { responses: { '200': { description: ok } } } }
+  /collection/check: { post: { responses: { '200': { description: ok } } } }
+  /category/list: { get: { responses: { '200': { description: ok } } } }
+  /category/get: { get: { responses: { '200': { description: ok } } } }
+  /category/get/fulllist: { get: { responses: { '200': { description: ok } } } }
+  /category/create: { post: { responses: { '200': { description: ok } } } }
+  /category/update/name: { post: { responses: { '200': { description: ok } } } }
+  /category/update/desc: { post: { responses: { '200': { description: ok } } } }
+  "/category/update/": { post: { responses: { '200': { description: ok } } } }
+  /article/get/author: { get: { responses: { '200': { description: ok } } } }
+  /article/get/title: { get: { responses: { '200': { description: ok } } } }
+  /article/get/content: { get: { responses: { '200': { description: ok } } } }
+  /article/get/collection: { get: { responses: { '200': { description: ok } } } }
+  /article/get/category: { get: { responses: { '200': { description: ok } } } }
+  /article/get/tag: { get: { responses: { '200': { description: ok } } } }
+  /article/get/time: { get: { responses: { '200': { description: ok } } } }
+  /article/get/count: { get: { responses: { '200': { description: ok } } } }
+  /article/get/self: { get: { responses: { '200': { description: ok } } } }
+  /article/get: { get: { responses: { '200': { description: ok } } } }
+  /article/create: { post: { responses: { '200': { description: ok } } } }
+  /article/update/content: { post: { responses: { '200': { description: ok } } } }
+  /article/update/summary: { post: { responses: { '200': { description: ok } } } }
+  /article/update/category: { post: { responses: { '200': { description: ok } } } }
+  /article/update/title: { post: { responses: { '200': { description: ok } } } }
+  /article/update/status/dart: { post: { responses: { '200': { description: ok } } } }
+  /article/update/status/public: { post: { responses: { '200': { description: ok } } } }
+  /article/update: { post: { responses: { '200': { description: ok } } } }
+  /article/delete: { post: { responses: { '200': { description: ok } } } }
+  /article/like/create: { post: { responses: { '200': { description: ok } } } }
+  /article/like/delete: { post: { responses: { '200': { description: ok } } } }
+  /article/like: { post: { responses: { '200': { description: ok } } } }
+  /article/like/check: { post: { responses: { '200': { description: ok } } } }
+  /article/collection: { post: { responses: { '200': { description: ok } } } }
+  /article/tag/create: { post: { responses: { '200': { description: ok } } } }
+  /article/tag/update: { post: { responses: { '200': { description: ok } } } }
+  /article/tag/delete: { post: { responses: { '200': { description: ok } } } }
+  /file/upload: { post: { responses: { '200': { description: ok } } } }
+  /common/starttime: { get: { responses: { '200': { description: ok } } } }
+  /common/vis/preday: { get: { responses: { '200': { description: ok } } } }
+  /common/vis/currmonth: { get: { responses: { '200': { description: ok } } } }
+  /common/info: { get: { responses: { '200': { description: ok } } } }
+  /common/isadmin: { get: { responses: { '200': { description: ok } } } }
+  /common/entry: { get: { responses: { '200': { description: ok } } } }
+  "/setting/": { get: { responses: { '200': { description: ok } } }, post: { responses: { '200': { description: ok } } } }
+  /setting/userlist: { get: { responses: { '200': { description: ok } } } }
+  /setting/user/permission: { post: { responses: { '200': { description: ok } } } }

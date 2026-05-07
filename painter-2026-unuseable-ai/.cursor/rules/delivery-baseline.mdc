@@ -1,0 +1,14 @@
+---
+description: Enforce end-to-end delivery baseline and finding log workflow
+alwaysApply: true
+---
+
+# Delivery Baseline
+
+- Every implementation must be complete end-to-end. No half-done delivery is allowed.
+- A change is incomplete if any core link is missing, such as route only, pseudo handler, repository stub, missing integration path, missing tests, or missing docs.
+- During execution, continuously read the latest code in touched areas and actively detect partial/pseudo logic.
+- Once a finding is detected, do two actions immediately:
+  - report it in the work update
+  - append it to `docs/migration/realtime-findings-log.md`
+- After the current phase, run a dedicated convergence pass to close logged findings one by one.

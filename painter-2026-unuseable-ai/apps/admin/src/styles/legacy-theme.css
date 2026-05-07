@@ -1,0 +1,182 @@
+:root {
+  --color: #444444;
+  --color-rev: #ffffff;
+  --highlight-color: #67a7ec;
+  --second-highlight-color: #378ce7;
+  --home-background: #f7f9fe;
+  --header-background: rgba(255, 255, 255, 0.6);
+  --base-hover-background: #378ce7;
+  --btn-hover-color: #ffffff;
+  --btn-hover-grey: #00000010;
+  --border-color: #67a7ec;
+  --card-background: #ffffff;
+  --content-border: 1px solid rgb(224, 224, 230);
+  --card--background: var(--card-background);
+  --scrollbar-hover: #ebebeb;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  color: var(--color);
+  background: var(--home-background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page-header {
+  padding: 0 120px;
+}
+
+.page-header h1,
+.page-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.page-cont {
+  padding: 10px 120px 24px;
+  transition: 0.3s;
+}
+
+@media (max-width: 1000px) {
+  .page-header {
+    padding: 0 80px;
+  }
+  .page-cont {
+    padding: 10px 80px 24px;
+  }
+}
+
+@media (max-width: 500px) {
+  .page-header {
+    padding: 0 20px;
+  }
+  .page-cont {
+    padding: 10px 20px 24px;
+  }
+}
+
+.panel {
+  display: grid;
+  gap: 12px;
+  background: var(--card--background);
+  border: var(--content-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.btn {
+  width: fit-content;
+  border: 0;
+  border-radius: 10px;
+  background: var(--base-hover-background);
+  color: var(--btn-hover-color);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn:hover {
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn.danger {
+  background: #991b1b;
+}
+
+input,
+textarea,
+select {
+  border: var(--content-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.hint {
+  color: #0f766e;
+  font-size: 13px;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.empty {
+  color: #64748b;
+}
+
+/* 对齐老后台 admin_base.vue 表单行 */
+.input-item {
+  display: flex;
+  margin: 10px 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.input-left {
+  width: 140px;
+  font-weight: 500;
+}
+
+.input-right {
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+pre.raw-block {
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: #6488ad10;
+  font-size: 12px;
+  overflow: auto;
+  max-height: 240px;
+}

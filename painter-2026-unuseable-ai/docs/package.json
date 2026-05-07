@@ -1,0 +1,16 @@
+{
+  "name": "@painter/docs",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "docs:dev": "vitepress dev .",
+    "docs:build": "vitepress build .",
+    "build": "vitepress build .",
+    "test": "echo \"docs has no unit tests\"",
+    "lint": "echo \"docs lint placeholder\"",
+    "typecheck": "echo \"docs no typecheck\""
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0"
+  }
+}

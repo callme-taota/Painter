@@ -1,0 +1,20 @@
+{
+  "name": "@painter/sdk-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/client.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../openapi/openapi.yaml --output src/types.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "echo \"no sdk tests yet\"",
+    "lint": "echo \"sdk lint placeholder\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.5.2",
+    "typescript": "^5.7.3"
+  }
+}

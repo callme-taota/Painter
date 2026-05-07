@@ -1,0 +1,15 @@
+---
+description: Enforce backend infrastructure baseline and persistence choices
+alwaysApply: true
+---
+
+# Infrastructure Baseline
+
+- Default runtime stack for backend services is `MySQL + Redis`.
+- Do not use SQLite for business persistence unless user explicitly requests it.
+- Use PostgreSQL only when scenario-specific requirements justify it (for example advanced relational capabilities).
+- Use MQ for asynchronous workflows, eventual consistency, or decoupled event-driven flows.
+- When changing persistence/message infrastructure, update:
+  - service implementation and configuration
+  - tests (unit/integration/contract as needed)
+  - deployment and architecture docs under `docs/`

@@ -1,0 +1,26 @@
+{
+  "name": "painter-2026",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "docs"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @painter/web",
+    "dev:admin": "npm run dev -w @painter/admin",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "sdk:generate": "npm run generate -w @painter/sdk-ts",
+    "contract:check": "npm run lint -w @painter/openapi",
+    "docs:dev": "npm run docs:dev -w @painter/docs",
+    "docs:build": "npm run docs:build -w @painter/docs"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

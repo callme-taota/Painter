@@ -1,0 +1,558 @@
+:root {
+  --color: #444444;
+  --color-rev: #ffffff;
+  --highlight-color: #67a7ec;
+  --second-highlight-color: #378ce7;
+  --home-background: #f7f9fe;
+  --header-background: rgba(255, 255, 255, 0.6);
+  --base-hover-background: #378ce7;
+  --btn-hover-color: #ffffff;
+  --btn-hover-grey: #00000010;
+  --btn-hover-deep-grey: #00000020;
+  --border-color: #67a7ec;
+  --layout-bottom-background: #dcdcdc30;
+  --card-background: #ffffff;
+  --article-background: rgba(255, 255, 255, 0.6);
+  --add-btn-background: rgba(0, 0, 0, 0.05);
+  --content-border: 1px solid rgb(224, 224, 230);
+  --scrollbar-hover: #ebebeb;
+  --code-background: #6488ad10;
+  --base-dot: #00000030;
+  --base-dot-hover: #00000080;
+
+  /* 与老项目 CSS 变量名对齐（便于逐段迁移样式） */
+  --card--background: var(--card-background);
+  --layout--bottom-background: var(--layout-bottom-background);
+  --login-border: var(--content-border);
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  color: var(--color);
+  background: var(--home-background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background-color: var(--home-background);
+}
+::-webkit-scrollbar-thumb {
+  background-color: #34343425;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover);
+}
+
+.page-header {
+  padding: 0 120px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.page-cont {
+  padding: 10px 120px;
+  transition: 0.3s;
+}
+
+@media (max-width: 1000px) {
+  .page-header {
+    padding: 0 80px;
+  }
+  .page-cont {
+    padding: 10px 80px;
+  }
+}
+
+@media (max-width: 500px) {
+  .page-header {
+    padding: 0 20px;
+  }
+  .page-cont {
+    padding: 10px 20px;
+  }
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  background: var(--card-background);
+  border: var(--content-border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.btn {
+  width: fit-content;
+  border: 0;
+  border-radius: 10px;
+  background: var(--base-hover-background);
+  color: var(--btn-hover-color);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn:hover {
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  border: var(--content-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.hint {
+  color: #0f766e;
+  font-size: 13px;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.empty {
+  color: #64748b;
+}
+
+/* ---------- 登录 / 注册（对齐 auth.css，适配固定顶栏） ---------- */
+.auth-page-cont {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px 40px;
+}
+
+.login-cont {
+  background: var(--card--background);
+  width: min(780px, 100%);
+  min-height: 400px;
+  border-radius: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 16px -3px rgba(0, 0, 0, 0.12);
+}
+
+.login-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1 1 260px;
+  padding: 40px;
+}
+
+.login-left-line {
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+.login-welcome {
+  font-weight: bolder;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+.login-left-logo {
+  width: 70px;
+  height: 70px;
+  margin-right: 20px;
+  border-radius: 14px;
+  background: var(--base-hover-background);
+  color: var(--btn-hover-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.login-right {
+  position: relative;
+  padding: 40px 40px 88px;
+  flex: 1 1 280px;
+  border-left: var(--login-border);
+}
+
+@media (max-width: 720px) {
+  .login-right {
+    border-left: none;
+    border-top: var(--login-border);
+  }
+}
+
+.painter-login {
+  font-size: x-large;
+  user-select: none;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.login-account-text {
+  margin: 10px 0 6px;
+  font-size: 14px;
+}
+
+.login-btn-cont {
+  position: absolute;
+  bottom: 32px;
+  left: 40px;
+  right: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-link {
+  color: var(--highlight-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+.register-steps {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+  color: var(--color);
+}
+
+.register-steps li {
+  margin: 8px 0;
+}
+
+/* ---------- 文章列表卡片（对齐 article_card.vue） ---------- */
+.article-list-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.article-list-flex {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0 2%;
+}
+
+a.article-card {
+  text-decoration: none;
+  color: inherit;
+}
+
+.article-card {
+  transition: 0.3s;
+  width: 49%;
+  min-height: 155px;
+  background: var(--card--background);
+  border-radius: 20px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.article-card:hover {
+  box-shadow: 0 0 6px var(--border-color);
+}
+
+.article-card-cont {
+  padding: 26px;
+}
+
+.article-card-title {
+  line-height: 36px;
+  min-height: 36px;
+  font-size: 22px;
+  font-weight: bolder;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.article-card-summary {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 14px;
+  color: #5b6472;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.article-more-cont {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.article-more-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.article-card-tag-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.article-card-tag-chip {
+  line-height: 24px;
+  padding: 2px 10px;
+  background: var(--btn-hover-grey);
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+@media (max-width: 1000px) {
+  .article-card {
+    width: 100%;
+  }
+}
+
+/* ---------- 标签 / 分类列表（对齐 tagList.vue / categoryList.vue） ---------- */
+.tags-cont,
+.categories-cont {
+  padding: 20px min(160px, 8vw);
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+a.tag-item,
+a.category-item {
+  text-decoration: none;
+  color: inherit;
+}
+
+.tag-item,
+.category-item {
+  padding: 6px 10px 6px 30px;
+  background: var(--card--background);
+  height: 32px;
+  line-height: 32px;
+  margin: 10px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 2px 16px -3px rgba(0, 0, 0, 0.2);
+  min-width: 120px;
+}
+
+.tag-item:hover,
+.category-item:hover {
+  transform: scale(1.05);
+  color: var(--color-rev);
+  font-weight: bold;
+  background: var(--base-hover-background);
+}
+
+.tag-item-name,
+.category-item-name {
+  padding-right: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.tag-item-count,
+.category-item-count {
+  background: var(--btn-hover-grey);
+  width: 32px;
+  height: 32px;
+  text-align: center;
+  border-radius: 50%;
+  line-height: 32px;
+  flex-shrink: 0;
+}
+
+.tag-item:hover .tag-item-count,
+.category-item:hover .category-item-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--color-rev);
+}
+
+.tags-toolbar {
+  padding: 0 min(160px, 8vw);
+  margin: 0 auto;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---------- 首页 entry（对齐 entry.vue 视觉） ---------- */
+.entry-cont {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  padding: 0 min(80px, 6vw) 20px;
+  position: relative;
+}
+
+.entry-page {
+  position: relative;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.entry-painter-text {
+  font-weight: 500;
+  font-size: xx-large;
+  padding: 0 18px;
+  cursor: default;
+  transition: 0.3s;
+  border-radius: 14px;
+}
+
+.entry-painter-text:hover {
+  text-shadow: 0 0 12px #fff;
+  color: var(--color-rev);
+  background-color: var(--base-hover-background);
+}
+
+.second-highlight {
+  color: var(--second-highlight-color);
+}
+
+.entry-page-bold {
+  font-weight: bold;
+  font-size: xx-large;
+}
+
+.entry-tag {
+  margin: 4px 8px 4px 0;
+  padding: 2px 4px;
+  font-size: large;
+  font-weight: lighter;
+  font-style: italic;
+  border-bottom: 1px solid var(--highlight-color);
+  display: inline-block;
+}
+
+.entry-contact-me {
+  flex-wrap: wrap;
+  display: flex;
+  margin-top: 16px;
+  justify-content: center;
+  gap: 8px;
+}
+
+.entry-icon-cont {
+  transition: 0.3s;
+  border-radius: 14px;
+  height: 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--layout--bottom-background);
+  text-decoration: none;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.entry-icon-cont:hover {
+  background-color: var(--base-hover-background);
+  color: var(--btn-hover-color);
+}
+
+.entry-side-page-number {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  width: 12px;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.entry-side-to-btn {
+  border-radius: 50%;
+  background-color: var(--base-dot);
+  width: 12px;
+  height: 12px;
+  margin: 4px 0;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.entry-side-to-btn:hover,
+.entry-side-to-btn.is-active {
+  background-color: var(--base-dot-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--base-hover-background);
+  border: 1px solid var(--border-color);
+}
+
+.btn-ghost:hover {
+  background: var(--btn-hover-grey);
+}
+
+pre.raw-block {
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--code-background);
+  font-size: 12px;
+  overflow: auto;
+  max-height: 220px;
+}

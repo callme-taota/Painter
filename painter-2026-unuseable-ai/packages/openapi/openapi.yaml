@@ -1,0 +1,437 @@
+openapi: 3.1.0
+info:
+  title: Painter 2026 API
+  version: 1.0.0
+  description: Contract-first APIs for painter-2026 services.
+servers:
+  - url: /api/v1
+paths:
+  /identity/auth/login:
+    post:
+      summary: User login
+      operationId: identityLogin
+      tags: [identity]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseLoginData'
+  /content/articles:
+    get:
+      summary: List articles with cursor pagination
+      operationId: listArticles
+      tags: [content]
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Article list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseArticleListData'
+    post:
+      summary: Create article
+      operationId: createArticle
+      tags: [content]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArticleRequest'
+      responses:
+        '200':
+          description: Create result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCreateArticleData'
+  /system/configs:
+    get:
+      summary: Fetch config center values by namespace
+      operationId: listConfigs
+      tags: [system]
+      parameters:
+        - in: query
+          name: namespace
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Config list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseConfigListData'
+  /analytics/overview:
+    get:
+      summary: Fetch analytics overview
+      operationId: getAnalyticsOverview
+      tags: [analytics]
+      responses:
+        '200':
+          description: Analytics overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAnalyticsOverviewData'
+  /content/comments:
+    get:
+      summary: List comments by article
+      operationId: listComments
+      tags: [content]
+      parameters:
+        - in: query
+          name: articleId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Comment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCommentListData'
+    post:
+      summary: Create comment
+      operationId: createComment
+      tags: [content]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '200':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCreateCommentData'
+  /content/interactions/like:
+    post:
+      summary: Like an article
+      operationId: likeArticle
+      tags: [content]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleInteractionRequest'
+      responses:
+        '200':
+          description: Like result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseActionData'
+  /content/interactions/collect:
+    post:
+      summary: Collect an article
+      operationId: collectArticle
+      tags: [content]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleInteractionRequest'
+      responses:
+        '200':
+          description: Collect result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseActionData'
+  /identity/follows:
+    get:
+      summary: List followings by user
+      operationId: listFollowings
+      tags: [identity]
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Followings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFollowListData'
+    post:
+      summary: Follow user
+      operationId: createFollow
+      tags: [identity]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FollowRequest'
+      responses:
+        '200':
+          description: Follow action result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseActionData'
+  /system/admin/settings:
+    get:
+      summary: Admin get site settings
+      operationId: getAdminSettings
+      tags: [system]
+      responses:
+        '200':
+          description: Site settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSettingsData'
+    patch:
+      summary: Admin update site settings
+      operationId: updateAdminSettings
+      tags: [system]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSettingsData'
+components:
+  schemas:
+    ApiMeta:
+      type: object
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        traceId: { type: string }
+      required: [code, message, traceId]
+    ApiResponseLoginData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/LoginData'
+    ApiResponseArticleListData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Article'
+                nextCursor: { type: string, nullable: true }
+              required: [items]
+    ApiResponseCreateArticleData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                articleId: { type: string }
+              required: [articleId]
+    ApiResponseConfigListData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                namespace: { type: string }
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ConfigItem'
+              required: [namespace, items]
+    ApiResponseAnalyticsOverviewData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AnalyticsOverview'
+    ApiResponseCommentListData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Comment'
+              required: [items]
+    ApiResponseCreateCommentData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                commentId: { type: string }
+              required: [commentId]
+    ApiResponseActionData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                success: { type: boolean }
+              required: [success]
+    ApiResponseFollowListData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FollowItem'
+              required: [items]
+    ApiResponseSettingsData:
+      allOf:
+        - $ref: '#/components/schemas/ApiMeta'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SiteSettings'
+    LoginRequest:
+      type: object
+      properties:
+        username: { type: string }
+        password: { type: string }
+      required: [username, password]
+    LoginData:
+      type: object
+      properties:
+        userId: { type: string }
+        accessToken: { type: string }
+        expiresAt: { type: string, format: date-time }
+      required: [userId, accessToken, expiresAt]
+    CreateArticleRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 128 }
+        summary: { type: string, maxLength: 512 }
+        content: { type: string }
+        categoryId: { type: string }
+        tagIds:
+          type: array
+          items: { type: string }
+      required: [title, content, categoryId]
+    Article:
+      type: object
+      properties:
+        articleId: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        authorId: { type: string }
+        readCount: { type: integer }
+        likeCount: { type: integer }
+        commentCount: { type: integer }
+        updatedAt: { type: string, format: date-time }
+      required: [articleId, title, authorId, updatedAt]
+    ConfigItem:
+      type: object
+      properties:
+        key: { type: string }
+        value: { type: string }
+        valueType: { type: string, enum: [string, number, boolean, json] }
+        updatedAt: { type: string, format: date-time }
+      required: [key, value, valueType, updatedAt]
+    AnalyticsOverview:
+      type: object
+      properties:
+        qps: { type: integer }
+        p95ms: { type: integer }
+        cacheHitRatio: { type: number }
+        generatedAt: { type: string, format: date-time }
+        slowSQLThreshold: { type: string }
+      required: [qps, p95ms, cacheHitRatio, generatedAt, slowSQLThreshold]
+    Comment:
+      type: object
+      properties:
+        commentId: { type: string }
+        articleId: { type: string }
+        userId: { type: string }
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [commentId, articleId, userId, content, createdAt]
+    CreateCommentRequest:
+      type: object
+      properties:
+        articleId: { type: string }
+        content: { type: string }
+      required: [articleId, content]
+    ArticleInteractionRequest:
+      type: object
+      properties:
+        articleId: { type: string }
+      required: [articleId]
+    FollowRequest:
+      type: object
+      properties:
+        targetUserId: { type: string }
+      required: [targetUserId]
+    FollowItem:
+      type: object
+      properties:
+        userId: { type: string }
+        nickname: { type: string }
+      required: [userId, nickname]
+    SiteSettings:
+      type: object
+      properties:
+        siteName: { type: string }
+        icpCode: { type: string }
+        github: { type: string }
+        canRegister: { type: boolean }
+      required: [siteName, canRegister]
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        siteName: { type: string }
+        icpCode: { type: string }
+        github: { type: string }
+        canRegister: { type: boolean }
