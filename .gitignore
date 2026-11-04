@@ -27,3 +27,9 @@ painter-backend/server/static/upload/*
 painter-backend/build/*
 painter-backend/logs/*
 painter-backend/server/static/webroot/*
+
+# Local assistant state and document preview captures
+/.cc-connect/
+/draft_*_folder/
+# Captured external API reference may contain temporary authorization data
+/diagrams/2026-10-21-pg-board-update/native-create-reference.md

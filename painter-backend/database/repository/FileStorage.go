@@ -47,17 +47,7 @@ func (f *FileStorage) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater
 }
 
 func (f *FileStorage) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var storages []FileStorage
-	if err := query(db).Find(&storages).Error; err != nil {
-		return err
-	}
-
-	for _, storage := range storages {
-		if err := db.Delete(&storage).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[FileStorage](db, query)
 }
 
 func (f *FileStorage) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {

@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DEFAULT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+source "$DEFAULT_ROOT/scripts/lib/deploy.sh"
+usage() { cat <<'HELP'
+Painter deployment and operations (checkout or release bundle)
+  ./install.sh                         Interactive install wizard
+  scripts/painter install [--non-interactive --mode local|lan|https]
+      [--lan-ip IPv4 | --domain hostname] [--port 8080] [--project name]
+      [--image registry/image:explicit-tag | --build] [--install-docker]
+      [--github-client-id ID --github-client-secret-file FILE --owner-github-id ID]
+  scripts/painter update [--image registry/image:tag | --build]
+  scripts/painter doctor | status | backups | backup
+  scripts/painter verify-backup --backup DIRECTORY_NAME
+  scripts/painter start | restart | stop | logs [--tail 100 --follow] | setup-token
+  ./maintain.sh                        Interactive maintenance menu
+  Shared options: --root DIR --timeout 180 --non-interactive
+No command pulls Git, rotates existing secrets, rolls back a schema, or deletes volumes.
+HELP
+}
+command=${1:-install}; [[ $# == 0 ]] || shift
+case "$command" in -h|--help|help) usage; exit 0;; install|update|backup|backups|verify-backup|doctor|start|restart|status|logs|stop|setup-token) ;; *) usage >&2; die "Unknown command: $command";; esac
+if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then usage; exit 0; fi
+parse_options "$@"
+validate_command_options "$command"
+# The host backup inventory stays usable when Docker is unavailable.
+if [[ "$command" == backups ]]; then list_backups; exit 0; fi
+# Read-only commands do not require a writable project lock.
+case "$command" in status|logs|doctor|setup-token) ;; *) lock_operation;; esac
+docker_preflight
+ENV_EXISTED=0; [[ ! -f "$ROOT/.env" ]] || ENV_EXISTED=1
+if [[ "$command" == install ]]; then
+ if [[ ! -e "$ROOT/.env" && ! -L "$ROOT/.env" ]]; then
+  project=${PROJECT_REQUEST:-painter-next}; existing=$(docker ps -a --filter "label=com.docker.compose.project=$project" --format '{{.ID}}') || command_failed 'Cannot inspect existing Docker projects.'
+  [[ -z "$existing" ]] || die 'Docker containers already use this project name but .env is absent. Recover its original secrets or choose another --project; no replacement was attempted.'
+  existing=$(docker volume ls --filter "label=com.docker.compose.project=$project" --format '{{.Name}}') || command_failed 'Cannot inspect existing Docker volumes.'
+  [[ -z "$existing" ]] || die 'Docker data volumes already use this project name but .env is absent. Recover the original .env; no new secrets or replacement were attempted.'
+  new_configuration
+ else say 'Existing .env preserved; this rerun does not change access mode, OAuth or secrets.'; fi
+fi
+load_configuration
+if [[ "$command" == install && "$IMAGE_SET" == 1 && "$IMAGE" != "$CONFIGURED_IMAGE" ]]; then die 'Existing image configuration differs; use update --image after a verified backup.'; fi
+if [[ "$command" == install && "$BUILD" == 1 && -n "$CONFIGURED_IMAGE" ]]; then die 'Existing release image is configured; use update --build to change it after backup.'; fi
+validate_compose
+case "$command" in
+ install) if ((ENV_EXISTED)); then existing_app=$(service_id app) || command_failed 'Cannot inspect the existing application; activation was not attempted.'; if [[ -n "$existing_app" ]]; then say 'Existing application detected; taking a pre-activation backup before rerun.'; backup_site; fi; fi; EFFECTIVE_IMAGE=$CONFIGURED_IMAGE; ((BUILD==0)) || EFFECTIVE_IMAGE=''; activate; print_access;;
+ update) backup_site; EFFECTIVE_IMAGE=$CONFIGURED_IMAGE; ((IMAGE_SET==0)) || EFFECTIVE_IMAGE=$IMAGE; ((BUILD==0)) || EFFECTIVE_IMAGE=''; activate; if [[ "$EFFECTIVE_IMAGE" != "$CONFIGURED_IMAGE" ]]; then persist_image "$EFFECTIVE_IMAGE"; fi; say "Update healthy. Pre-update backup: $LAST_BACKUP"; print_access;;
+ backup) backup_site;;
+ verify-backup) verify_backup;;
+ doctor) doctor_site;;
+ start) start_site; say 'Existing deployment started; application health verified.';;
+ restart) compose restart --timeout 30 app || command_failed 'Application restart failed.'; wait_health; say 'Application restarted; health verified.';;
+ setup-token) compose exec -T app painter setup-token;;
+ status) say "Project: $PROJECT"; say "URL: $URL"; compose ps -a;;
+ logs) args=(logs --tail "$LOG_TAIL"); ((LOG_FOLLOW==0)) || args+=(--follow); compose "${args[@]}";;
+ stop) compose stop; say 'Stopped. Database, media, backups and all volumes were retained.';;
+esac

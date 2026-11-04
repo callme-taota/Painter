@@ -28,7 +28,7 @@ func (t *userLastLoginUpdateTask) taskFn() func() {
 				tolog.Infof("Error while UserLastLoginUpdate %e %v", err, ok).PrintAndWriteSafe()
 				return
 			}
-			tolog.Infof("Updating last request for user %s in MySQL", userID).PrintAndWriteSafe()
+			tolog.Infof("Updating last request for user %d in MySQL", userID).PrintAndWriteSafe()
 		}
 	}
 	return taskFn

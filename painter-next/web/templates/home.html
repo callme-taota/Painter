@@ -1,0 +1,72 @@
+{{define "home-page"}}
+{{if not .HomeHasIntro}}<h1 class="sr-only">{{.Site.display_name}}</h1>{{end}}
+{{range .HomeSections}}
+{{if .WorkJourneyStart}}<div class="home-work-journey" data-home-work-journey>{{end}}
+{{if eq .Key "intro"}}{{template "home-introduction" .}}
+{{else if eq .Key "articles"}}{{template "home-articles" .}}
+{{else if and (eq .Key "steam") (not .GroupedWithMusic)}}{{if .FollowingMusic}}<div class="home-collection-journey" data-game-music-journey data-collection-direction="games-music">{{template "home-games" .}}{{template "home-records" .FollowingMusic}}</div>{{else}}{{template "home-games" .}}{{end}}
+{{else if and (eq .Key "music") (not .GroupedWithGames)}}{{if .FollowingGames}}<div class="home-collection-journey" data-game-music-journey data-collection-direction="music-games">{{template "home-records" .}}{{template "home-games" .FollowingGames}}</div>{{else}}{{template "home-records" .}}{{end}}
+{{else if eq .Key "photos"}}{{template "home-photos" .}}
+{{else if eq .Key "activity"}}{{template "home-activity" .}}
+{{else if eq .Key "projects"}}{{template "home-projects" .}}
+{{else if eq .Key "closing"}}{{template "home-closing" .}}{{end}}
+{{if .WorkJourneyEnd}}</div>{{end}}
+{{end}}
+{{end}}
+
+{{define "home-introduction"}}
+<section class="home-story" id="home-intro" data-home-section="intro" data-home-story aria-label="个人介绍"><div class="story-stage">
+ <div class="story-art" aria-hidden="true"><div class="story-pages" data-story-pages><div class="story-leaf story-leaf-back"></div><div class="story-leaf story-leaf-middle"></div><div class="story-leaf story-leaf-front"><div class="story-sheet-title">{{.Name}}。</div>{{if .Description}}<div class="story-sheet-intro">{{.Description}}</div>{{end}}<div class="story-sheet-signature"><img src="/assets/images/painter-logo.png" width="28" height="28" alt=""><span>{{.Brand}}</span></div></div></div></div>
+ <div class="story-scene story-scene-hello" data-story-scene="hello"><div class="story-hero-copy">{{if or .Title .Name}}<h1 class="story-title">{{if .Title}}<span class="greeting">{{.Title}}</span>{{end}}{{if .Name}}<span class="personal-name">{{.Name}}。</span>{{end}}</h1>{{end}}{{if .Description}}<p class="story-intro-line">{{.Description}}</p>{{end}}{{if and .LinkLabel .LinkURL}}<a class="story-jump" href="{{.LinkURL}}">{{.LinkLabel}} {{template "home-arrow"}}</a>{{end}}</div>{{if .ScrollLabel}}<span class="story-cue">{{.ScrollLabel}} <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18m-6-6 6 6 6-6"/></svg></span>{{end}}</div>
+ {{if or .Description .Roles}}<div class="story-scene story-scene-intro" data-story-scene="intro"><div class="story-intro-copy">{{if .Description}}<h2>{{range phrases .Description}}<span class="intro-phrase">{{.}}</span>{{end}}</h2>{{end}}{{if .Roles}}<ul class="story-roles">{{range .Roles}}<li>{{.}}</li>{{end}}</ul>{{end}}</div></div>{{end}}
+</div></section>
+{{end}}
+
+{{define "home-section-heading"}}<div class="home-section-heading"><div>{{if .Title}}<h2>{{.Title}}</h2>{{end}}{{if .Description}}<p class="home-section-description">{{.Description}}</p>{{end}}</div>{{if and .LinkLabel .LinkURL}}<a href="{{.LinkURL}}">{{.LinkLabel}} {{template "home-arrow"}}</a>{{end}}</div>{{end}}
+
+{{define "home-articles"}}<section class="home-writing" id="home-writing" data-home-section="articles" data-home-writing><div class="home-writing-stage">{{template "home-section-heading" .}}{{if .Items}}<div class="home-writing-viewport" tabindex="0" aria-label="最近文章，可横向浏览"><div class="home-writing-track">{{range .Items}}{{template "home-writing-entry" .}}{{end}}</div></div>{{else}}<p class="home-writing-empty">文字正在酝酿中。</p>{{end}}</div></section>{{end}}
+
+{{define "home-games"}}
+<section class="home-wall home-games home-game-story" id="home-steam" data-home-section="steam" data-game-story aria-label="{{if .Title}}{{.Title}}{{else}}游戏墙{{end}}">
+ <h2 class="sr-only">{{if .Title}}{{.Title}}{{else}}游戏墙{{end}}</h2>
+ <div class="home-game-stage" data-game-stage>
+  <div class="home-game-window" data-game-window>
+   {{range $i,$game := .Items}}<article class="home-game home-game-frame" data-game-frame data-game-id="{{.provider_id}}">
+    <img class="game-backdrop" src="{{if .hero_url}}{{.hero_url}}{{else}}{{.image_url}}{{end}}" data-game-hero data-fallback="{{.image_url}}" alt="" loading="lazy" decoding="async">
+    <div class="game-scene-content"><div class="game-identity{{if not .logo_url}} has-missing-logo{{end}}">
+     <h3 class="sr-only">{{.title}}</h3>{{if .logo_url}}<img class="game-wordmark" src="{{.logo_url}}" alt="{{.title}}" data-game-logo loading="lazy" decoding="async">{{end}}
+     <span class="game-name-fallback" aria-hidden="true">{{.title}}</span>
+     <p class="game-playtime">{{gameHours .playtime_minutes}}</p>{{if and (eq .source "manual") .subtitle}}<p class="game-description">{{.subtitle}}</p>{{end}}
+     <a class="game-store-link" href="{{.url}}" target="_blank" rel="noopener" aria-label="在 Steam 查看 {{.title}}">在 Steam 查看 {{template "home-arrow"}}</a>
+    </div></div>
+   </article>{{end}}
+   <div class="home-game-chrome"><div class="game-chapter-heading"><span class="game-chapter-title">{{.Title}}</span>{{if .Description}}<p class="game-chapter-description">{{.Description}}</p>{{end}}</div><a class="game-library-link" href="/games">{{if .LinkLabel}}{{.LinkLabel}}{{else}}查看更多游戏{{end}} {{template "home-arrow"}}</a></div>
+   <nav class="game-scene-nav" aria-label="首页游戏" data-game-nav hidden>{{range $i,$game := .Items}}<button type="button" data-game-jump="{{$i}}" aria-label="查看 {{.title}}" aria-pressed="false"><span></span></button>{{end}}</nav>
+  </div>
+ </div>
+ <a class="game-static-more" href="/games">查看完整游戏墙 {{template "home-arrow"}}</a>
+</section>{{end}}
+
+{{define "home-records"}}
+<section class="home-wall home-records home-record-wall" id="home-music" data-home-section="music" data-record-wall aria-label="{{if .Title}}{{.Title}}{{else}}唱片墙{{end}}">
+ <div class="home-record-stage">
+  <div class="home-record-grid">{{range .Items}}<a class="home-record-tile" href="{{.url}}" target="_blank" rel="noopener" aria-label="在 Apple Music 聆听 {{.title}}{{if .subtitle}} · {{.subtitle}}{{end}}"><img src="{{.image_url}}" alt="{{if .alt}}{{.alt}}{{else}}{{.title}} 专辑封面{{end}}" loading="lazy" decoding="async" data-home-cover><span><strong>{{.title}}</strong>{{if .subtitle}}<small>{{.subtitle}}</small>{{end}}</span></a>{{end}}</div>
+  <div class="home-record-caption"><div>{{if .Title}}<h2>{{.Title}}</h2>{{end}}{{if .Description}}<p>{{.Description}}</p>{{end}}{{with .MusicPlaylist}}<p class="record-playlist-source">{{.title}}{{if .partial}} · 公开页部分封面{{end}}</p>{{end}}</div>
+   <div class="record-destinations">{{if .MusicPlaylist}}<a class="record-source-link" href="{{.MusicPlaylist.source_url}}" target="_blank" rel="noopener">打开歌单 {{template "home-arrow"}}</a>{{end}}{{if and .LinkLabel .LinkURL}}<a class="record-source-link" href="{{.LinkURL}}">{{.LinkLabel}} {{template "home-arrow"}}</a>{{end}}{{if .MusicBadgeURL}}<a class="home-music-badge" href="{{if .MusicPlaylist}}{{.MusicPlaylist.source_url}}{{else}}{{.MusicBadgeURL}}{{end}}" target="_blank" rel="noopener"><img src="/assets/brands/listen-on-apple-music-zh-cn.svg" width="125" height="42" alt="在 Apple Music 上聆听"></a>{{end}}</div>
+  </div>
+ </div>
+</section>{{end}}
+
+{{define "home-photos"}}<section class="home-wall home-photos" id="home-photos" data-home-section="photos">{{template "home-section-heading" .}}<div class="home-photo-grid" data-moment-gallery data-gallery-title="图片墙">{{range .Items}}<figure class="home-photo"><a href="{{.image_url}}" target="_blank" rel="noopener" data-moment-image data-image-alt="{{if .alt}}{{.alt}}{{else}}{{.title}}{{end}}" aria-label="查看图片：{{.title}}"><img src="{{.image_url}}" alt="{{if .alt}}{{.alt}}{{else}}{{.title}}{{end}}" loading="lazy" decoding="async"></a>{{if or .title .subtitle}}<figcaption>{{if .title}}<strong>{{if .url}}<a href="{{.url}}" target="_blank" rel="noopener">{{.title}}</a>{{else}}{{.title}}{{end}}</strong>{{end}}{{if .subtitle}}<span>{{.subtitle}}</span>{{end}}</figcaption>{{end}}</figure>{{end}}</div></section>{{end}}
+
+{{define "home-closing"}}<section class="home-close" id="home-closing" data-home-section="closing"><div>{{if .Title}}<h2>{{.Title}}</h2>{{end}}{{if .Description}}<p>{{.Description}}</p>{{end}}{{if and .LinkLabel .LinkURL}}<nav class="home-close-links" aria-label="继续探索"><a class="home-phrase-link" href="{{.LinkURL}}">{{.LinkLabel}}{{template "home-arrow"}}</a></nav>{{end}}</div></section>{{end}}
+{{define "home-arrow"}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>{{end}}
+
+{{define "home-activity"}}<section class="home-activity home-personal-section" id="home-activity" data-home-section="activity" aria-label="更新频率">{{template "home-section-heading" .}}
+ <div class="activity-summary"><p><strong>{{.Activity.Total}}</strong> 次发布，<strong>{{.Activity.ActiveDays}}</strong> 天留下记录。</p><span>{{.Activity.Start}} — {{.Activity.End}}</span></div>
+ <div class="activity-scroll" tabindex="0" role="region" aria-label="每日发布日历，可横向滚动"><div class="activity-calendar" data-activity-calendar>{{range .Activity.Weeks}}<div class="activity-week">{{range .}}<span class="activity-day{{if not .InRange}} is-padding{{end}}{{if .Future}} is-future{{end}}" data-level="{{.Level}}" {{if .InRange}}data-date="{{.Date}}" data-count="{{.Count}}" aria-label="{{.Date}}：{{.Count}} 次发布"{{end}}></span>{{end}}</div>{{end}}</div></div>
+ <div class="activity-foot"><p>{{.Activity.SourceLabel}} · {{.Activity.Timezone}}<br><span>按首次发布时间计数；撤回或删除后不计入。</span></p><div class="activity-legend" aria-label="颜色越深，发布越多"><span>少</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>多</span></div></div>
+ <p class="activity-day-detail" data-activity-detail aria-live="polite">左右滑动查看更多日期；悬停或点击格子查看当天记录。</p>
+</section>{{end}}
+
+{{define "home-projects"}}<section class="home-projects home-personal-section" id="home-projects" data-home-section="projects" aria-label="开源项目">{{template "home-section-heading" .}}{{if .Items}}<div class="project-deck" data-project-deck role="list" aria-label="开源项目牌组">{{range $i,$project := .Items}}<article class="project-playing-card" data-project-card role="listitem"><a href="{{.url}}" target="_blank" rel="noopener" class="project-card-link"><div class="project-card-source"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M9 15 21 3M13 3h8v8"/></svg><span>{{if eq .source "github"}}GitHub{{else}}项目{{end}}</span><span class="project-card-arrow">{{template "home-arrow"}}</span></div><div class="project-card-body">{{if .avatar_url}}<img class="project-owner-avatar" src="{{.avatar_url}}" width="44" height="44" alt="" loading="lazy" decoding="async">{{end}}<h3>{{.title}}</h3>{{if .full_name}}<p class="project-full-name">{{.full_name}}</p>{{end}}{{if .description}}<p class="project-description">{{.description}}</p>{{end}}</div><div class="project-card-meta">{{if .language}}<span>{{.language}}</span>{{end}}{{if ne .stars nil}}<span><svg class="icon" viewBox="0 0 24 24" aria-label="Star"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>{{.stars}}</span>{{end}}</div></a></article>{{end}}</div><p class="project-deck-hint">悬停或聚焦一张卡片，展开查看；点击前往项目。</p>{{else}}<p class="home-project-empty">还没有公开展示的项目。</p>{{end}}</section>{{end}}

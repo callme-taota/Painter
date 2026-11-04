@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "identity": "user",
+  "dry_run": true,
+  "data": {
+    "api": [
+      {
+        "desc": "create mermaid node on the whiteboard.",
+        "method": "POST",
+        "url": "/open-apis/board/v1/whiteboards/O1QY...Lnlb/nodes/plantuml",
+        "body": {
+          "plant_uml_code": "sequenceDiagram\n  participant B as 浏览器\n  participant I as Ingest\n  participant D as PostgreSQL\n  participant W as 聚合worker\n  B-\u003e\u003eI: 有限批次 events\n  I-\u003e\u003eD: 校验后 INSERT去重，COMMIT\n  D--\u003e\u003eI: 已持久化\n  I--\u003e\u003eB: ACK accepted / duplicate\n  W-\u003e\u003eD: 锁未聚合行 FOR UPDATE SKIP LOCKED\n  W-\u003e\u003eD: UV去重 + daily upsert + aggregated标记，同事务\n  alt worker在commit前崩溃\n    D--\u003e\u003eW: 整批回滚，下次仍能认领未处理行\n  else commit后崩溃\n    D--\u003e\u003eW: 指标和处理标记已保存，不重复累计\n  end\n",
+          "syntax_type": 2,
+          "parse_mode": 1,
+          "overwrite": true
+        }
+      }
+    ],
+    "context": {
+      "app_id": "cli_aa5960846f78dd1e",
+      "user_open_id": "ou_2e04b6768a86d80a0997c0d3d42f5dcc"
+    },
+    "description": "will call whiteboard open api to update content."
+  }
+}

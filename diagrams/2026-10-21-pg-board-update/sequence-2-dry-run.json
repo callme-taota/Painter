@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "identity": "user",
+  "dry_run": true,
+  "data": {
+    "api": [
+      {
+        "desc": "create mermaid node on the whiteboard.",
+        "method": "POST",
+        "url": "/open-apis/board/v1/whiteboards/FyQh...inSg/nodes/plantuml",
+        "body": {
+          "plant_uml_code": "sequenceDiagram\n  participant E as 编辑器\n  participant C as Content\n  participant R as 规范渲染器\n  participant D as PostgreSQL\n  E-\u003e\u003eC: 等待保存后发布 version + draft_version\n  C-\u003e\u003eR: 渲染当前草稿，不持数据库事务\n  R--\u003e\u003eC: 安全HTML / 纯文本 / hash\n  C-\u003e\u003eD: BEGIN，锁文章/媒体，复核CAS\n  C-\u003e\u003eD: 修订快照 + publication + 搜索投影/GIN + outbox\n  alt 所有写入成功\n    C-\u003e\u003eD: COMMIT\n    D--\u003e\u003eC: 成功\n    C--\u003e\u003eE: 发布完成 revision_id + URL\n  else 任一步失败\n    C-\u003e\u003eD: ROLLBACK\n    C--\u003e\u003eE: 保留草稿，线上旧修订继续有效\n  end\n",
+          "syntax_type": 2,
+          "parse_mode": 1,
+          "overwrite": true
+        }
+      }
+    ],
+    "context": {
+      "app_id": "cli_aa5960846f78dd1e",
+      "user_open_id": "ou_2e04b6768a86d80a0997c0d3d42f5dcc"
+    },
+    "description": "will call whiteboard open api to update content."
+  }
+}

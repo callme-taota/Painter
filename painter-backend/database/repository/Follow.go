@@ -45,17 +45,7 @@ func (f *Follow) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func
 }
 
 func (f *Follow) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var follows []Follow
-	if err := query(db).Find(&follows).Error; err != nil {
-		return err
-	}
-
-	for _, follow := range follows {
-		if err := db.Delete(&follow).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[Follow](db, query)
 }
 
 func (f *Follow) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {

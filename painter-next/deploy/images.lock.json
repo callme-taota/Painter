@@ -1,0 +1,33 @@
+{
+  "resolved_at_utc": "2026-10-24T06:26:15.434054+00:00",
+  "images": {
+    "node": {
+      "tag": "24.14.0-bookworm-slim",
+      "digest": "sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8",
+      "reference": "node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8",
+      "resolved": true,
+      "source": "https://hub.docker.com/v2/repositories/library/node/tags/24.14.0-bookworm-slim"
+    },
+    "golang": {
+      "tag": "1.26.7-bookworm",
+      "digest": "sha256:e8c859f5632dcfde7b32d2012b4351728f6437930887c2f6a91ea242459e5514",
+      "reference": "golang:1.26.7-bookworm@sha256:e8c859f5632dcfde7b32d2012b4351728f6437930887c2f6a91ea242459e5514",
+      "resolved": true,
+      "source": "https://hub.docker.com/v2/repositories/library/golang/tags/1.26.7-bookworm"
+    },
+    "postgres": {
+      "tag": "18.6-bookworm",
+      "digest": "sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc",
+      "reference": "postgres:18.6-bookworm@sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc",
+      "resolved": true,
+      "source": "https://hub.docker.com/v2/repositories/library/postgres/tags/18.6-bookworm"
+    },
+    "caddy": {
+      "tag": "2.11.7-alpine",
+      "digest": "sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f",
+      "reference": "caddy:2.11.7-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f",
+      "resolved": true,
+      "source": "https://hub.docker.com/v2/repositories/library/caddy/tags/2.11.7-alpine"
+    }
+  }
+}

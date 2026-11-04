@@ -164,7 +164,7 @@ const thirdStep = async () => {
         <div class="login-cont">
             <div class="login-left">
                 <div class="login-left-line">
-                    <img src="../../assets/logo.png" alt="painter" class="login-left-logo">
+                    <img src="/logo.png" alt="painter" class="login-left-logo">
                     <div>
                         <div class="login-welcome">
                             欢迎来到Painter

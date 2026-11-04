@@ -1,0 +1,14 @@
+{{define "author-page"}}
+<section class="author-sheet" aria-labelledby="author-name">
+ <div class="author-backdrop" data-author-preset="{{.User.page.background_preset}}" aria-hidden="true">{{if .User.page.background_url}}<img src="{{.User.page.background_url}}" alt="" width="1200" height="400" fetchpriority="high">{{end}}</div>
+ <div class="author-identity">
+  <div class="author-identity-row">{{if .User.avatar_url}}<img class="avatar author-portrait" src="{{.User.avatar_url}}" width="80" height="80" alt="">{{else}}<span class="avatar author-portrait">{{initial .User.display_name}}</span>{{end}}<h1 id="author-name">{{.User.display_name}}</h1><div class="author-follow" data-follow-island data-user-id="{{.User.id}}"><a class="button" href="/login?return_to=/users/{{.User.id}}">关注作者</a></div></div>
+  {{if .User.bio}}<p class="author-bio">{{.User.bio}}</p>{{end}}
+ </div>
+</section>
+<section class="author-writing" aria-labelledby="author-writing-title">
+ <div class="author-writing-head"><h2 id="author-writing-title">{{if .Query.Get "q"}}搜索文章{{else}}公开文章{{end}}</h2><form class="author-search" action="/users/{{.User.id}}" method="get" role="search" aria-label="搜索这位作者的文章"><label class="sr-only" for="author-query">搜索作者文章</label><div class="author-search-field"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="author-query" type="search" name="q" value="{{.Query.Get "q"}}" maxlength="64" placeholder="搜索作者文章" autocomplete="off"></div><button type="submit">搜索</button></form></div>
+ {{if .Query.Get "q"}}<div class="author-search-context"><p>包含“{{.Query.Get "q"}}”的文章</p><a href="/users/{{.User.id}}#author-writing-title">查看全部文章</a></div>{{end}}
+ {{if .Error}}<div class="notice error" role="alert">{{.Error}}</div>{{else if .Items}}{{template "post-list" .}}{{else}}<div class="author-empty"><h3>{{if .Query.Get "q"}}没有找到这位作者的相关文章{{else}}下一篇，正在酝酿{{end}}</h3><p>{{if .Query.Get "q"}}换个关键词试试，或查看作者的全部公开文章。{{else}}公开发布的文字会留在这里。{{end}}</p>{{if .Query.Get "q"}}<a href="/users/{{.User.id}}#author-writing-title">清除搜索</a>{{end}}</div>{{end}}
+</section>
+{{end}}

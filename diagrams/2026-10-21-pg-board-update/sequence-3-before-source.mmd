@@ -1,0 +1,17 @@
+sequenceDiagram
+  participant B as 浏览器
+  participant A as Identity
+  participant G as GitHub
+  participant D as SQLite
+  B->>A: GET /auth/github/start
+  A->>D: 保存state哈希、加密verifier、浏览器绑定、到期时间
+  A-->>B: 临时绑定cookie + 跳转含S256 challenge
+  B->>G: 用户授权
+  G-->>B: callback code + state
+  B->>A: callback及临时cookie
+  A->>D: 原子消费有效state（一次性）
+  A->>G: code + verifier + client_secret换token
+  A->>G: /user取得稳定GitHub ID
+  A->>D: 身份查找/新建用户 + session哈希 + 登录outbox，同事务
+  D-->>A: commit
+  A-->>B: Secure HttpOnly session cookie + 站内跳转

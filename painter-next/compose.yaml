@@ -1,0 +1,101 @@
+name: painter-next
+x-app: &app
+  image: ${PAINTER_IMAGE:-${COMPOSE_PROJECT_NAME:-painter-next}:local}
+  build: .
+  init: true
+  restart: unless-stopped
+  environment: &app-env
+    ENVIRONMENT: ${ENVIRONMENT:-development}
+    LISTEN_ADDR: :8080
+    PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+    MEDIA_DIR: /var/lib/painter/media
+    GOMEMLIMIT: ${GOMEMLIMIT:-192MiB}
+    GOMAXPROCS: ${GOMAXPROCS:-1}
+    APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?Run scripts/configure.sh first}
+    ANALYTICS_HMAC_KEY: ${ANALYTICS_HMAC_KEY:?Run scripts/configure.sh first}
+    SETUP_TOKEN: ${SETUP_TOKEN:-}
+    GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+    GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+    BOOTSTRAP_GITHUB_ID: ${BOOTSTRAP_GITHUB_ID:-}
+  volumes:
+    - app-media:/var/lib/painter/media
+    - backup-data:/var/backups/painter
+services:
+  db:
+    image: postgres:18.6-bookworm@sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: painter
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?Run scripts/configure.sh first}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C.UTF-8 --auth-host=scram-sha-256
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?Run scripts/configure.sh first}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Run scripts/configure.sh first}
+    volumes:
+      - pg-data:/var/lib/postgresql
+      - ./deploy/init-roles.sh:/docker-entrypoint-initdb.d/10-painter.sh:ro
+    command: [postgres, -c, max_connections=20, -c, shared_buffers=64MB, -c, work_mem=2MB, -c, maintenance_work_mem=32MB, -c, autovacuum_work_mem=16MB, -c, max_parallel_workers_per_gather=0]
+    shm_size: 128mb
+    mem_limit: 512m
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U postgres -d painter']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  migrate:
+    <<: *app
+    restart: 'no'
+    environment:
+      <<: *app-env
+      DATABASE_URL: postgres://painter_migrator:${DB_MIGRATION_PASSWORD}@db:5432/painter?sslmode=disable
+    command: [migrate]
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+  app:
+    <<: *app
+    environment:
+      <<: *app-env
+      DATABASE_URL: postgres://painter_app:${DB_APP_PASSWORD}@db:5432/painter?sslmode=disable
+    ports:
+      - ${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8080}:8080
+    mem_limit: 256m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  ops:
+    <<: *app
+    profiles: [tools]
+    restart: 'no'
+    environment:
+      <<: *app-env
+      DATABASE_URL: postgres://postgres:${DB_ADMIN_PASSWORD}@db:5432/painter?sslmode=disable
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+  caddy:
+    image: caddy:2.11.7-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
+    profiles: [edge]
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+volumes:
+  backup-data:
+  pg-data:
+  app-media:
+  caddy-data:
+  caddy-config:

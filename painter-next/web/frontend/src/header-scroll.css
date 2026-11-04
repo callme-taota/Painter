@@ -1,0 +1,29 @@
+/* Enhancement is opt-in; the SSR header remains visible without JavaScript. */
+body:not([data-page-kind=home]) .site-header[data-scroll-header],
+body[data-page-kind=studio] .studio-mobile-bar[data-scroll-header]{
+ position:sticky;
+ transform:translateY(0);
+ visibility:visible;
+ transition:transform .18s cubic-bezier(.22,1,.36,1),visibility 0s;
+}
+body[data-page-kind=studio] .studio-mobile-bar[data-scroll-header]{top:0;z-index:30}
+body[data-page-kind=article] .site-header[data-scroll-header]{background:var(--paper)}
+body:not([data-page-kind=home]) .site-header[data-scroll-hidden=true],
+body[data-page-kind=studio] .studio-mobile-bar[data-scroll-hidden=true]{
+ transform:translateY(calc(-100% - var(--scroll-header-offset,0px) - 20px));
+ visibility:hidden;
+ pointer-events:none;
+ transition:transform .18s cubic-bezier(.22,1,.36,1),visibility 0s .18s;
+}
+body:not([data-page-kind=home]) .site-header[data-scroll-instant],
+body[data-page-kind=studio] .studio-mobile-bar[data-scroll-instant]{transition:none}
+@media(prefers-reduced-motion:reduce){
+ body:not([data-page-kind=home]) .site-header[data-scroll-header],
+ body[data-page-kind=studio] .studio-mobile-bar[data-scroll-header]{transition:none}
+}
+
+/* Keep editor commands reachable when the mobile brand bar returns. */
+body[data-page-kind=studio]:has(.studio-mobile-bar[data-scroll-header][data-scroll-hidden=false]) .editor-page .editor-bar{top:var(--scroll-header-height,69px)}
+
+.site-header,body[data-page-kind=article] .site-header{border-radius:var(--radius-navigation)}
+@media(max-width:720px){.site-header,body[data-page-kind=article] .site-header{border-radius:var(--radius-navigation-mobile)}}

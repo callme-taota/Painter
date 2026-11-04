@@ -1,0 +1,16 @@
+// Isolated native candidate only. No content is copied to the formal database.
+const fs=require('fs'),crypto=require('crypto'),{request}=require('/tmp/painter-browser/node_modules/playwright');
+const base='http://192.168.2.209:18081',file='/tmp/painter-v22-fixtures.json';
+const itemBody=x=>Object.fromEntries(['kind','title','subtitle','alt','url','image_url','media_id','provider_id','position','visible'].map(k=>[k,x[k]]));
+(async()=>{
+ if(fs.existsSync(file)){console.log('V22 isolated fixtures already ready.');return}
+ const c=await request.newContext({storageState:'/tmp/painter-next-v16-owner-state.json'}),s=await c.get(base+'/api/v1/session').then(r=>r.json());if(s.user?.role!=='owner')throw Error('owner session required');
+ async function api(method,path,data,version){const r=await c.fetch(base+'/api/v1'+path,{method,headers:{Origin:base,'X-CSRF-Token':s.csrf_token,'Idempotency-Key':crypto.randomUUID(),...(version?{'If-Match':'"'+version+'"'}:{})},...(data===undefined?{}:{data})});if(!r.ok())throw Error(path+' '+r.status()+' '+await r.text());return r.status()===204?{}:r.json()}
+ const items={steam:[],music:[],photos:[]};
+ for(const[kind,ids]of[['steam',['620','413150','1145360']],['music',['1440857781','1441164426','617154241']]]){
+  const existing=(await api('GET','/admin/home/items?kind='+kind+'&limit=50')).items;
+  for(const[id,i]of ids.map((v,i)=>[v,i])){const found=existing.find(x=>x.provider_id===id);if(found){items[kind].push(found);continue}const m=await api('POST','/admin/home/import',{kind,input:kind==='steam'?'https://store.steampowered.com/app/'+id:'https://music.apple.com/us/album/'+id});if(!m.title||!m.image_url)throw Error('metadata incomplete');items[kind].push(await api('POST','/admin/home/items',{...itemBody(m),kind,position:i,visible:true}))}
+ }
+ const media=[];for(let i=0;i<3;i++){const r=await c.post(base+'/api/v1/media',{headers:{Origin:base,'X-CSRF-Token':s.csrf_token,'Idempotency-Key':crypto.randomUUID()},multipart:{file:{name:'V22-wall-'+i+'.jpg',mimeType:'image/jpeg',buffer:fs.readFileSync('tests/browser/fixtures/moments/lake-cc0.jpg')}}});if(r.status()!==201)throw Error('photo upload '+r.status());const id=(await r.json()).media_id;media.push(id);items.photos.push(await api('POST','/admin/home/items',{kind:'photos',title:['沿着湖边慢慢走','把光留在照片里','日常里的一个片刻'][i],subtitle:'V22 隔离环境验收照片',alt:'山峰与湖水，只用于隔离环境验收。',url:'',image_url:'',media_id:id,provider_id:'',position:i,visible:true}))}
+ const h=await api('GET','/admin/home'),original=structuredClone(h);for(const key of['steam','music','photos']){h.config.sections[key].enabled=true;h.config.sections[key].limit=3;h.config.sections[key].description='仅用于隔离环境的界面验收，正式首页未导入这些条目。'}h.config.sections.articles.limit=3;const steam={steam_id:h.steam.steam_id,mode:h.steam.mode,auto_sync_enabled:h.steam.auto_sync_enabled},saved=await api('PUT','/admin/home',{config:h.config,steam},h.version);fs.writeFileSync(file,JSON.stringify({items,media,original,config:saved.config}),{mode:0o600});console.log(JSON.stringify({steam_imports:items.steam.map(x=>x.title),apple_imports:items.music.map(x=>x.title),photos:media.length,formal_writes:0}));await c.dispose()
+})().catch(e=>{console.error(e.message);process.exitCode=1});

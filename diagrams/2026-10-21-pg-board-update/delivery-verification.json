@@ -1,0 +1,73 @@
+{
+  "document_token": "LgzzdgLFVoNUb9xoWKCc4UbhnWe",
+  "new_boards_created": 0,
+  "document_body_modified_by_this_agent": false,
+  "architecture_local_check": {
+    "node_count": 71,
+    "connectors": 10,
+    "errors": 0,
+    "warnings": 0
+  },
+  "preview_cache_recheck": "sequence-5 initial thumbnail stale; second export showed PostgreSQL/SKIP LOCKED/aggregated and passed visual QA",
+  "boards": [
+    {
+      "diagram": "architecture",
+      "board_token": "SvCUweghZh7bDwbUt3RcHGQEnje",
+      "updated_in_place": true,
+      "update_ok": true,
+      "source_sha256": "3f58866a330c1774c2f2bb055cf18c70ed0f06ee67bdb0b1ebb6840fd57a34fc",
+      "backup_raw": "diagrams/2026-10-21-pg-board-update/architecture-before.json",
+      "visual_qa": true
+    },
+    {
+      "diagram": "sequence-1",
+      "board_token": "PHCxwYlBKhRmLxb9SjMcIgtAnPE",
+      "updated_in_place": true,
+      "update_ok": true,
+      "source_sha256": "132ed67b9c004900b8761335ad6d4b13dadd42f5f7049538144d8ed25bb297af",
+      "backup_raw": "diagrams/2026-10-21-pg-board-update/sequence-1-before.json",
+      "visual_qa": false,
+      "source_roundtrip_equal": true
+    },
+    {
+      "diagram": "sequence-2",
+      "board_token": "FyQhw1Q4ShAcpVb3A9VcNmiinSg",
+      "updated_in_place": true,
+      "update_ok": true,
+      "source_sha256": "60477383e2e57a48b961e0e2c01f8fd25f6041578f518a5eb2e0c3c232c5522b",
+      "backup_raw": "diagrams/2026-10-21-pg-board-update/sequence-2-before.json",
+      "visual_qa": true,
+      "source_roundtrip_equal": true
+    },
+    {
+      "diagram": "sequence-3",
+      "board_token": "XskNw9B3QhdxYMbXNvRcCTVAntf",
+      "updated_in_place": true,
+      "update_ok": true,
+      "source_sha256": "899ccceb771e154c45169e4de2e8f1e16c9818d08b240727b343b7658393a403",
+      "backup_raw": "diagrams/2026-10-21-pg-board-update/sequence-3-before.json",
+      "visual_qa": false,
+      "source_roundtrip_equal": true
+    },
+    {
+      "diagram": "sequence-4",
+      "board_token": "DJE4wqyBWhMw3IbjupKcTthsnvb",
+      "updated_in_place": true,
+      "update_ok": true,
+      "source_sha256": "53b890e94b9edaf51110ac3f25774b48f648f80d70472649989fbe58d660db80",
+      "backup_raw": "diagrams/2026-10-21-pg-board-update/sequence-4-before.json",
+      "visual_qa": false,
+      "source_roundtrip_equal": true
+    },
+    {
+      "diagram": "sequence-5",
+      "board_token": "O1QYwNUaRhSl2dblWWhcUrALnlb",
+      "updated_in_place": true,
+      "update_ok": true,
+      "source_sha256": "bcefa813dda14cae0c2a2f690bd4cb92cd262e9fa91f4b41380d35039243cc6e",
+      "backup_raw": "diagrams/2026-10-21-pg-board-update/sequence-5-before.json",
+      "visual_qa": true,
+      "source_roundtrip_equal": true
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+# Product
+
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+web
+
+## Stack
+Confirmed in docs/next: Go SSR public pages, Vue 3 / TypeScript / Vite workbench and interactive islands, Tiptap 3 document editing with a CodeMirror 6 source mode, PostgreSQL. Node is a build dependency; assets are embedded in Go.
+
+## Users
+Readers discover and read articles and public short moments, follow writers, save articles and discuss. Authors write and publish their own articles and moments. Owners manage site identity, home composition and interest walls, taxonomy, members, moderation and operations.
+
+## Product Purpose
+A personal blog with a complete, dependable writing and reading experience. Preserve the existing useful capabilities while keeping deployment small and the public document readable without JavaScript.
+
+## Operating Context
+Local username/password sign in, owner-controlled reader registration, and optional GitHub compatibility; same-origin cookie sessions and CSRF-protected writes. Passwords use Argon2id, bounded hashing and login backoff; password changes revoke sessions. Workbench authors use CAS, immutable revisions, local recovery and explicit publication.
+
+The owner confirmed on 2026-10-25 that the primary deployment is a local server, with access from the local network. Optimize installation and operations for one local server running the Go application and PostgreSQL. Public-domain HTTPS remains an optional deployment mode.
+
+## Capabilities and Constraints
+The original scope and API contract are ../../docs/next/TECHNICAL_DESIGN.md and ../../docs/next/API_CONTRACT.md; ../docs/EXPERIENCE_V3.md records the owner's 2026-10-28 changes and current API/data contract. No demo data presented as real. No production Node. PostgreSQL is the database; SQLite is prohibited. Public body and personal state are separate.
+
+Use a single taxonomy called 标签. The public header contains the original Painter logo, articles, moments, phrases and a search trigger; About and the enabled friend directory appear in the centered logo/About/friends/2026 footer. Tags are explored through search and contextual article links. Global search opens a keyboard-accessible floating dialog with real public-content suggestions; filters belong only to the search results page. Support Cmd/Ctrl+K and slash outside editable fields.
+
+By default, the homepage introduces the person before a small section of real articles; tags are reached through search (V15). V18 replaces the earlier WebGL torus and homeLens with layered DOM paper pages carrying the configured introduction name (or site-name fallback), tagline and Painter mark. Native scrolling drives a modest fan/tilt and transitions between introduction and writing scenes, without a canvas, model download or idle render loop. Reduced motion and no JavaScript retain normal document-flow chapters. Right-side tools open a custom three-choice theme panel directly, without a nested native select. The header search shortcut appears only on hover or keyboard focus. Right-side tools contain theme selection and scene-configurable navigation/account actions; article scenes may add bottom navigation and synchronized likes. Automatic covers use full-bleed SVG gradient artwork and clean title typography (three layouts, four palettes); uploaded covers retain the same draft, revision, publication and backup guarantees as body media. RSS starts disabled and is enabled only through its owner setting.
+
+The workbench defaults to a directly editable document, with headings, lists, tables, slash insertion and images. Preserve existing Markdown until an actual body edit; unsupported syntax stays in source mode. Save/recovery/CAS and public revision guarantees apply equally to both views. No cloud editor or collaboration service is required.
+
+V16 keeps one continuous article page. The directly editable document is primary; Markdown source and export live under More. At1360px and above, the same280px inspector supports either body representation. Narrower screens retain the same native article-information disclosure after the title, including its expanded choice. Summary, tags, dates and cover are one shared set of controls. Title, formatting and body text share their edge; long titles grow vertically. Source line numbers occupy the left inset without covering any Markdown characters. Preview and split remain secondary source tools.
+
+Title focus uses its own underline and document focus colors the formatting divider, including forced colors. Commands retain visible keyboard outlines. The desktop inspector scrolls within the writing height without enlarging the title row or leaving a blank grid gap.
+
+V11 makes uncertain editor state explicit. Initial loading must obtain the tags and, for an existing article, a complete current draft before enabling editing or saving; a failed load offers a retry. Continuing after a version conflict retains the comparison and pauses automatic saving until the writer explicitly saves the merged draft. That manual-save requirement follows a local recovery point across reloads, even when its content matches the server. Restoring a revision first saves current work, then locks both editing modes and article information until the current server draft is confirmed. A failed confirmation retains the local content and offers export and a read retry without repeating the restore. Restoring a draft never changes the public revision.
+
+The V8 workbench is an independent operating surface for writing, personal space and site operations. A grouped sidebar contains the Painter identity, role-appropriate destinations, website link, theme choice and account controls; a modal navigation drawer serves narrower screens. The task area omits the public reading header, footer and right action rail. Site settings have three keyboard-accessible sections, 网站信息、功能与通知、登录安全, with direct hash links. Shared single-choice fields and confirmation dialogs use the existing visual system; file and date inputs retain their device-native pickers.
+
+V9 organizes that sidebar into two levels: 内容管理、数据与运维、站点管理、个人空间, followed by their destinations. Article creation stays a page action. Owner-only capabilities remain owner-only; authors retain their own articles and article analysis, and readers see only personal space. Personal media and relationships retain their personal scope. Role filtering removes empty groups. A fresh session expands the current group; explicit expansion choices are retained per account within the browser tab, and navigation reveals the current destination within the independently scrolling list. Article editor routes and the followers alias keep their parent destination selected. A location trail identifies the group, destination and editing task. Desktop settings use sidebar destinations; the mobile drawer and local settings tabs share the same hash state, preserve mounted forms, and synchronize with browser history. This changes navigation without adding permissions, business data or settings capabilities.
+
+Owners can save sentences or words as 片语 with an optional source or attribution, then explicitly make them public or retain them as private drafts. The public /phrases page renders only published saved text and source, supports long text without truncation and remains readable with normal scrolling and next-item links without JavaScript. Previous/next controls and copying progressively enhance it. Counts, search and status filters describe the current page or loaded records, not a fabricated library total. The manager exposes unsaved changes, confirms replacement or deletion and reports version conflicts; its unsaved form is not persistent local recovery.
+
+Conflict reload in the phrase manager fetches and validates the selected record by its exact identity, preserves the loaded list and pagination, and keeps local input when that read fails, is incomplete or the record has been deleted. Personal media lists omit deleted files, preview only ready files, and permit deletion only for unreferenced ready or failed files. Deleted comments remain read-only. Search suggestions retain native link activation, including new-tab actions and touch scrolling, alongside keyboard selection.
+
+Owners maintain a friend-link directory through 内容管理 → 友链, with saved website names, HTTP(S) destinations, optional descriptions and avatars, explicit visibility and ordering. Public /friends renders only visible saved links and remains useful without JavaScript; missing or failed avatars retain a name initial. Page title, introduction and the enable switch are saved separately. Closing the page hides its public route, footer entrance and sitemap entry while retaining saved links. Management preserves unsaved input across tabs, confirms replacement and deletion, and exposes save failures and version conflicts. Preview availability and save messages follow persisted page settings. No real friend links or public submission form are supplied by default.
+
+## Brand Commitments
+Painter Next. Chinese interface. The current appearance uses neutral light/dark surfaces, solid navigation and controls, sans typography and black/white primary actions. The V18 user direction replaces the previous blue/serif/Liquid Glass interface; web/DESIGN.md records the current visual tokens. Existing business contracts in the technical design remain authoritative.
+
+The owner confirmed on 2026-10-25 that personal character is the visual priority. Let the configured site name, personal introduction, writing and topic choices establish that character through the publication layout and typography. Keep reading comfortable and authoring dependable. Personal facts and biography must come from the owner. The old homepage provides the confirmed name 逃塔 and seven role labels; the current site restores those as editable introduction data, separate from the Painter brand. V18 preserves the Painter logo and these saved identity fields while changing their presentation.
+
+## Product Principles
+- Save the writer's work before changing publication.
+- Make permissions and failures visible without losing local edits.
+- Keep public reading useful without JavaScript.
+- Show observed data with its real limits.
+
+## Accessibility & Inclusion
+WCAG 2.2 AA target, full keyboard use, responsive navigation, reduced motion and transparency controls, Chinese IME support.
+
+## Evidence on Hand
+The old repository and docs/next define the real product. The implementation is new; screenshots and API verification must come from the running application. This record uses the explicit accepted brief; no additional interview was needed.
+
+Article creation, last saved edit and current publication times have separate per-article visibility choices. Choices follow draft/revision/publication guarantees; unpublished edits never alter public timestamps. Unknown historical edit times remain unrecorded.
+
+V13 places summary and tags together before the cover, with reading duration and a labelled native information icon revealing only enabled public dates. Cover and prose share a 760px maximum column. Author identity stands in the desktop right rail and moves to a right-aligned row before the cover on narrow screens. Discussion boundaries, short centered Markdown thematic breaks and the tonal recommendation region have distinct visual roles. Reading, date disclosure, author links and recommendations remain useful without JavaScript.
+
+On non-home pages, enhanced global headers hide when scrolling down and return when scrolling up, retaining document space and keyboard access. Focus, dialogs and menus keep navigation visible; reduced motion removes the transition. The mobile workbench header participates while the desktop sidebar remains unchanged, and returning navigation leaves sticky editor commands reachable. The homepage uses its separate progressive scroll-story behavior.
+
+The editor chooses tags through a searchable multi-select with removable selections, keyboard navigation and an explicit 20-tag limit. Search text is transient and never saves content. Article endings show up to three public recommendations, prioritized by shared published canonical tags and then recency, with recent-publication fallback; private drafts and withdrawn posts are excluded. Recommendations remain readable without JavaScript.
+
+New deployments use a server-issued installation code and three browser steps (environment, site, administrator). Completion atomically creates the owner, closes registration and seals installation; existing identities never reopen setup. GitHub is an optional owner-configured login provider, with encrypted server-side credentials, explicit enabled state and no automatic account linking. Shared OIDC MFA is a future architecture, not a delivered feature.
+
+### Search filters and administration tools (V15)
+
+The full search page has one leading keyword field and compact tag/sort/reset controls. Tags are a searchable OR multi-selection with removable choices, a 20-selection limit, and an explicit pending-filter notice until submission. Tag-only and author-only search work without a keyword; relevance and recent publication ordering use the same published-only projection and cursor binding. Legacy /tags redirects to /search; the homepage tag directory is removed. Native semantic checkboxes and radio inputs share project rendering across public and studio screens. At 320px search results prioritize matching text over thumbnails.
+
+Deployment and maintenance commands reuse the fixed Compose project, private configuration and persistent volumes. Backup verification restores to a disposable database. Administrator CLI and stdio MCP use normal owner sessions and existing HTTP content transactions, with server-side owner enforcement, CAS and idempotency. AI reads are enabled by default; writes require an explicit MCP option. No SQLite, additional runtime daemon, model API key or hosted AI service is introduced.
+
+### Continuous administration and author identity (V16)
+
+Article management is a semantic, paginated table with server-side title/summary search, status filters, site/mine scope, edit and per-row actions. Tag management uses a searchable table and a single open inline editor. Horizontal tables stay inside narrow screens, with an explicit scrolling hint and reachable operation columns. Menus escape table clipping. Comment moderation is named 评论管理 and retains real hide/restore actions.
+
+Author identity places avatar, name and follow in one row, with biography below and article search on that same public page. Each account may save a background preset or own ready uploaded image in Personal space → 作者主页. Independent CAS versioning, unsaved protection and reference-aware media deletion apply. Public backgrounds never expose private contact fields.
+
+Discussion uses one raised paper surface with a composer, aligned comment identities and clear state. The homepage recent-writing chapter uses large saved covers; desktop vertical scroll advances the horizontal shelf. Mobile, reduced-motion and no-JavaScript layouts retain native horizontal browsing. Empty sites show actual empty content. Public header corners are24px desktop and20px mobile.
+
+### Compact choices (V17)
+
+The user prefers compact single-choice labels, fields and menus with one radius scale across public and workbench screens. Desktop ordinary controls36px, narrow/coarse44px; inset tags/segments28px/36px. Choices13px/20px, ordinary editable fields14px/20px desktop and16px/20px narrow/coarse. Central tokens own4px items,6px controls,8px menus and12px surfaces; navigation24px/20px and circular identity/radio remain purposeful. Author palettes use compact rows and two columns on small screens, not large swatch cards. Preserve real content, keyboard/disabled/focus behavior and no page overflow.
+
+
+### Neutral publication and inset workbench (V18)
+
+The workbench visually adapts official shadcn dashboard-01/sidebar-07: a neutral grouped rail, solid inset task surface, breadcrumb hierarchy, restrained borders and sans task headings. Existing Vue components, navigation semantics, role filtering, settings hashes, drawer behavior and editor protections remain in place. This is not a React/Radix migration and does not import the reference dashboard's sample metrics or business data. Public reading, search, author, friend, phrase, authentication and installation screens share the simpler neutral theme.
+
+Geist Latin is served locally as one 29,400-byte variable WOFF2, with installed Chinese sans fallbacks. Its SIL Open Font License 1.1 is available at /assets/licenses/Geist-OFL.txt. No runtime font CDN is required. The V17 control density and radius rules remain unchanged, including 36px/44px ordinary controls, 28px/36px inset elements and 4px/6px/8px/12px item/control/menu/surface radii.
+
+V18 changes presentation and the home renderer only. Existing calculations, settings values, permission rules, content/publication transactions, APIs and PostgreSQL schema14 remain unchanged. Implementation documentation and current acceptance evidence belong in ../docs/EXPERIENCE_V18.md; this product record does not assert that a review or deployment has completed.
+
+### Independent short moments (V20)
+
+V20 introduced moments as an independent pure-text content type, separate from articles and phrases. Each permits up to 500 Unicode code points, including spaces and newlines; all-whitespace text without images is invalid. Count code points rather than UTF-16 code units or displayed grapheme clusters. The editor follows the server's max_text_length. Public text is escaped, retains whitespace and never interprets HTML or Markdown. V21 extends this model with optional images as recorded below.
+
+New moments are private drafts until explicitly published. Saving changes to a published moment leaves its public_text unchanged; publishing updates the public copy. Withdrawal keeps the draft, deletion removes public visibility, and deleted records are privately read-only without a restore action. Public ordering uses first publication and ID, so editing or republishing does not promote an old moment. Public DTOs contain only published text and public author information.
+
+/moments and /moments/{id} are server-rendered public reading routes. Layout choices affect moments only: list (760px maximum), default two columns, or multi-column grid (three, four on sufficiently wide screens). At 720px and below all choices render one column while retaining the stored browser preference. Use DOM row-major order. Layout buttons are hidden without JavaScript; text and author/time links remain usable.
+
+/studio/moments gives owners site/mine scope and authors their own content; readers and anonymous users cannot write. Status and cursor pagination are server-side, and counts describe the current page. The composer never automatically selects or replaces input from a list refresh. Save and publish are separate actions; switching confirms unsaved edits and leaving uses beforeunload. Conflicts retain input and require reading the latest draft before an explicit choice of server content or continued local editing. Uncertain creation retains its idempotency key and original payload. This manager does not inherit the article editor's persistent offline recovery or revision history.
+
+Settings → 功能与通知 → right-side tools can add an optional create menu separately to home, article and other scenes. It is visible only to owners/authors and links to article creation and /studio/moments?compose=1#moment-compose. The new tool defaults off, existing scene choices and defaults are preserved, and moments use the other scene. It does not appear in the workbench. V20 excluded inbox, direct messages, sharing, series, moment attachments, likes, comments and moment article-search integration. The focused scope and completed build, browser, visual and LAN deployment evidence are recorded in ../docs/EXPERIENCE_V20.md.
+
+### Images in moments (V21)
+
+A moment may contain images alone or text of up to 500 Unicode code points with up to nine ordered ready PNG/JPEG/GIF/WebP images. Each image has an optional description of up to 200 code points. The private list supplies max_images (nine) and the deployment's max_image_bytes, with a 10 MiB client fallback. Multi-file uploads run sequentially, preserve successful items, and retain each failed file and its idempotency key for retry or explicit cancellation. Uploading blocks switching, saving and publishing. Dirty checks, beforeunload, conflict choices and uncertain-create payloads include image order and descriptions. The queue is not persistent offline recovery.
+
+Schema16 stores relational moment_images with separate draft/public references and database guards. Saving affects only the draft; explicit publication copies the snapshot. Withdrawal and soft deletion clear the public copy while retaining draft references, including deleted read-only records. Removing an image never deletes physical media. GC protects draft/public references; unattached uploads retain the existing seven-day orphan cleanup policy. Older clients may omit images on save to preserve existing draft images; [] removes all and null is rejected. CAS, idempotency, audit and writer permissions remain enforced.
+
+Public SSR provides one/two/three-column image groups by count (four images form two-by-two), a contained single image and native original-image links. JavaScript adds the shared native image dialog (V27): a dark fullscreen backdrop, an unframed contained image and close/previous/next icons; one-image groups show only close. Title/count remain available to assistive technology, and the original link appears only for failed-load recovery. Escape, Tab containment, focus return, arrow/Home/End navigation, backdrop dismissal, native modified-click/no-JavaScript fallbacks and protection from stale image responses remain authoritative; see ../docs/EXPERIENCE_V27.md. Images lazy-load the original upload without a resizing service. V20 card layouts and optional create settings are unchanged. Inbox, direct messages, sharing, series and moment likes/comments remain outside scope. Current build, browser and deployment verification is pending the root report; see ../docs/EXPERIENCE_V21.md.
+
+### Configurable home and interest walls (V22)
+
+Owners manage /studio/home through separate content, wall-library and Steam-settings panels. All six home sections (intro, articles, steam, music, photos, closing) have explicit visibility, order, title, description and optional destination copy. Article count is 0–12; wall counts are 0–24, with zero hiding the section. Enabled empty walls stay absent. Intro may inherit the site name/tagline/roles or use custom fields; writing-scene copy, scroll prompt, motion and warmth are configurable. Defaults preserve the existing introduction, six public articles and closing, with all three new walls off and empty. Reduced-motion and no-JavaScript reading remain supported.
+
+Wall libraries use server pagination and real current-page counts. Manual items default hidden in the manager; public visibility requires a saved visible item, an enabled section and a positive count. Photos upload privately in sequence, retain successful items through failures, and require per-photo review/save. Ready owned media references protect deletion and GC even for hidden items. Removing an item does not delete the media file. Title/description, ordering, image, source and publication facts come from saved content, never illustrative personal activity.
+
+Steam supports App ID/store-link metadata previews and optional owned/recent library snapshots with a privately encrypted key and saved ID64. Automatic sync is opt-in at a six-hour cadence with failure backoff; upstream failure/empty responses retain previous data. Manual edits mark local_override and survive subsequent updates of that game. Deleting a synchronized game does not blacklist it; hide it to keep it out of public view. Apple Music imports public album catalogue metadata via iTunes, with an official destination badge; it does not claim private listening history, playlists or MusicKit authorization.
+
+Schema17 adds independent home settings/items, import cache and provider-rate records with existing owner/CAS/idempotency/audit protections. Public SSR reads local saved snapshots and public articles, with no live provider API call for a visitor request; browsers may still load saved official CDN artwork. No actual account connection or personal collection is supplied. Candidate fixtures belong only to isolated tests. Current formal release and validation figures are pending the root report in ../docs/EXPERIENCE_V22.md.
+
+### Game journeys and public playlist snapshots (V23)
+
+Within the existing home composition, native scroll opens a rectangular artwork mask, advances through at most five actual Steam game scenes and closes onto an adjacent full-screen music cover wall. Games use exact returned official hero/wordmark assets with legacy fallback; a missing wordmark shows the real saved title. Native links remain available. No wheel interception, WebGL or idle animation loop is introduced. Nonadjacent game/music sections remain independent. Motion-off, reduced-motion and no-JavaScript layouts show normal-flow game scenes and album anchors. Existing articles, photos, moments and owner profile are outside this presentation change.
+
+Stored Steam section counts remain 0–24 for compatibility, while home rendering caps positive counts at five. Zero hides the homepage shelf; /games still paginates all visible games while the Steam section is enabled. The More destination is fixed to /games, with configurable copy. Its ordinary sort links select position, descending playtime or title; signed cursors bind sort and page size. Provider minutes are read-only: null is unknown and a fresh explicit zero remains zero. Ambiguous legacy zero subtitles migrate conservatively to null rather than inventing a statistic.
+
+The owner manager accepts public Apple Music playlist URLs in addition to the existing album path. Preview and explicit confirmation are separate; it labels parsed tracks, deduplicated albums and the first 24 displayed covers independently. The supplied playlist yielded 300 tracks / 291 albums with a continuation marker on 2026-11-03, so this is a partial same-ID CN public-page snapshot. A preview lasts 30 minutes, successful page metadata is cached 24 hours, and confirmation imports that exact snapshot without another provider request. New playlist rows are visible and can appear when the music wall is enabled; manual single items still default hidden. Reimport preserves manual matches, hidden state, uploaded media, descriptions and order, and deletes no old items. Uncertain results retry the original idempotency key/version/preview, while failures and conflicts preserve local input and previous data.
+
+Schema18 adds raw hero/logo fields and nullable provider minutes; schema19 adds owner-bound playlist previews, independent source CAS state and unique playlist album identities. Visitors read saved local SSR data; official CDN images may still load remotely. This uses verified public-page artwork templates, including a decoded 632px sample, not a literal 100px URL rewrite. It does not use MusicKit, private listening history or tokens and does not promise that Apple's undocumented serialized page format will remain stable. Candidate acceptance, the scoped visual SHIP decision, formal migration, intentional owner activation and completed 104-check formal read-only smoke are recorded in ../docs/EXPERIENCE_V23.md. The supplied playlist is active as a partial 300-track / 291-album snapshot; home shows 24 covers beside at most five games, and the actual complete game library has 112 visible items.
+
+### Publication activity, public projects and article references (V24)
+
+The complete /games library uses larger 2:3 Steam portrait covers, aligned desktop title/hour rows and native sorting/pagination. Its normal three columns become four at 1600px, two at 1050px and one at 720px. Existing provider-minute truth and the homepage five-scene limit remain separate.
+
+Owners may add activity and projects to the existing homepage order. Old six-section settings normalize to eight sections on read, with both additions disabled; migration does not rewrite those saved rows. Activity counts each currently public article/moment once at first publication in a configured IANA timezone, using a rolling 365-day range or natural year. Edits, republication, phrases and GitHub commits do not add activity; withdrawal/deletion removes it. Exact range, source, timezone and counts remain visible. Public and owner-preview calendars initially expose the latest nonfuture day, retain native access to older dates and explain sideways scrolling.
+
+The owner project manager saves up to 100 manual or public GitHub records, with independent visibility/order and a homepage limit of 0–24. Explicit refresh reads a public unauthenticated repository snapshot, validates identity and preserves manual fields. Failures retain the last successful metadata and expose a retryable error. Missing statistics remain absent; explicit zero is zero. Visitors read saved snapshots without triggering provider work. The homepage project hand supports hover, keyboard and touch selection with neighboring avoidance, local horizontal browsing and reduced-motion fallback.
+
+Authors insert GitHub, Steam, Apple Music and web-reference snapshots through the existing document/source editor. Empty new articles retain an editable paragraph and the same card tools. A web reference may remain an ordinary inline text/Emoji link with hover/focus/touch source detail. Known types use strictly validated versioned Markdown and the shared sanitized renderer; unknown versions/types remain ordinary source/link. Uploaded article images reuse the existing viewer while provider images retain their destination links. Draft/CAS/recovery/media/revision/publication protections remain authoritative, and old published HTML is not re-rendered during upgrade. A2UI, arbitrary executable components, embedded players and private listening/play history are not part of this capability.
+
+Schema 20 adds only the first-publication index, homepage projects and project refresh-rate storage. Callout/aside, download, code tabs and book cards are future suggestions with no delivered syntax. Implementation, candidate/formal data boundaries and current acceptance are recorded in ../docs/EXPERIENCE_V24.md; the card contract is ../docs/CONTENT_CARDS_V24.md.
+
+### 首页影像上的浮动工具（V25）
+
+首页右侧工具在游戏与音乐影像后随实际覆盖渐变为液态玻璃，包含游戏开合遮罩与相邻音乐墙的连续交接；离开后恢复原有实色。工具位置、尺寸、动作与实色主题菜单沿用原实现。减少透明度、提高对比度、无 JavaScript或能力不支持时保留原样，减少动态效果移除缓动。此局部增强不改变配置、内容或数据库合同；实现与候选/正式验证边界见 ../docs/EXPERIENCE_V25.md。
+
+### 首页连续叙事（V26）
+
+首页在站长保存的顺序下可连贯呈现介绍、真实项目、发布日历、可选照片、唱片、最多五个游戏、收束和最后的最近文章。SSR先筛除禁用或无内容区块，再只组合相邻的介绍/项目/日历及任一方向的唱片/游戏，不强制重排其他配置。游戏原生控件持有焦点时保持完整画面，离开焦点后恢复滚动位置；无 JavaScript、减少动态效果和关闭动态效果保留普通文档流。沿用既有公开内容、提供方身份、可见性和数量合同，没有 schema 迁移或已发布正文全量重渲染；候选数据与正式启用证据分别记录于 ../docs/EXPERIENCE_V26.md。

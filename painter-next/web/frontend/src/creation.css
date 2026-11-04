@@ -1,0 +1,11 @@
+.floating-create{position:relative}
+.floating-create>summary{display:flex;align-items:center;justify-content:center;list-style:none;cursor:pointer;width:40px;min-width:40px;min-height:44px;padding:9px;border:0;border-radius:var(--radius-control);background:transparent}
+.floating-create>summary::-webkit-details-marker{display:none}
+.floating-create>summary:hover,.floating-create[open]>summary{background:var(--subtle)}
+.create-popover{position:absolute;right:58px;top:50%;transform:translateY(-50%);width:196px;padding:5px;border:1px solid var(--line);border-radius:var(--radius-menu);background:var(--paper);box-shadow:var(--shadow)}
+.create-popover a{display:flex;align-items:center;gap:10px;min-height:var(--control-height);padding:8px 10px;border-radius:var(--radius-item);font:500 13px/20px var(--font-ui)}
+.create-popover a:hover,.create-popover a:focus-visible{background:var(--subtle)}
+.create-popover .icon{width:16px;height:16px;flex:none}
+@media(max-width:720px){.create-popover{right:54px;width:min(196px,calc(100vw - 80px))}.create-popover a{min-height:44px}}
+@media(max-width:480px){.site-header .brand-name{display:none}.site-header .brand{max-width:none;overflow:visible}.site-header .site-nav{gap:14px}.site-header .nav-row{gap:12px}.site-header .wrap{padding-inline:12px}}
+@media(pointer:coarse){.create-popover a{min-height:44px}}

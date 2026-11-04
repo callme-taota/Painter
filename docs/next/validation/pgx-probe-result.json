@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "driver": "github.com/jackc/pgx/v5 v5.11.0",
+  "go": "go1.26.7",
+  "cgo_enabled": "0",
+  "server": "PostgreSQL 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)",
+  "encoding": "UTF8",
+  "lc_ctype": "C.UTF-8",
+  "chinese_trigrams": 5,
+  "native_jsonb_bytea_boolean_bigint": "passed",
+  "schema_sha256": "d4e08b685182e0c453db5c92729091d50e348b297c22f8028cf50d593a410ff3"
+}

@@ -47,35 +47,11 @@ func (a *Article) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (a *Article) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var articles []Article
-	if err := query(db).Find(&articles).Error; err != nil {
-		return err
-	}
-
-	for i := range articles {
-		articles[i].BaseTable = &BaseTableImplement{}
-		if err := updater(&articles[i]); err != nil {
-			return err
-		}
-		if err := db.Save(&articles[i]).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return updateRows(a, db, query, updater)
 }
 
 func (a *Article) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var articles []Article
-	if err := query(db).Find(&articles).Error; err != nil {
-		return err
-	}
-
-	for _, article := range articles {
-		if err := db.Delete(&article).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[Article](db, query)
 }
 
 func (a *Article) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {

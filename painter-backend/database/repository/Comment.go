@@ -42,35 +42,11 @@ func (c *Comment) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (c *Comment) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var comments []Comment
-	if err := query(db).Find(&comments).Error; err != nil {
-		return err
-	}
-
-	for i := range comments {
-		comments[i].BaseTable = &BaseTableImplement{}
-		if err := updater(&comments[i]); err != nil {
-			return err
-		}
-		if err := db.Save(&comments[i]).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return updateRows(c, db, query, updater)
 }
 
 func (c *Comment) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var comments []Comment
-	if err := query(db).Find(&comments).Error; err != nil {
-		return err
-	}
-
-	for _, comment := range comments {
-		if err := db.Delete(&comment).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[Comment](db, query)
 }
 
 func (c *Comment) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {

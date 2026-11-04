@@ -57,17 +57,7 @@ func (h *History) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater fun
 }
 
 func (h *History) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var histories []History
-	if err := query(db).Find(&histories).Error; err != nil {
-		return err
-	}
-
-	for _, user := range histories {
-		if err := db.Delete(&user).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[History](db, query)
 }
 
 func (h *History) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {

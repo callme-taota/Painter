@@ -1,58 +1,16 @@
 import type { AxiosResponse } from "axios";
 import { AxiosGet, AxiosPost, type MyResponse } from "./axios";
 
-export const CategoryList = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosGet({
-        url:"/category/list",
-        data: data
-    });
-    return res
-}
+export const CategoryList = async (data: any): Promise<AxiosResponse> => AxiosGet({ url: "/category/list", data });
 
-export const CategoryCreate = async (data: any): Promise<MyResponse> => {
-    const res = await AxiosPost({
-        url:"/category/create",
-        data: data
-    });
-    return res
-}
+export const CategoryCreate = async (data: any): Promise<MyResponse> => AxiosPost({ url: "/category/create", data });
 
-export const CategoryUpdate = async (data: any): Promise<MyResponse> => {
-    const res = await AxiosPost({
-        url:"/category/update/",
-        data: data
-    });
-    return res
-}
+export const CategoryUpdate = async (data: any): Promise<MyResponse> => AxiosPost({ url: "/category/update/", data });
 
-export const CategoryUpdateName = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosPost({
-        url:"/category/update/name",
-        data: data
-    });
-    return res
-}
+export const CategoryUpdateName = async (data: any): Promise<AxiosResponse> => AxiosPost({ url: "/category/update/name", data });
 
-export const CategoryUpdateDesc = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosPost({
-        url:"/category/update/desc",
-        data: data
-    });
-    return res
-}
+export const CategoryUpdateDesc = async (data: any): Promise<AxiosResponse> => AxiosPost({ url: "/category/update/desc", data });
 
-export const GetCategoryByID = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosGet({
-        url : "/category/get",
-        data: data
-    });
-    return res
-}
+export const GetCategoryByID = async (data: any): Promise<AxiosResponse> => AxiosGet({ url: "/category/get", data });
 
-export const GetCategoriesList = async (data: any): Promise<AxiosResponse> => {
-    const res = await AxiosGet({
-        url : "/category/get/fulllist",
-        data: data
-    });
-    return res
-}
+export const GetCategoriesList = async (data: any): Promise<AxiosResponse> => AxiosGet({ url: "/category/get/fulllist", data });

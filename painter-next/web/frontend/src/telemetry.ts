@@ -1,0 +1,10 @@
+import { randomID } from './random'
+const pageInstance=randomID()
+let queued=0
+export function track(event_name:string,fields:Record<string,any>={},attempt=0){
+ try{if(localStorage.getItem('painter-analytics')==='off'||queued>=100)return}catch{return}
+ const event={event_id:randomID(),schema_version:1,event_name,page_instance_id:pageInstance,client_at_ms:Date.now(),props:{},...fields};queued++
+ const send=(n:number)=>fetch('/api/v1/analytics/events',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',keepalive:true,body:JSON.stringify({events:[event]})}).then(r=>{if((r.status===429||r.status>=500)&&n<2)setTimeout(()=>void send(n+1),1000*2**n)}).catch(()=>{if(n<2)setTimeout(()=>void send(n+1),1000*2**n)})
+ void send(attempt)
+}
+export function initTelemetry(){const b=document.body,kind=b.dataset.pageKind;if(!['home','article','search','phrases','friends'].includes(kind||''))return;const post=b.dataset.postId?{post_id:b.dataset.postId,revision_id:b.dataset.revisionId,read_receipt:b.dataset.receipt}:{};let viewed=false,read=false,visibleMs=0,last=performance.now();function visible(){if(!document.hidden&&!viewed){viewed=true;if(kind==='home'||kind==='article'||kind==='phrases'||kind==='friends')track('page_view.v1',post);if(kind==='search'&&b.dataset.searchId)track('search_submit.v1',{search_instance_id:b.dataset.searchId,props:{query_rune_count:Number(b.dataset.queryLength),result_count:Number(b.dataset.resultCount),duration_ms:0}})}}visible();const timer=setInterval(()=>{const now=performance.now();if(!document.hidden)visibleMs+=Math.min(now-last,1500);last=now;visible();if(kind==='article'&&!read&&visibleMs>=10000){read=true;track('post_read.v1',{...post,props:{duration_ms:Math.round(visibleMs)}});clearInterval(timer)}},1000);document.addEventListener('visibilitychange',()=>{last=performance.now();visible()});document.querySelectorAll<HTMLElement>('[data-search-result-open]').forEach(el=>el.addEventListener('click',()=>{track('search_result_open.v1',{search_instance_id:b.dataset.searchId,post_id:el.dataset.postId,revision_id:el.dataset.revisionId,props:{result_rank:Number(el.dataset.resultRank)}})}))}

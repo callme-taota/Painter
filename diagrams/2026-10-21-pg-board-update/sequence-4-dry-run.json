@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "identity": "user",
+  "dry_run": true,
+  "data": {
+    "api": [
+      {
+        "desc": "create mermaid node on the whiteboard.",
+        "method": "POST",
+        "url": "/open-apis/board/v1/whiteboards/DJE4...snvb/nodes/plantuml",
+        "body": {
+          "plant_uml_code": "sequenceDiagram\n  participant E as 编辑器\n  participant M as Media\n  participant F as 本地持久卷\n  participant D as PostgreSQL\n  E-\u003e\u003eM: 上传，带幂等key及当前用户\n  M-\u003e\u003eD: 创建staging媒体记录及随机存储key\n  M-\u003e\u003eF: 流式写入staging并验证/计算hash\n  M-\u003e\u003eF: fsync文件，原子rename至objects，fsync目录\n  M-\u003e\u003eD: CAS staging→ready并记录尺寸/hash\n  D--\u003e\u003eM: commit\n  M--\u003e\u003eE: media_id + 私有预览URL\n  E-\u003e\u003eE: 用稳定media引用替换上传占位\n",
+          "syntax_type": 2,
+          "parse_mode": 1,
+          "overwrite": true
+        }
+      }
+    ],
+    "context": {
+      "app_id": "cli_aa5960846f78dd1e",
+      "user_open_id": "ou_2e04b6768a86d80a0997c0d3d42f5dcc"
+    },
+    "description": "will call whiteboard open api to update content."
+  }
+}

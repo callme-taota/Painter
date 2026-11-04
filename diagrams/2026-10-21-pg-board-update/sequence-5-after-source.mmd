@@ -1,0 +1,16 @@
+sequenceDiagram
+  participant B as 浏览器
+  participant I as Ingest
+  participant D as PostgreSQL
+  participant W as 聚合worker
+  B->>I: 有限批次 events
+  I->>D: 校验后 INSERT去重，COMMIT
+  D-->>I: 已持久化
+  I-->>B: ACK accepted / duplicate
+  W->>D: 锁未聚合行 FOR UPDATE SKIP LOCKED
+  W->>D: UV去重 + daily upsert + aggregated标记，同事务
+  alt worker在commit前崩溃
+    D-->>W: 整批回滚，下次仍能认领未处理行
+  else commit后崩溃
+    D-->>W: 指标和处理标记已保存，不重复累计
+  end

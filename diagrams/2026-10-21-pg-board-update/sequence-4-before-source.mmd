@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant E as 编辑器
+  participant M as Media
+  participant F as 本地持久卷
+  participant D as SQLite
+  E->>M: 上传，带幂等key及当前用户
+  M->>D: 创建staging媒体记录及随机存储key
+  M->>F: 流式写入staging并验证/计算hash
+  M->>F: fsync文件，原子rename至objects，fsync目录
+  M->>D: CAS staging→ready并记录尺寸/hash
+  D-->>M: commit
+  M-->>E: media_id + 私有预览URL
+  E->>E: 用稳定media引用替换上传占位

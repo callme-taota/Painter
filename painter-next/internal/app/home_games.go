@@ -1,0 +1,160 @@
+package app
+
+import (
+	"context"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
+)
+
+type homeGamePage struct {
+	Scope string `json:"s"`
+	ID    string `json:"i"`
+	Value int64  `json:"v"`
+	Title string `json:"t"`
+}
+
+func homePublicItem(item map[string]any) {
+	for _, field := range []string{"version", "created_at", "updated_at", "visible", "local_override"} {
+		delete(item, field)
+	}
+	if item["kind"] == "steam" {
+		item["poster_url"] = item["image_url"]
+		id, _ := item["provider_id"].(string)
+		if homeDigits(id, 1, 10) {
+			item["poster_url"] = "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/library_600x900.jpg"
+			if item["hero_url"] == "" {
+				item["hero_url"] = "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/library_hero.jpg"
+			}
+			if item["logo_url"] == "" {
+				item["logo_url"] = "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/logo.png"
+			}
+		}
+	}
+}
+func (a *App) gamesList(w http.ResponseWriter, r *http.Request) error {
+	data, e := a.PublicGames(r.Context(), r.URL.Query())
+	if e == nil {
+		JSON(w, 200, data)
+	}
+	return e
+}
+
+// PublicGames is a local snapshot: explicit visibility and Steam's enabled flag
+// apply to all readers, including owners. Home's display cap does not constrain
+// this collection. A zero homepage count hides that shelf, not the full library.
+func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, error) {
+	order := q.Get("sort")
+	if order == "" {
+		order = "position"
+	}
+	if order != "position" && order != "playtime" && order != "title" {
+		return nil, E(400, "VALIDATION_FAILED", "游戏排序可选 position、playtime 或 title")
+	}
+	limit, e := momentLimit(q)
+	if e != nil {
+		return nil, e
+	}
+	scope := "games:v1:" + order + ":" + strconv.Itoa(limit)
+	page := homeGamePage{Scope: scope, ID: "0", Value: -1}
+	cursor := q.Get("cursor")
+	if cursor != "" {
+		if len(cursor) > 2048 {
+			return nil, E(400, "VALIDATION_FAILED", "游戏分页游标过长")
+		}
+		if e = a.decodePage(cursor, &page); e != nil {
+			return nil, e
+		}
+		if page.Scope != scope || !positiveID(page.ID) || page.Value < -1 || page.Value > 52704000 || len(page.Title) > 320 {
+			return nil, E(400, "VALIDATION_FAILED", "游戏分页条件已改变，请重新加载")
+		}
+	}
+	tx, e := a.Pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	if e != nil {
+		return nil, e
+	}
+	defer tx.Rollback(context.Background())
+	settings, e := homeRead(ctx, tx, false)
+	if e != nil {
+		return nil, e
+	}
+	if !settings.Config.Sections["steam"].Enabled {
+		return nil, NotFound()
+	}
+	var total int
+	if e = tx.QueryRow(ctx, `SELECT count(*) FROM homepage_items WHERE kind='steam' AND visible`).Scan(&total); e != nil {
+		return nil, e
+	}
+	condition, sorting := `(position,id)>($2::bigint,$3::bigint)`, `position,id`
+	if order == "playtime" {
+		condition = `(COALESCE(playtime_minutes,-1)<$2::bigint OR (COALESCE(playtime_minutes,-1)=$2::bigint AND id>$3::bigint))`
+		sorting = `playtime_minutes DESC NULLS LAST,id`
+	}
+	if order == "title" {
+		condition = `(title COLLATE "C",id)>($4::text COLLATE "C",$3::bigint)`
+		sorting = `title COLLATE "C",id`
+	}
+	// Every branch references all four typed placeholders; order is a fixed enum,
+	// never a user-supplied SQL expression. No query can widen public visibility.
+	statement := `SELECT ` + homeItemColumns + ` FROM homepage_items WHERE kind='steam' AND visible AND ($3::bigint=0 OR ` + condition + `) AND $4::text IS NOT NULL AND $2::bigint IS NOT NULL ORDER BY ` + sorting + ` LIMIT $1`
+	rows, e := tx.Query(ctx, statement, limit+1, page.Value, page.ID, page.Title)
+	if e != nil {
+		return nil, e
+	}
+	items := []map[string]any{}
+	for rows.Next() {
+		item, e := scanHomeItem(rows)
+		if e != nil {
+			rows.Close()
+			return nil, e
+		}
+		items = append(items, item)
+	}
+	e = rows.Err()
+	rows.Close()
+	if e != nil {
+		return nil, e
+	}
+	more := len(items) > limit
+	next := ""
+	if more {
+		items = items[:limit]
+		last := items[len(items)-1]
+		p := homeGamePage{Scope: scope, ID: last["id"].(string), Title: last["title"].(string)}
+		switch order {
+		case "position":
+			p.Value = int64(last["position"].(int))
+		case "playtime":
+			p.Value = -1
+			if value, ok := last["playtime_minutes"].(int64); ok {
+				p.Value = value
+			}
+		}
+		next = a.encodePage(p)
+	}
+	for _, item := range items {
+		homePublicItem(item)
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return nil, e
+	}
+	return map[string]any{"items": items, "next_cursor": next, "cursor": next, "has_more": more, "limit": limit, "max_limit": 50, "total": total, "sort": order}, nil
+}
+
+func steamAssetURL(id, format, filename string) string {
+	if !homeDigits(id, 1, 10) || !strings.HasPrefix(format, "steam/apps/"+id+"/") || strings.Count(format, "${FILENAME}") != 1 || filename == "" || len(format) > 512 || len(filename) > 256 || strings.Contains(format, "..") || strings.Contains(filename, "..") || strings.ContainsAny(format+filename, "\\\r\n\t") || strings.HasPrefix(filename, "/") {
+		return ""
+	}
+	target := "https://shared.akamai.steamstatic.com/store_item_assets/" + strings.Replace(format, "${FILENAME}", filename, 1)
+	if !homeRemoteImage("steam", target) {
+		return ""
+	}
+	u, e := url.Parse(target)
+	if e != nil || u.Host != "shared.akamai.steamstatic.com" || u.Fragment != "" {
+		return ""
+	}
+	return target
+}

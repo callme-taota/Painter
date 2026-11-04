@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!deploy/example.env
+**/node_modules
+web/assets
+data
+backups
+tests/artifacts
+/painter

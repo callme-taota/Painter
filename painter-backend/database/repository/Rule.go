@@ -61,35 +61,11 @@ func (r *Rule) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (r *Rule) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var rules []Rule
-	if err := query(db).Find(&rules).Error; err != nil {
-		return err
-	}
-
-	for i := range rules {
-		rules[i].BaseTable = &BaseTableImplement{}
-		if err := updater(&rules[i]); err != nil {
-			return err
-		}
-		if err := db.Save(&rules[i]).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return updateRows(r, db, query, updater)
 }
 
 func (r *Rule) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var rules []Rule
-	if err := query(db).Find(&rules).Error; err != nil {
-		return err
-	}
-
-	for _, rule := range rules {
-		if err := db.Delete(&rule).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[Rule](db, query)
 }
 
 func (r *Rule) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
@@ -145,35 +121,11 @@ func (g *Group) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (g *Group) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var groups []Group
-	if err := query(db).Find(&groups).Error; err != nil {
-		return err
-	}
-
-	for i := range groups {
-		groups[i].BaseTable = &BaseTableImplement{}
-		if err := updater(&groups[i]); err != nil {
-			return err
-		}
-		if err := db.Save(&groups[i]).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return updateRows(g, db, query, updater)
 }
 
 func (g *Group) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var groups []Group
-	if err := query(db).Find(&groups).Error; err != nil {
-		return err
-	}
-
-	for _, group := range groups {
-		if err := db.Delete(&group).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[Group](db, query)
 }
 
 func (g *Group) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {
@@ -227,35 +179,11 @@ func (g *GroupRule) Create(db *gorm.DB, row Table) (*gorm.DB, error) {
 }
 
 func (g *GroupRule) Update(db *gorm.DB, query func(*gorm.DB) *gorm.DB, updater func(Table) error) error {
-	var groupRules []GroupRule
-	if err := query(db).Find(&groupRules).Error; err != nil {
-		return err
-	}
-
-	for i := range groupRules {
-		groupRules[i].BaseTable = &BaseTableImplement{}
-		if err := updater(&groupRules[i]); err != nil {
-			return err
-		}
-		if err := db.Save(&groupRules[i]).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return updateRows(g, db, query, updater)
 }
 
 func (g *GroupRule) Delete(db *gorm.DB, query func(*gorm.DB) *gorm.DB) error {
-	var groupRules []GroupRule
-	if err := query(db).Find(&groupRules).Error; err != nil {
-		return err
-	}
-
-	for _, groupRule := range groupRules {
-		if err := db.Delete(&groupRule).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return deleteRows[GroupRule](db, query)
 }
 
 func (g *GroupRule) Select(db *gorm.DB, query func(*gorm.DB) *gorm.DB) ([]Table, *gorm.DB, error) {

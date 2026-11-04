@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant E as 编辑器
+  participant A as Content应用服务
+  participant D as PostgreSQL
+  E->>A: 创建草稿 Idempotency-Key
+  A->>D: posts + draft + 幂等结果，同一事务
+  D-->>A: commit
+  A-->>E: id / version / draft_version
+  E->>E: 更新URL并保留唯一文档ID
+  E->>A: 保存 If-Match + draft_version + mutation_id
+  A->>D: CAS更新工作副本、关系与版本
+  alt 版本一致
+    D-->>A: commit
+    A-->>E: 已持久化的新版本
+  else 另一标签页已保存
+    D-->>A: rollback
+    A-->>E: 409，不覆盖本地文本
+  end
