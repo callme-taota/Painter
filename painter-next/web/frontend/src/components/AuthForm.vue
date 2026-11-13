@@ -34,12 +34,15 @@ async function initialize(){
 async function submit(){
  if(busy.value)return
  error.value=''
- const length=Array.from(password.value).length
- if(length<15||length>1024||new TextEncoder().encode(password.value).length>4096){error.value='密码需为 15–1024 个字符，且不超过 4096 字节。';return}
+ const registering=props.mode==='register'
+ const passwordBytes=new TextEncoder().encode(password.value).length
+ if(registering){
+  const length=Array.from(password.value).length
+  if(length<15||length>1024||passwordBytes>4096){error.value='密码需为 15–1024 个字符，且不超过 4096 字节。';return}
+ }else if(passwordBytes>4096){error.value='密码不能超过 4096 字节。';return}
  busy.value=true
  try{
   options.value=await getOptions()
-  const registering=props.mode==='register'
   const r=await fetch('/api/v1/auth/'+(registering?'register':'login'),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':options.value.csrf_token},body:JSON.stringify({username:username.value.trim().toLowerCase(),password:password.value,...(registering?{display_name:displayName.value.trim()}:{})})})
   if(!r.ok)throw new Error(await readError(r))
   const data=await r.json()
@@ -82,7 +85,7 @@ onMounted(initialize)
     <p v-if="mode==='register'&&!options.registration_open" class="notice">当前暂停注册。已有账号可前往登录。</p>
     <form v-else class="auth-form" @submit.prevent="submit">
      <p v-if="mode==='login'&&options.external_login_enabled===false" class="muted">当前仅允许管理员登录。</p>
-     <label>用户名<input v-model="username" required minlength="2" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,63}" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="字母、数字、下划线或连字符"></label>
+     <label>用户名<input v-model="username" required minlength="2" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_\-]{1,63}" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="字母、数字、下划线或连字符"></label>
      <label v-if="mode==='register'">显示名称<input v-model="displayName" required maxlength="100" autocomplete="nickname" placeholder="读者会看到的名字"></label>
      <label>密码<input v-model="password" required type="password" :autocomplete="mode==='register'?'new-password':'current-password'" :aria-describedby="mode==='register'?'password-hint':undefined"></label>
      <small v-if="mode==='register'" id="password-hint">使用 15–1024 个字符。建议使用容易记住的长密码，首尾空格也会保留。</small>

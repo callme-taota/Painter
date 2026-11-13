@@ -100,7 +100,7 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-C-iC-xF3.js",
+    "file": "chunks/AuthForm-CzJvLB-T.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
@@ -110,7 +110,7 @@
       "__plugin-vue_export-helper-CQjV9x8B.js"
     ],
     "css": [
-      "AuthForm-DJ8csUJS.css"
+      "AuthForm-CftWU_Hm.css"
     ]
   },
   "src/components/FollowIsland.vue": {
@@ -222,7 +222,7 @@
     "isDynamicEntry": true
   },
   "src/public.ts": {
-    "file": "public-3AQz6lYJ.js",
+    "file": "public-CGBSCDh0.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
@@ -270,7 +270,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-Bs45XbFc.js",
+    "file": "studio-BU7M0tDb.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,

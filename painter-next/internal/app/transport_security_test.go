@@ -138,3 +138,66 @@ func TestPublicHTTPSHandlerDispatch(t *testing.T) {
 		t.Fatal("trusted HTTPS request did not reach the handler")
 	}
 }
+
+func TestAuthenticationUsesConfiguredHTTPSOrigin(t *testing.T) {
+	for _, tc := range []struct {
+		name, target, peer, proto, method string
+		tls, development, redirect        bool
+	}{
+		{name: "LAN login", target: "http://192.168.2.209:18080/login?return_to=%2Fstudio%2Fposts%2Fnew", redirect: true},
+		{name: "LAN register", target: "http://192.168.2.209:18080/register?return_to=%2Fme", redirect: true},
+		{name: "LAN https is not the authentication authority", target: "https://192.168.2.209:18080/login", tls: true, redirect: true},
+		{name: "untrusted host cannot change redirect", target: "http://evil.example/login?return_to=https%3A%2F%2Fevil.example", redirect: true},
+		{name: "public direct TLS", target: "https://blog.example.test/login?mfa=1", tls: true},
+		{name: "public trusted tunnel", target: "http://blog.example.test/login", peer: "192.0.2.3:3150", proto: "https"},
+		{name: "public spoofed scheme", target: "http://blog.example.test/login", peer: "192.0.2.4:3150", proto: "https", redirect: true},
+		{name: "public HTTP still needs HTTPS for cookies", target: "http://blog.example.test/login", redirect: true},
+		{name: "development stays local", target: "http://127.0.0.1:18088/login", development: true},
+		{name: "never redirect API submissions", target: "http://192.168.2.209:18080/api/v1/auth/login", method: "POST"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := transportConfig(t)
+			c.EnforcePublicHTTPS = false
+			if tc.development {
+				c.PublicBaseURL = "http://127.0.0.1:18088"
+				c.GitHubCallbackURL = c.PublicBaseURL + "/auth/github/callback"
+				if err := c.defaults(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			a := App{Config: c}
+			method := tc.method
+			if method == "" {
+				method = http.MethodGet
+			}
+			r := httptest.NewRequest(method, tc.target, nil)
+			r.RemoteAddr = tc.peer
+			if tc.tls {
+				r.TLS = &tls.ConnectionState{}
+			}
+			if tc.proto != "" {
+				r.Header.Set("X-Forwarded-Proto", tc.proto)
+			}
+			r.Header.Set("X-Forwarded-Host", "attacker.invalid")
+			w := httptest.NewRecorder()
+			if got := a.redirectAuthenticationOrigin(w, r); got != tc.redirect {
+				t.Fatalf("redirect=%v want=%v", got, tc.redirect)
+			}
+			if tc.redirect {
+				want := "https://blog.example.test" + r.URL.RequestURI()
+				if w.Code != http.StatusTemporaryRedirect || w.Header().Get("Location") != want || !strings.Contains(w.Header().Get("Cache-Control"), "no-store") || w.Header().Get("Referrer-Policy") != "no-referrer" {
+					t.Fatalf("wrong authentication redirect: status=%d location=%s", w.Code, w.Header().Get("Location"))
+				}
+			} else if w.Header().Get("Location") != "" {
+				t.Fatal("unexpected authentication redirect")
+			}
+			if !tc.development {
+				cookies := httptest.NewRecorder()
+				a.cookie(cookies, localNonceCookie, "synthetic-test-nonce", 600)
+				if !cookies.Result().Cookies()[0].Secure {
+					t.Fatal("HTTPS authentication cookie was weakened")
+				}
+			}
+		})
+	}
+}

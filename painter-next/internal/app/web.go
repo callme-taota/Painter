@@ -423,6 +423,9 @@ func (a *App) RegisterWeb() {
 		render(w, r, webPage{Kind: "about", Title: "关于", Site: site, HTML: template.HTML(expanded)})
 	})
 	authPage := func(w http.ResponseWriter, r *http.Request) {
+		if a.redirectAuthenticationOrigin(w, r) {
+			return
+		}
 		var registration bool
 		_ = a.Pool.QueryRow(r.Context(), "SELECT registration_enabled AND external_login_enabled FROM site_settings WHERE id=1").Scan(&registration)
 		returnTo := "/me"

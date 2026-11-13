@@ -99,6 +99,26 @@ func (a *App) redirectPublicHTTP(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+// Authentication uses one configured HTTPS origin. A LAN HTTP page cannot keep
+// production Secure cookies; send its login form to that origin before asking
+// for credentials. Public reading and all API CSRF checks remain unchanged.
+func (a *App) redirectAuthenticationOrigin(w http.ResponseWriter, r *http.Request) bool {
+	origin := a.Config.publicHTTPSOrigin
+	if origin == nil || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
+		return false
+	}
+	if strings.EqualFold(r.Host, origin.Host) && a.Config.secureRequest(r) {
+		return false
+	}
+	target := *origin
+	target.Path, target.RawPath = r.URL.Path, r.URL.RawPath
+	target.RawQuery, target.ForceQuery = r.URL.RawQuery, r.URL.ForceQuery
+	w.Header().Set("Cache-Control", "private, no-store")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	http.Redirect(w, r, target.String(), http.StatusTemporaryRedirect)
+	return true
+}
+
 // ClientIP accepts Cloudflare's single client address only with explicit opt-in
 // and a trusted direct connector. It deliberately ignores all forwarding chains.
 // Official header semantics: https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-connecting-ip
