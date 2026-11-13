@@ -2,6 +2,9 @@ import importlib.util
 import base64
 import json
 import os
+import secrets
+import shutil
+import subprocess
 from pathlib import Path
 import stat
 import sys
@@ -64,6 +67,82 @@ class BackupToolTests(unittest.TestCase):
             config.chmod(0o644)
             with self.assertRaises(ValueError):
                 schedule.private_file(config)
+
+    @unittest.skipUnless(shutil.which("systemd-analyze"), "real systemd verifier is required")
+    def test_systemd_real_path_fields_and_execution(self):
+        # Verify actual unit syntax, then execute only unique temporary fixture
+        # units. No Painter unit, database, secret, timer, or real Docker runs.
+        available = subprocess.run(["systemctl", "--user", "list-jobs", "--no-legend", "--no-pager"],
+                                   capture_output=True, text=True)
+        if available.returncode:
+            self.skipTest("a running user systemd manager is required for execution")
+        with tempfile.TemporaryDirectory(prefix="painter-backup-systemd-", dir="/tmp") as directory:
+            root = Path(directory) / "space ' apostrophe % percent"
+            root.mkdir()
+            for filename in ("runtime.env", ".env"):
+                config = root / filename
+                config.write_text("PAINTER_BACKUP_FIXTURE=fixture-only\n")
+                config.chmod(0o600)
+            (root / "compose.yaml").write_text("services: {}\n")
+            postgres = root / "PostgreSQL tools"
+            postgres.mkdir()
+            for name in ("pg_dump", "pg_restore"):
+                (postgres / name).touch()
+            for mode in ("native", "compose"):
+                with self.subTest(mode=mode):
+                    # systemd intentionally restricts apostrophes in argv[0].
+                    # Configuration, cwd, PG tools and all path arguments retain
+                    # the special characters tested here.
+                    binary = Path(directory) / ("fixture-" + mode)
+                    output = root / (mode + "-result.json")
+                    binary.write_text("#!" + sys.executable + "\nimport json,os,sys\nfrom pathlib import Path\n" +
+                        "Path(" + repr(str(output)) + ").write_text(json.dumps({" +
+                        "'marker':os.environ.get('PAINTER_BACKUP_FIXTURE'),'cwd':os.getcwd()," +
+                        "'pgbin':os.environ.get('POSTGRES_BIN_DIR'),'args':sys.argv[1:]}))\n")
+                    binary.chmod(0o700)
+                    args = types.SimpleNamespace(mode=mode, binary=str(binary), env_file=str(root / "runtime.env"),
+                        backup_root=str(root / "backups"), keep=14, postgres_bin=str(postgres),
+                        calendar="*-*-* 03:30:00", project_root=str(root), docker=str(binary))
+                    service, timer = schedule.units(args)
+                    schedule.verify_units(service, timer)
+                    setting = "EnvironmentFile" if mode == "native" else "WorkingDirectory"
+                    path = root / "runtime.env" if mode == "native" else root
+                    broken = service.replace(setting + "=" + schedule.path_value(path),
+                                             setting + "=" + schedule.quote(path))
+                    with self.assertRaises(ValueError):
+                        schedule.verify_units(broken, timer)
+                    name = "painter-backup-pathcheck-" + mode + "-" + secrets.token_hex(6)
+                    unit = Path(directory) / (name + ".service")
+                    timer_file = Path(directory) / (name + ".timer")
+                    unit.write_text(service)
+                    timer_file.write_text(timer.replace("Unit=painter-backup.service", "Unit=" + name + ".service"))
+                    verified = subprocess.run(["systemd-analyze", "--user", "verify", "--man=no", str(unit), str(timer_file)],
+                                              capture_output=True, text=True)
+                    self.assertEqual(verified.returncode, 0, verified.stderr)
+                    # systemd can ignore invalid fields and still exit zero.
+                    # Fail on diagnostics for either fixture, while unrelated
+                    # installed system units may produce their own warnings.
+                    self.assertNotIn(name, verified.stderr)
+                    link = Path(os.environ.get("XDG_RUNTIME_DIR", "/run/user/" + str(os.getuid()))) / "systemd/user" / unit.name
+                    try:
+                        linked = subprocess.run(["systemctl", "--user", "link", "--runtime", str(unit)], capture_output=True, text=True)
+                        self.assertEqual(linked.returncode, 0, linked.stderr)
+                        started = subprocess.run(["systemctl", "--user", "start", unit.name], capture_output=True, text=True)
+                        self.assertEqual(started.returncode, 0, started.stderr)
+                        result = json.loads(output.read_text())
+                        if mode == "native":
+                            self.assertEqual(result["marker"], "fixture-only")
+                            self.assertEqual(result["pgbin"], str(postgres))
+                            self.assertIn(str(root / "runtime.env"), result["args"])
+                        else:
+                            self.assertEqual(result["cwd"], str(root))
+                            self.assertIn(str(root), result["args"])
+                    finally:
+                        subprocess.run(["systemctl", "--user", "stop", unit.name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["systemctl", "--user", "reset-failed", unit.name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        if link.is_symlink() and Path(os.readlink(link)) == unit:
+                            link.unlink()
+                        subprocess.run(["systemctl", "--user", "daemon-reload"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def fixture(self, directory):
         root = Path(directory)

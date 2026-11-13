@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 
 def private_file(value):
@@ -28,6 +29,21 @@ def quote(value):
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('%', '%%') + '"'
 
 
+def path_value(value):
+    """Serialize one systemd path setting, not an ExecStart argument.
+
+    EnvironmentFile and WorkingDirectory take the complete unquoted setting
+    value. Quotes there are literal filename characters; only specifiers need
+    escaping. Interior spaces and apostrophes are already part of the path.
+    """
+    value = str(value)
+    if not value.startswith("/") or any(c in value for c in "\n\r\x00"):
+        raise ValueError("unit paths must be absolute and one line")
+    if value != value.strip():
+        raise ValueError("unit paths must not end with whitespace")
+    return value.replace("%", "%%")
+
+
 def units(args):
     if args.mode == "native":
         binary = Path(args.binary).absolute()
@@ -36,7 +52,7 @@ def units(args):
         environment = private_file(args.env_file)
         command = [str(binary), "backup-run", "--root", str(Path(args.backup_root).absolute()),
                    "--keep", str(args.keep), "--config-snapshot", str(environment)]
-        configuration = "EnvironmentFile=" + quote(environment) + "\n"
+        configuration = "EnvironmentFile=" + path_value(environment) + "\n"
         if args.postgres_bin:
             directory = Path(args.postgres_bin).absolute()
             for name in ("pg_dump", "pg_restore"):
@@ -55,7 +71,7 @@ def units(args):
                    "--volume", str(environment) + ":/run/painter-recovery.env:ro", "ops", "backup-run",
                    "--root", args.backup_root, "--keep", str(args.keep),
                    "--config-snapshot", "/run/painter-recovery.env"]
-        configuration = "WorkingDirectory=" + quote(root) + "\n"
+        configuration = "WorkingDirectory=" + path_value(root) + "\n"
         configuration += "UnsetEnvironment=DB_ADMIN_PASSWORD DB_MIGRATION_PASSWORD DB_APP_PASSWORD APP_ENCRYPTION_KEY ANALYTICS_HMAC_KEY PUBLIC_BASE_URL PUBLIC_HOST APP_PORT APP_BIND_ADDRESS PAINTER_IMAGE COMPOSE_PROJECT_NAME COMPOSE_PROFILES GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET BOOTSTRAP_GITHUB_ID SETUP_TOKEN\n"
     service = ("[Unit]\nDescription=Painter verified automatic database and media backup\n"
                "After=network.target\n\n[Service]\nType=oneshot\nUMask=0077\n"
@@ -66,6 +82,21 @@ def units(args):
              "OnCalendar=" + args.calendar + "\nPersistent=true\nRandomizedDelaySec=10min\n"
              "AccuracySec=1min\nUnit=painter-backup.service\n\n[Install]\nWantedBy=timers.target\n")
     return service, timer
+
+
+def verify_units(service, timer):
+    # Validate unique temporary names before writing or enabling actual units.
+    # Some ignored-invalid-setting diagnostics still produce exit status zero.
+    with tempfile.TemporaryDirectory(prefix="painter-backup-verify-") as directory:
+        name = Path(directory).name
+        service_path = Path(directory) / (name + ".service")
+        timer_path = Path(directory) / (name + ".timer")
+        service_path.write_text(service)
+        timer_path.write_text(timer.replace("Unit=painter-backup.service", "Unit=" + name + ".service"))
+        result = subprocess.run(["systemd-analyze", "--user", "verify", "--man=no",
+                                 str(service_path), str(timer_path)], capture_output=True, text=True)
+        if result.returncode or name in result.stderr:
+            raise ValueError("generated backup units failed systemd verification; existing units were preserved")
 
 
 def main():
@@ -96,6 +127,7 @@ def main():
         args.backup_root = (str(Path.home() / ".local/share/painter/backups/automatic")
                             if args.mode == "native" else "/var/backups/painter/automatic")
     service, timer = units(args)
+    verify_units(service, timer)
     unit_dir = Path.home() / ".config/systemd/user"
     unit_dir.mkdir(parents=True, exist_ok=True)
     for name, content in (("painter-backup.service", service), ("painter-backup.timer", timer)):
