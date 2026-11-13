@@ -10,7 +10,7 @@ html[data-theme=dark] [data-search-glass]{
  --search-glass-line:rgb(255 255 255 / .15);
  --search-glass-fill:rgb(255 255 255 / .07);
 }
-html[data-theme] [data-search-glass].liquid-glass-surface{
+html[data-theme] [data-search-glass]:not(.mobile-primary-nav).liquid-glass-surface{
  --liquid-glass-tint:var(--search-glass-tint);
  --liquid-glass-blur:18px;
 }

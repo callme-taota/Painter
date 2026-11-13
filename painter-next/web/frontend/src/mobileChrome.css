@@ -7,12 +7,13 @@ html.mobile-overlay-open{overflow:hidden;overscroll-behavior:none}
  html{scroll-padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
  body:not([data-page-kind=studio]):not([data-page-kind=setup]){padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
  html.mobile-chrome-ready .floating-controls.site-dock{display:none}
- html.mobile-chrome-ready .mobile-primary-nav{position:fixed;z-index:65;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;min-height:64px;padding:5px 8px;border-radius:32px;color:var(--ink);--liquid-glass-tint:rgb(255 255 255 / .86);--liquid-glass-blur:18px}
- html[data-theme=dark].mobile-chrome-ready .mobile-primary-nav{--liquid-glass-tint:rgb(24 27 33 / .9)}
- .mobile-primary-nav>a{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;min-height:54px;min-width:44px;border-radius:25px;font-size:11px;line-height:15px;text-decoration:none;color:var(--muted);position:relative}
+ html.mobile-chrome-ready .mobile-primary-nav{position:fixed;z-index:65;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;min-height:64px;padding:5px 8px;border-radius:32px;color:var(--ink);--liquid-glass-tint:rgb(255 255 255 / .54);--liquid-glass-blur:10px}
+ html[data-theme=dark].mobile-chrome-ready .mobile-primary-nav{--liquid-glass-tint:rgb(24 27 33 / .62)}
+ .mobile-primary-nav>a{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;min-height:54px;min-width:44px;border-radius:25px;font-size:11px;line-height:15px;text-decoration:none;color:var(--ink);position:relative}
  .mobile-primary-nav>a>.icon{width:22px;height:22px;stroke-width:1.7}
- .mobile-primary-nav>a[aria-current=page]{color:var(--ink);background:rgb(128 128 128 / .12);font-weight:600}
- .mobile-primary-nav>a:active{background:rgb(128 128 128 / .14)}
+ .mobile-primary-nav>a[aria-current=page]{color:var(--ink);background:rgb(255 255 255 / .38);box-shadow:inset 0 1px 0 rgb(255 255 255 / .7),0 2px 6px rgb(0 0 0 / .065);font-weight:600}
+ html[data-theme=dark] .mobile-primary-nav>a[aria-current=page]{background:rgb(255 255 255 / .11);box-shadow:inset 0 1px 0 rgb(255 255 255 / .2),0 2px 6px rgb(0 0 0 / .15)}
+ .mobile-primary-nav>a:active{background:rgb(128 128 128 / .16);transform:scale(.96)}
  .mobile-primary-nav>a:focus-visible{outline:2px solid var(--link);outline-offset:0}
  .mobile-sheet[open]{position:fixed;display:flex;flex-direction:column;inset:auto 0 0;margin:0;width:100%;max-width:none;max-height:min(86dvh,var(--mobile-viewport-height,86dvh));padding:0;border:0;border-radius:24px 24px 0 0;background:var(--paper);color:var(--ink);box-shadow:0 -8px 40px rgb(0 0 0 / .12);overflow:hidden}
  .mobile-sheet-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px 8px;flex:none;border-bottom:1px solid var(--line)}
@@ -44,8 +45,15 @@ html.mobile-overlay-open{overflow:hidden;overscroll-behavior:none}
  .mobile-sheet .floating-like{flex-direction:row}
  .mobile-sheet [data-like-count]{font:500 13px/20px var(--font-ui);color:var(--muted)}
  /* A full-height search task leaves room for the software keyboard. */
- #site-search.raycast-search[open]{inset:var(--mobile-viewport-top,0px) 0 auto;margin:0;width:100%;max-width:none;height:var(--mobile-viewport-height,100dvh);max-height:var(--mobile-viewport-height,100dvh);border:0;border-radius:0;padding:env(safe-area-inset-top,0px) 0 max(8px,env(safe-area-inset-bottom,0px));box-shadow:none!important;--liquid-glass-tint:rgb(255 255 255 / .94)}
- html[data-theme=dark] #site-search.raycast-search[open]{--liquid-glass-tint:rgb(18 21 28 / .94)}
+ #site-search.raycast-search[open]{inset:var(--mobile-viewport-top,0px) 0 auto;margin:0;width:100%;max-width:none;height:var(--mobile-viewport-height,100dvh);max-height:var(--mobile-viewport-height,100dvh);border:0;border-radius:0;padding:env(safe-area-inset-top,0px) 0 max(8px,env(safe-area-inset-bottom,0px));box-shadow:none!important;--liquid-glass-tint:rgb(255 255 255 / .72)}
+ html[data-theme=dark] #site-search.raycast-search[open]{--liquid-glass-tint:rgb(18 21 28 / .76)}
+ #site-search.raycast-search::backdrop{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+ #site-search.raycast-search[data-liquid-glass-mode=solid]::backdrop,
+ .reduce-transparency #site-search.raycast-search::backdrop{-webkit-backdrop-filter:none;backdrop-filter:none}
+ /* Some WebKit compositors accept backdrop-filter without painting it in the
+    top layer. Blur only existing background siblings while this task is open;
+    the dialog, its input and results are never filtered or cloned. */
+ body:has(>#site-search[open]):not(:has(>#site-search[data-liquid-glass-mode=solid]))>:is(.site-header,#main,.site-footer,.mobile-primary-nav,.site-dock,#workbench){filter:blur(12px)}
  #site-search.raycast-search .quick-search-row{padding:10px 12px;gap:8px;min-height:66px}
  #site-search.raycast-search input[name=q]{min-width:0;font-size:16px;height:44px}
  #site-search.raycast-search [data-search-close],#site-search.raycast-search .raycast-search-submit{min-width:44px;min-height:44px;height:44px;padding:8px;font-size:14px}
@@ -76,5 +84,5 @@ html.mobile-overlay-open{overflow:hidden;overscroll-behavior:none}
  .login-panel :is(input,button){min-height:48px}
  .login-panel :is(input,textarea){font-size:16px}
 }
-@media(prefers-reduced-motion:no-preference){@media(max-width:720px){.mobile-primary-nav>a{transition:background-color 140ms ease-out}}}
+@media(prefers-reduced-motion:no-preference){@media(max-width:720px){.mobile-primary-nav>a{transition:background-color 140ms ease-out,transform 180ms cubic-bezier(.16,1,.3,1)}}}
 @media print{.mobile-primary-nav,.mobile-sheet{display:none!important}}
