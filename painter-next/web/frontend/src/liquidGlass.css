@@ -53,9 +53,6 @@ html[data-theme=dark] .liquid-glass-shine{
 @media(forced-colors:active){.liquid-glass-surface{border-color:ButtonText!important}.liquid-glass-optics{background:Canvas!important;box-shadow:none!important}}
 @media(prefers-reduced-motion:reduce){.liquid-glass-optics,.liquid-glass-optics>*{transition:none!important;animation:none!important}}
 
-/* WebKit can filter an image's own pixels although it cannot apply an SVG
-   filter to the live backdrop. Media copies need no canvas/CORS pixel access. */
-.liquid-glass-media{display:none}
 @media(max-width:720px){
  /* On WebKit a negative-z child cannot reliably sample the live backdrop.
     The surface owns native blur; foreground text is never filtered. */
@@ -84,13 +81,5 @@ html[data-theme=dark] .liquid-glass-shine{
  .liquid-glass-shine::before{background:linear-gradient(145deg,rgb(255 255 255 / .95) 3%,rgb(255 255 255 / .18) 38%,rgb(255 255 255 / .05) 62%,rgb(255 255 255 / .65) 100%)}
  .liquid-glass-shine::after{inset:1px;padding:1px;background:linear-gradient(145deg,rgb(0 0 0 / .035),transparent 35%,rgb(0 0 0 / .16) 72%,transparent);opacity:.75}
  html[data-theme=dark] .liquid-glass-shine::before{opacity:.65}
- .liquid-glass-media{z-index:1;pointer-events:none}
- .liquid-glass-surface[data-liquid-glass-mode=media]>.liquid-glass-optics>.liquid-glass-backdrop{
-  background:transparent;
- }
- .liquid-glass-surface[data-liquid-glass-mode=media]>.liquid-glass-optics::before{
-  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;background:var(--liquid-glass-tint);
- }
  .liquid-glass-optics>.liquid-glass-shine{z-index:3}
- #site-search .liquid-glass-media>span{filter:blur(12px)}
 }

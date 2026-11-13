@@ -1,3 +1,5 @@
+// Historical V47 optics experiment; the mirror pipeline was removed in V48.
+// Current mobile performance regression: v48-glass-scroll.cjs.
 // Anonymous, read-only optical/runtime checks. This does not authenticate or write content.
 // The WebKit build is a real Linux WebKit engine, not Safari or a physical iPhone.
 const fs = require('node:fs');

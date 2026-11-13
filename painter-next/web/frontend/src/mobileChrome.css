@@ -45,15 +45,11 @@ html.mobile-overlay-open{overflow:hidden;overscroll-behavior:none}
  .mobile-sheet .floating-like{flex-direction:row}
  .mobile-sheet [data-like-count]{font:500 13px/20px var(--font-ui);color:var(--muted)}
  /* A full-height search task leaves room for the software keyboard. */
- #site-search.raycast-search[open]{inset:var(--mobile-viewport-top,0px) 0 auto;margin:0;width:100%;max-width:none;height:var(--mobile-viewport-height,100dvh);max-height:var(--mobile-viewport-height,100dvh);border:0;border-radius:0;padding:env(safe-area-inset-top,0px) 0 max(8px,env(safe-area-inset-bottom,0px));box-shadow:none!important;--liquid-glass-tint:rgb(255 255 255 / .72)}
- html[data-theme=dark] #site-search.raycast-search[open]{--liquid-glass-tint:rgb(18 21 28 / .76)}
+ #site-search.raycast-search[open]{inset:var(--mobile-viewport-top,0px) 0 auto;margin:0;width:100%;max-width:none;height:var(--mobile-viewport-height,100dvh);max-height:var(--mobile-viewport-height,100dvh);border:0;border-radius:0;padding:env(safe-area-inset-top,0px) 0 max(8px,env(safe-area-inset-bottom,0px));box-shadow:none!important;--liquid-glass-tint:rgb(255 255 255 / .94)}
+ html[data-theme=dark] #site-search.raycast-search[open]{--liquid-glass-tint:rgb(18 21 28 / .94)}
  #site-search.raycast-search::backdrop{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
  #site-search.raycast-search[data-liquid-glass-mode=solid]::backdrop,
  .reduce-transparency #site-search.raycast-search::backdrop{-webkit-backdrop-filter:none;backdrop-filter:none}
- /* Some WebKit compositors accept backdrop-filter without painting it in the
-    top layer. Blur only existing background siblings while this task is open;
-    the dialog, its input and results are never filtered or cloned. */
- body:has(>#site-search[open]):not(:has(>#site-search[data-liquid-glass-mode=solid]))>:is(.site-header,#main,.site-footer,.mobile-primary-nav,.site-dock,#workbench){filter:blur(12px)}
  #site-search.raycast-search .quick-search-row{padding:10px 12px;gap:8px;min-height:66px}
  #site-search.raycast-search input[name=q]{min-width:0;font-size:16px;height:44px}
  #site-search.raycast-search [data-search-close],#site-search.raycast-search .raycast-search-submit{min-width:44px;min-height:44px;height:44px;padding:8px;font-size:14px}

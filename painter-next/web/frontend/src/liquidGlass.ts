@@ -1,5 +1,4 @@
 import './liquidGlass.css'
-import {createMobileMediaGlassRenderer,type MobileMediaGlassRenderer} from './liquidGlassMedia'
 
 const SVG_NS='http://www.w3.org/2000/svg'
 const XLINK_NS='http://www.w3.org/1999/xlink'
@@ -19,13 +18,6 @@ type GlassSurface={
  id:string
  originalPosition:string
  positioned:boolean
- renderer:MobileMediaGlassRenderer|null
- media:HTMLSpanElement
- fallback:'solid'|'refract'|'blur'
- mediaFilter:SVGFilterElement|null
- mediaKey:string
- mediaVersion:number
- settleTimers:number[]
 }
 
 const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value))
@@ -147,50 +139,6 @@ function measure(surface:GlassSurface):void{
  target.dataset.glassTextureSize=`${width}x${height}`
 }
 
-/** WebKit needs bounding-box primitive coordinates for feImage displacement.
- * Decode the map before publishing a fresh graph; fresh IDs also avoid its stale
- * SVG-filter cache when the lens changes size. Desktop backdrop graphs stay as-is.
- */
-function prepareMediaFilter(surface:GlassSurface,notify:()=>void):void{
- if(!surface.filter||surface.mediaKey===surface.key)return
- surface.mediaKey=surface.key
- const version=++surface.mediaVersion
- const width=surface.target.clientWidth,height=surface.target.clientHeight
- const uri=surface.image?.getAttribute('href')
- if(!width||!height||!uri)return
- const graph=surface.filter.cloneNode(true) as SVGFilterElement
- const minimum=Math.min(width,height)
- graph.setAttribute('filterUnits','objectBoundingBox')
- graph.setAttribute('primitiveUnits','objectBoundingBox')
- for(const element of [graph,graph.querySelector('feImage')!]){
-  for(const name of ['x','width'])element.setAttribute(name,String(Number(element.getAttribute(name))/width))
-  for(const name of ['y','height'])element.setAttribute(name,String(Number(element.getAttribute(name))/height))
- }
- const kx=minimum/width,ky=minimum/height
- const map=svg('feColorMatrix',{in:'lens-map',type:'matrix',values:`${kx} 0 0 0 ${(1-kx)/2} 0 ${ky} 0 0 ${(1-ky)/2} 0 0 1 0 0 0 0 0 1 0`,result:'normalised-lens-map'})
- graph.querySelector('feImage')!.after(map)
- for(const channel of graph.querySelectorAll('feDisplacementMap')){
-  channel.setAttribute('in2','normalised-lens-map')
-  channel.setAttribute('scale',String(Number(channel.getAttribute('scale'))/minimum))
- }
- graph.querySelector('feGaussianBlur')!.setAttribute('stdDeviation',`${.18/width} ${.18/height}`)
- const decoded=new Image();decoded.src=uri
- void decoded.decode().then(()=>{
-  if(active.get(surface.target)!==surface||version!==surface.mediaVersion)return
-  surface.settleTimers.forEach(clearTimeout);surface.settleTimers=[]
-  surface.mediaFilter?.remove()
-  surface.mediaFilter=graph
-  graph.id=`painter-liquid-glass-${++serial}`
-  definitions!.querySelector('defs')!.append(graph)
-  notify()
-  for(const delay of [60,250])surface.settleTimers.push(window.setTimeout(()=>{
-   if(active.get(surface.target)!==surface||version!==surface.mediaVersion)return
-   graph.id=`painter-liquid-glass-${++serial}`
-   notify()
-  },delay))
- }).catch(()=>{/* The native blur remains usable if the local map cannot decode. */})
-}
-
 /**
  * Enhances only the public header and explicitly marked command surfaces.
  * Existing controls, focus, positions and V28 scroll ownership are untouched.
@@ -202,6 +150,9 @@ export function initLiquidGlass(root:ParentNode=document):()=>void{
  const surfaces:GlassSurface[]=[]
  const supportsBackdrop=CSS.supports('backdrop-filter','blur(1px)')||CSS.supports('-webkit-backdrop-filter','blur(1px)')
  const refraction=supportedRefraction()
+ // Native compositing owns phone scrolling. Do not rasterise/mirror content or
+ // introduce a main-thread displacement pass to chase the composited viewport.
+ const phone=matchMedia('(max-width:720px)')
  const reducedTransparency=matchMedia('(prefers-reduced-transparency:reduce)')
  const increasedContrast=matchMedia('(prefers-contrast:more)')
  const forcedColors=matchMedia('(forced-colors:active)')
@@ -211,12 +162,11 @@ export function initLiquidGlass(root:ParentNode=document):()=>void{
   const optics=document.createElement('span')
   optics.className='liquid-glass-optics'
   optics.setAttribute('aria-hidden','true')
-  const backdrop=document.createElement('span'),media=document.createElement('span'),shine=document.createElement('span')
+  const backdrop=document.createElement('span'),shine=document.createElement('span')
   backdrop.className='liquid-glass-backdrop';shine.className='liquid-glass-shine'
-  media.className='liquid-glass-media'
-  optics.append(backdrop,media,shine)
+  optics.append(backdrop,shine)
   const positioned=getComputedStyle(target).position==='static'
-  const surface:GlassSurface={target,optics,media,filter:null,image:null,channels:[],key:'',id:`painter-liquid-glass-${++serial}`,positioned,originalPosition:target.style.position,renderer:null,fallback:'blur',mediaFilter:null,mediaKey:'',mediaVersion:0,settleTimers:[]}
+  const surface:GlassSurface={target,optics,filter:null,image:null,channels:[],key:'',id:`painter-liquid-glass-${++serial}`,positioned,originalPosition:target.style.position}
   if(positioned)target.style.position='relative'
   target.prepend(optics)
   target.classList.add('liquid-glass-surface')
@@ -228,40 +178,16 @@ export function initLiquidGlass(root:ParentNode=document):()=>void{
   return !supportsBackdrop||reducedTransparency.matches||increasedContrast.matches||forcedColors.matches
    ||document.documentElement.classList.contains('reduce-transparency')||document.body.classList.contains('reduce-transparency')
  }
- let appearance=''
  function update(){
   queued=0
   if(destroyed)return
   const opaque=solid()
-  const nextAppearance=`${document.documentElement.dataset.theme}:${opaque}`
-  const appearanceChanged=appearance!==''&&appearance!==nextAppearance
-  appearance=nextAppearance
   for(const surface of surfaces){
-   const phone=matchMedia('(max-width:720px)').matches
-   const mode=opaque?'solid':!phone&&refraction&&surface.target.dataset.glassRefraction!=='off'?'refract':'blur'
-   surface.fallback=mode
-   const mobile=!opaque&&phone
-    &&surface.target.dataset.glassRefraction!=='off'&&surface.target.matches('.site-header,[data-mobile-nav],#site-search')
-   if(mode==='refract'||mobile){
+   const mode=opaque?'solid':!phone.matches&&refraction&&surface.target.dataset.glassRefraction!=='off'?'refract':'blur'
+   if(mode==='refract'){
     try{measure(surface)}catch{surface.target.dataset.liquidGlassMode='blur';continue}
    }
-   const {target}=surface
-   if(!mobile){
-    surface.renderer?.destroy();surface.renderer=null
-    delete target.dataset.glassRenderer
-   }else if(target.clientWidth&&target.clientHeight){
-    prepareMediaFilter(surface,schedule)
-    if(!surface.mediaFilter){target.dataset.liquidGlassMode=mode;continue}
-    const options={filter:`url("#${surface.mediaFilter.id}")`}
-    if(surface.renderer)surface.renderer.update(options)
-    else surface.renderer=createMobileMediaGlassRenderer(target,surface.media,options,status=>{
-     if(destroyed)return
-     target.dataset.glassRenderer=status
-     target.dataset.liquidGlassMode=status==='active'?'media':surface.fallback
-    })
-    if(appearanceChanged)void surface.renderer?.refresh()
-   }
-   target.dataset.liquidGlassMode=target.dataset.glassRenderer==='active'&&surface.renderer?'media':mode
+   surface.target.dataset.liquidGlassMode=mode
   }
  }
  function schedule(){if(!queued&&!destroyed)queued=requestAnimationFrame(update)}
@@ -271,7 +197,7 @@ export function initLiquidGlass(root:ParentNode=document):()=>void{
  mutations.observe(document.documentElement,{attributes:true,attributeFilter:['class','data-theme']})
  mutations.observe(document.body,{attributes:true,attributeFilter:['class']})
  surfaces.forEach(surface=>mutations.observe(surface.target,{attributes:true,attributeFilter:['data-glass-refraction']}))
- const queries=[reducedTransparency,increasedContrast,forcedColors]
+ const queries=[reducedTransparency,increasedContrast,forcedColors,phone]
  queries.forEach(query=>query.addEventListener('change',schedule))
  addEventListener('resize',schedule,{passive:true})
  addEventListener('pageshow',schedule)
@@ -282,11 +208,9 @@ export function initLiquidGlass(root:ParentNode=document):()=>void{
   queries.forEach(query=>query.removeEventListener('change',schedule))
   removeEventListener('resize',schedule);removeEventListener('pageshow',schedule)
   for(const surface of surfaces){
-   surface.renderer?.destroy();surface.settleTimers.forEach(clearTimeout);surface.mediaVersion++
-   surface.optics.remove();surface.filter?.remove();surface.mediaFilter?.remove();surface.target.classList.remove('liquid-glass-surface')
+   surface.optics.remove();surface.filter?.remove();surface.target.classList.remove('liquid-glass-surface')
    if(surface.positioned)surface.target.style.position=surface.originalPosition
    delete surface.target.dataset.liquidGlassReady;delete surface.target.dataset.liquidGlassMode;delete surface.target.dataset.glassTextureSize
-   delete surface.target.dataset.glassRenderer
    active.delete(surface.target)
   }
   if(definitions&&!definitions.querySelector('filter')){definitions.remove();definitions=null;textures.clear()}
