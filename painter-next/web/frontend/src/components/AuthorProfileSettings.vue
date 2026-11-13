@@ -43,7 +43,7 @@ onBeforeUnmount(()=>window.removeEventListener('beforeunload',leave))
 
 <template>
  <section class="author-page-settings panel" aria-labelledby="author-settings-title" :aria-busy="busy">
-  <div class="author-settings-heading"><div><h2 id="author-settings-title">作者主页</h2><p>给自己的文字，选一幅背景。</p></div><a v-if="session.user?.id" class="text-link" :href="`/users/${session.user.id}`" target="_blank" rel="noopener">查看主页<Icon name="arrow" :size="16"/></a></div>
+  <div class="author-settings-heading"><div><h2 id="author-settings-title">公开主页外观</h2><p>选择背景，让公开资料更有自己的样子。</p></div><a v-if="session.user?.id" class="text-link" :href="`/users/${session.user.id}`" target="_blank" rel="noopener">查看主页<Icon name="arrow" :size="16"/></a></div>
   <div v-if="error" class="notice error" role="alert"><p>{{error}}</p><button v-if="!ready||conflict" type="button" :disabled="busy" @click="load">{{conflict?'重新读取设置':'重试'}}</button></div>
   <p v-if="message" class="notice" role="status">{{message}}</p>
   <p v-if="!ready&&!error" class="muted" role="status">正在读取主页设置…</p>

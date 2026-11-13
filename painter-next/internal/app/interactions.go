@@ -105,6 +105,7 @@ func interactionPublicPost(tx pgx.Tx, r *http.Request, id string) (string, error
 }
 
 func (a *App) RegisterInteractions() {
+	a.Handle("GET /api/v1/users/{id}/follow-state", a.followState)
 	a.Handle("GET /api/v1/me/post-states", a.interactionStates)
 	for _, kind := range []string{"like", "bookmark"} {
 		k := kind
@@ -133,6 +134,26 @@ func (a *App) RegisterInteractions() {
 		return e
 	})
 	a.Handle("GET /api/v1/posts/{id}/metrics", a.interactionMetrics)
+}
+
+// A follow button needs one relationship, never the reader's entire follow list.
+func (a *App) followState(w http.ResponseWriter, r *http.Request) error {
+	p, err := a.Require(r)
+	if err != nil {
+		return err
+	}
+	id := r.PathValue("id")
+	if !positiveID(id) {
+		return NotFound()
+	}
+	var followed, enabled bool
+	err = a.Pool.QueryRow(r.Context(), `SELECT EXISTS(SELECT 1 FROM follows WHERE follower_user_id=$1 AND followed_user_id=u.id),s.follows_enabled FROM users u CROSS JOIN site_settings s WHERE u.id=$2 AND u.disabled_at_ms IS NULL AND s.id=1`, p.ID, id).Scan(&followed, &enabled)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	JSON(w, 200, map[string]any{"followed": followed, "follows_enabled": enabled})
+	return nil
 }
 func (a *App) interactionStates(w http.ResponseWriter, r *http.Request) error {
 	p, e := a.Require(r)

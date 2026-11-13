@@ -3,7 +3,9 @@
 {{if eq .Kind "setup"}}<section class="installation-shell"><div data-install-wizard><h1>安装 Painter</h1><p>正在检查安装状态…</p><noscript>安装向导需要 JavaScript。也可以使用服务器上的 create-local-user 命令创建管理员。</noscript></div></section>
 {{else if eq .Kind "home"}}{{template "home-page" .}}
 {{else if eq .Kind "games"}}{{template "games-page" .}}
-{{else if eq .Kind "posts"}}<header class="page-heading"><h1>{{.Title}}</h1><p>发现值得停下来读的想法。</p></header>{{template "post-list" .}}
+{{else if eq .Kind "series-list"}}{{template "series-list-page" .}}
+{{else if eq .Kind "series"}}{{template "series-detail-page" .}}
+{{else if eq .Kind "posts"}}<header class="page-heading"><h1>{{.Title}}</h1><p>发现值得停下来读的想法。</p></header><section class="series-discovery"><p>想沿着一个主题连续阅读？</p><a href="/series">探索连载专栏 →</a></section>{{template "post-list" .}}
 {{else if eq .Kind "article"}}
 <article class="article-layout article-reading">
  <header class="article-heading">
@@ -12,7 +14,7 @@
    {{if .Post.summary}}<p class="article-summary">{{.Post.summary}}</p>{{end}}
    <div class="article-meta-row">
     <nav class="topic-links" aria-label="文章标签">{{range .Post.tags}}<a href="/search?tag_id={{.id}}">#{{.name}}</a>{{end}}</nav>
-    <div class="article-reading-meta"><span>{{.ReadTime}} 分钟阅读</span>{{template "article-information" .Post}}</div>
+    <div class="article-reading-meta"><button type="button" class="quiet" data-share-type="post" data-share-id="{{.Post.id}}" aria-label="分享这篇文章">分享</button><span>{{.ReadTime}} 分钟阅读</span>{{template "article-information" .Post}}</div>
    </div>
   </div>
  </header>
@@ -26,6 +28,7 @@
  <div class="reading-paper">
   {{if .Post.cover_url}}<figure class="article-cover-frame"><img class="article-cover" src="{{.Post.cover_url}}" width="1200" height="675" alt="文章封面"></figure>{{end}}
   <div class="prose">{{.HTML}}</div>
+  {{template "article-series" .}}
  </div>
  <div class="article-discussion" data-post-island data-post-id="{{.Post.id}}" data-revision-id="{{.Post.revision_id}}" data-receipt="{{.Post.read_receipt}}"><div class="comment-area"><h2>一起聊聊</h2><p class="muted">启用 JavaScript 即可阅读评论。</p></div></div>
  {{template "related-posts" .}}
@@ -65,8 +68,8 @@
 {{define "floating-controls"}}
 {{$scene := "other"}}{{if eq .Kind "home"}}{{$scene = "home"}}{{else if eq .Kind "article"}}{{$scene = "article"}}{{end}}
 <aside class="floating-controls site-dock" data-site-dock aria-label="站点导航与页面操作">
-  <details class="dock-browse"><summary class="dock-glass" aria-label="浏览内容" data-dock-label="浏览内容"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="2"/><rect x="14" y="4" width="6" height="6" rx="2"/><rect x="4" y="14" width="6" height="6" rx="2"/><rect x="14" y="14" width="6" height="6" rx="2"/></svg></summary><nav class="dock-popover" aria-label="内容导航"><a href="/posts">文章</a><a href="/moments">动态</a><a href="/phrases">片语</a></nav></details>
-  <nav class="dock-navigation" aria-label="内容导航">
+  <details class="dock-browse"><summary class="dock-glass" aria-label="浏览内容" data-dock-label="浏览内容"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="2"/><rect x="14" y="4" width="6" height="6" rx="2"/><rect x="4" y="14" width="6" height="6" rx="2"/><rect x="14" y="14" width="6" height="6" rx="2"/></svg></summary><nav class="dock-popover" aria-label="内容导航"><a href="/series">专栏</a><a href="/posts">文章</a><a href="/moments">动态</a><a href="/phrases">片语</a></nav></details>
+  <nav class="dock-navigation" aria-label="内容导航"><a href="/series" class="dock-glass" data-dock-label="专栏" aria-label="专栏" {{if or (eq .Kind "series-list") (eq .Kind "series")}}aria-current="page"{{end}}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a3 3 0 0 1 2 1 3 3 0 0 1 2-1h6v16h-6a3 3 0 0 0-2 1 3 3 0 0 0-2-1H4Zm8 1v16"/></svg></a>
     <a class="dock-glass" href="/posts" aria-label="文章" data-dock-label="文章" {{if or (eq .Kind "posts") (eq .Kind "article")}}aria-current="page"{{end}}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8m-8 4h5"/></svg></a>
     <a class="dock-glass" href="/moments" aria-label="动态" data-dock-label="动态" {{if or (eq .Kind "moments") (eq .Kind "moment")}}aria-current="page"{{end}}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V6a2 2 0 0 1 2-2Z"/><path d="M7 9h10m-10 4h6"/></svg></a>
     <a class="dock-glass" href="/phrases" aria-label="片语" data-dock-label="片语" {{if eq .Kind "phrases"}}aria-current="page"{{end}}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h5v7H5zM14 7h5v7h-5zM10 14c0 3-1 4-4 5m13-5c0 3-1 4-4 5"/></svg></a>
@@ -93,6 +96,6 @@
 </nav>
 <dialog id="mobile-more" class="mobile-sheet" aria-labelledby="mobile-more-title">
  <header class="mobile-sheet-heading"><h2 id="mobile-more-title">更多</h2><button type="button" class="quiet" data-mobile-more-close aria-label="关闭更多"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
- <div class="mobile-sheet-content"><nav class="mobile-destinations" aria-label="更多内容"><a href="/phrases">片语<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a><a href="/games">游戏墙<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a><a href="/me">{{if .Authenticated}}我的空间{{else}}登录账号{{end}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a></nav><div data-mobile-tools></div></div>
+ <div class="mobile-sheet-content"><nav class="mobile-destinations" aria-label="更多内容"><a href="/series">专栏<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a><a href="/phrases">片语<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a><a href="/games">游戏墙<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a><a href="/me">{{if .Authenticated}}我的空间{{else}}登录账号{{end}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a></nav><div data-mobile-tools></div></div>
 </dialog>
 {{end}}

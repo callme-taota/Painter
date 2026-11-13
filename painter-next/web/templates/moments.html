@@ -11,6 +11,7 @@
  <div class="moment-card-header"><a class="moment-author" href="/users/{{.author.id}}">{{if .author.avatar_url}}<img class="moment-avatar" src="{{.author.avatar_url}}" width="32" height="32" alt="" loading="lazy">{{else}}<span class="moment-avatar" aria-hidden="true">{{initial .author.display_name}}</span>{{end}}<span class="moment-author-name">{{.author.display_name}}</span></a><a class="moment-permalink" href="/moments/{{.id}}" aria-label="查看这条动态"><time class="moment-time" datetime="{{.published_at}}">{{dateTime .published_at}}</time></a></div>
  {{if .text}}<p class="moment-text">{{.text}}</p>{{end}}
  {{if .images}}<div class="moment-gallery" data-moment-gallery data-image-count="{{len .images}}" aria-label="动态图片">{{range $i,$image := .images}}<a class="moment-photo" href="{{.url}}" target="_blank" rel="noopener" data-moment-image data-image-alt="{{.alt}}" aria-label="查看图片 {{rank $i}}{{if .alt}}：{{.alt}}{{end}}"><img src="{{.url}}" alt="{{if .alt}}{{.alt}}{{else}}动态图片 {{rank $i}}{{end}}" loading="lazy" decoding="async"></a>{{end}}</div>{{end}}
+ <button type="button" class="quiet" data-share-type="moment" data-share-id="{{.id}}" aria-label="分享这条动态">分享动态</button>
 </article>
 {{end}}
 {{define "moment-detail"}}<div class="moment-detail"><a class="moment-back" href="/moments"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> 所有动态</a><h1 class="sr-only">{{.Post.author.display_name}}的动态</h1>{{template "moment-card" .Post}}</div>{{end}}

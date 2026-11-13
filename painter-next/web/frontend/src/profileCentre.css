@@ -1,0 +1,46 @@
+/* Private account tasks share one vocabulary and alignment at every width. */
+body[data-page-kind=studio] .profile-centre-identity{display:flex;align-items:center;gap:16px;max-width:900px;margin:0 0 28px}
+.profile-centre-identity>.avatar{flex:none;width:56px;height:56px;font-size:22px}
+.profile-centre-identity>div{flex:1;min-width:0}
+body[data-page-kind=studio] .profile-centre-identity h2{font:600 22px/1.35 var(--font-ui);letter-spacing:-.025em;overflow-wrap:anywhere;margin:0 0 5px}
+.profile-centre-identity p{font-size:13px;color:var(--muted);margin:0;overflow-wrap:anywhere}
+.profile-centre-identity>a{display:inline-flex;align-items:center;gap:6px;flex:none}
+body[data-page-kind=studio] .profile-task-tabs{position:static;display:flex;gap:26px;max-width:900px;padding:0;margin:0 0 28px;border-bottom:1px solid var(--line);background:none;overflow-x:auto;scrollbar-width:thin}
+body[data-page-kind=studio] .profile-task-tabs>button{flex:none;min-height:44px;padding:8px 0 12px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);font:500 14px/22px var(--font-ui);white-space:nowrap}
+body[data-page-kind=studio] .profile-task-tabs>button[aria-selected=true]{border-bottom-color:var(--ink);background:none;color:var(--ink)}
+.profile-overview,.profile-details-form{max-width:900px}
+.profile-reading-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 12px}
+body[data-page-kind=studio] :is(.profile-reading-heading,.profile-creation-entry) h2{font:600 17px/26px var(--font-ui);margin:0}
+.profile-reading-heading .text-link{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:13px}
+.profile-reading-links{display:flex;flex-direction:column}
+.profile-reading-links>a{display:flex;align-items:center;gap:14px;min-height:82px;padding:16px 4px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.profile-reading-links>a:hover{background:var(--subtle)}
+.profile-reading-links>a>span{flex:1;min-width:0}
+.profile-reading-links strong{display:block;font:500 15px/22px var(--font-ui)}
+.profile-reading-links small{display:block;font:400 13px/20px var(--font-ui);color:var(--muted);margin-top:3px}
+.profile-reading-links>a>.ui-icon:last-child{transform:rotate(-90deg);color:var(--muted)}
+.profile-creation-entry{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:32px 0;padding:24px 0;border-bottom:1px solid var(--line)}
+.profile-creation-entry p{font-size:13px;color:var(--muted);margin:6px 0 0}
+.profile-creation-entry>.actions{display:flex;gap:8px;flex-wrap:wrap}
+.profile-account-entry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:28px}
+.profile-account-entry>p{flex-basis:100%;margin:0 0 4px;color:var(--muted);font:400 13px/1.8 var(--font-ui);max-width:65ch}
+.profile-account-entry>button{display:inline-flex;align-items:center;gap:8px}
+.profile-privacy-setting p{font-size:13px;line-height:1.8;margin:8px 0 0}
+#phone-profile-appearance>.author-page-settings{margin-top:0}
+@media(max-width:720px){
+ body[data-page-kind=studio] .profile-centre-identity{gap:12px;margin-bottom:20px;flex-wrap:wrap}
+ body[data-page-kind=studio] .profile-centre-identity h2{font-size:20px}
+ body[data-page-kind=studio] .profile-centre-identity>a{min-height:44px;padding-inline:8px;font-size:13px}
+ body[data-page-kind=studio] .profile-task-tabs{gap:24px;margin-bottom:24px}
+ body[data-page-kind=studio] .profile-task-tabs>button{min-width:44px}
+ .profile-reading-links>a{min-height:82px}
+ .profile-creation-entry{align-items:flex-start;flex-direction:column;margin-top:28px;padding-top:0;gap:16px}
+ .profile-creation-entry>.actions{width:100%}
+ .profile-creation-entry>.actions>a{flex:1;justify-content:center}
+}
+@media(max-width:360px){
+ body[data-page-kind=studio] .profile-centre-identity{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px 12px}
+ .profile-centre-identity>.avatar{grid-row:1}
+ body[data-page-kind=studio] .profile-centre-identity>a{grid-column:2;justify-self:start;padding-left:0}
+ body[data-page-kind=studio] .profile-task-tabs{gap:20px}
+}

@@ -30,7 +30,7 @@
 | [`reading.ts`](../web/frontend/src/reading.ts)、文章模板 | 日期信息收起、作者、目录、评论和推荐分区 | 手机目录/工具以显式入口展开，正文始终拥有主阅读宽度 |
 | [`AccountSecurity.vue`](../web/frontend/src/components/AccountSecurity.vue)、[`AuthForm.vue`](../web/frontend/src/components/AuthForm.vue) | 本地账号、可选 GitHub、TOTP、恢复码、登录政策 | 手机绑定验证器要有可复制密钥，不能只提供需另一设备扫描的二维码 |
 
-现有动态是有图片、最多 500 个 Unicode 码点的短内容；文章、动态、片语仍是三种不同资源。站内信、专栏、三层分享、原生推送等不因本次布局调整自动成为已交付功能。
+现有动态是有图片、最多 500 个 Unicode 码点的短内容；文章、动态、片语仍是三种不同资源。V49 已实现连载专栏与三层分享，参见 [实现文档](SERIALS_AND_SHARING.md)。站内信、原生推送仍未交付，不因布局调整自动启用。
 
 ## 3. 端能力与断点
 

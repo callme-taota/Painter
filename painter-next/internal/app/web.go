@@ -24,6 +24,7 @@ type webPage struct {
 	ScriptNonce                                                                                                  string
 	Site, Post, User, Featured, FriendSettings                                                                   map[string]any
 	Items, Categories, Tags, Topics, Related                                                                     []map[string]any
+	Series                                                                                                       []map[string]any
 	CSS                                                                                                          []string
 	Query                                                                                                        url.Values
 	TOC                                                                                                          []TOCEntry
@@ -289,6 +290,22 @@ func (a *App) RegisterWeb() {
 		}
 		render(w, r, webPage{Kind: "posts", Title: "所有文章", Items: webMaps(data["items"]), Tags: tags, Next: webNext(r, data)})
 	})
+	a.Mux.HandleFunc("GET /series", func(w http.ResponseWriter, r *http.Request) {
+		data, err := a.PublicSeries(r.Context(), r.URL.Query())
+		if err != nil {
+			failure(w, r, err)
+			return
+		}
+		render(w, r, webPage{Kind: "series-list", Title: "专栏", Description: "把文章写成连续的章节，按自己的节奏读完一个主题。", Items: webMaps(data["items"]), Next: webNext(r, data)})
+	})
+	a.Mux.HandleFunc("GET /series/{id}", func(w http.ResponseWriter, r *http.Request) {
+		data, err := a.PublicSeriesDetail(r.Context(), r.PathValue("id"))
+		if err != nil {
+			failure(w, r, err)
+			return
+		}
+		render(w, r, webPage{Kind: "series", Title: webString(data["title"]), Description: webString(data["description"]), Post: data, Items: webMaps(data["chapters"]), PreviewImage: webString(data["cover_url"])})
+	})
 	a.Mux.HandleFunc("GET /games", func(w http.ResponseWriter, r *http.Request) {
 		data, e := a.PublicGames(r.Context(), r.URL.Query())
 		if e != nil {
@@ -329,7 +346,12 @@ func (a *App) RegisterWeb() {
 			failure(w, r, e)
 			return
 		}
-		render(w, r, webPage{Kind: "article", Title: webString(post["title"]), Description: webString(post["summary"]), Post: post, Related: related, TOC: toc, ReadTime: minutes, HTML: template.HTML(webString(post["sanitized_html"])), JSONLD: template.JS(ld)})
+		series, e := a.PostSeries(r.Context(), r.PathValue("id"))
+		if e != nil {
+			failure(w, r, e)
+			return
+		}
+		render(w, r, webPage{Kind: "article", Title: webString(post["title"]), Description: webString(post["summary"]), Post: post, Related: related, Series: series, TOC: toc, ReadTime: minutes, HTML: template.HTML(webString(post["sanitized_html"])), JSONLD: template.JS(ld)})
 	})
 	a.Mux.HandleFunc("GET /tags", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/search", http.StatusMovedPermanently)
@@ -366,6 +388,18 @@ func (a *App) RegisterWeb() {
 			return
 		}
 		u["page"] = pageSettings
+		var creator bool
+		var joined int64
+		var followers, following int64
+		if e := a.Pool.QueryRow(r.Context(), `SELECT role IN ('owner','author'),created_at_ms,(SELECT count(*) FROM follows WHERE followed_user_id=u.id),(SELECT count(*) FROM follows WHERE follower_user_id=u.id) FROM users u WHERE id=$1 AND disabled_at_ms IS NULL`, id).Scan(&creator, &joined, &followers, &following); e != nil {
+			failure(w, r, e)
+			return
+		}
+		u["creator"], u["joined_at"], u["follower_count"], u["following_count"] = creator, TimeString(joined), followers, following
+		if !creator {
+			render(w, r, webPage{Kind: "author", Title: webString(u["display_name"]), User: u})
+			return
+		}
 		data, e := a.AuthorPosts(r.Context(), id, r.URL.Query())
 		p := webPage{Kind: "author", Title: webString(u["display_name"]), User: u, NoIndex: r.URL.Query().Get("q") != ""}
 		if e != nil {
@@ -505,7 +539,7 @@ func (a *App) RegisterWeb() {
 	a.Mux.HandleFunc("GET /register", authPage)
 	shell := func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimRight(r.URL.Path, "/")
-		known := map[string]bool{"/me": true, "/me/bookmarks": true, "/me/following": true, "/me/followers": true, "/me/history": true, "/me/sessions": true, "/me/media": true, "/studio": true, "/studio/posts": true, "/studio/posts/new": true, "/studio/moments": true, "/studio/home": true, "/studio/settings": true, "/studio/phrases": true, "/studio/friends": true, "/studio/taxonomy": true, "/studio/members": true, "/studio/comments": true, "/studio/analytics": true, "/studio/operations": true}
+		known := map[string]bool{"/me": true, "/me/bookmarks": true, "/me/following": true, "/me/followers": true, "/me/history": true, "/me/sessions": true, "/me/media": true, "/studio": true, "/studio/posts": true, "/studio/posts/new": true, "/studio/moments": true, "/studio/series": true, "/studio/home": true, "/studio/settings": true, "/studio/phrases": true, "/studio/friends": true, "/studio/taxonomy": true, "/studio/members": true, "/studio/comments": true, "/studio/analytics": true, "/studio/operations": true}
 		if !known[path] && !(strings.HasPrefix(path, "/studio/posts/") && positiveID(strings.TrimPrefix(path, "/studio/posts/"))) {
 			failure(w, r, NotFound())
 			return
@@ -517,7 +551,7 @@ func (a *App) RegisterWeb() {
 		}
 		if strings.HasPrefix(path, "/studio") {
 			allowed := p.Role == "owner"
-			if strings.HasPrefix(path, "/studio/posts") || path == "/studio/analytics" || path == "/studio/moments" {
+			if strings.HasPrefix(path, "/studio/posts") || path == "/studio/analytics" || path == "/studio/moments" || path == "/studio/series" {
 				allowed = p.Role == "owner" || p.Role == "author"
 			}
 			if !allowed {
@@ -595,7 +629,7 @@ func (a *App) RegisterWeb() {
 			NS      string   `xml:"xmlns,attr"`
 			URLs    []loc    `xml:"url"`
 		}{NS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
-		for _, path := range []string{"/", "/posts", "/moments", "/about"} {
+		for _, path := range []string{"/", "/posts", "/series", "/moments", "/about"} {
 			out.URLs = append(out.URLs, loc{a.Config.PublicBaseURL + path})
 		}
 		var gamesEnabled bool
@@ -645,6 +679,22 @@ func (a *App) RegisterWeb() {
 				break
 			}
 			q.Set("cursor", next)
+		}
+		q = url.Values{"limit": {"50"}}
+		for pages := 0; pages < 1000; pages++ {
+			data, err := a.PublicSeries(r.Context(), q)
+			if err != nil {
+				http.Error(w, "Sitemap unavailable", 503)
+				return
+			}
+			for _, item := range webMaps(data["items"]) {
+				out.URLs = append(out.URLs, loc{a.Config.PublicBaseURL + "/series/" + webString(item["id"])})
+			}
+			if next := webString(data["next_cursor"]); next != "" {
+				q.Set("cursor", next)
+			} else {
+				break
+			}
 		}
 		b, _ := xml.Marshal(out)
 		w.Header().Set("Content-Type", "application/xml; charset=utf-8")

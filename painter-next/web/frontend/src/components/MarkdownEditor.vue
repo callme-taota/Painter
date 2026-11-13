@@ -9,7 +9,7 @@ import {markdown} from '@codemirror/lang-markdown'
 import {HighlightStyle,syntaxHighlighting} from '@codemirror/language'
 import {tags as syntaxTags} from '@lezer/highlight'
 import {searchKeymap,highlightSelectionMatches,openSearchPanel} from '@codemirror/search'
-import {api,body,session,APIError,list,download,date,allPages,type Row} from '../api'
+import {api,body,session,onSessionEnd,APIError,list,download,date,allPages,type Row} from '../api'
 import {track} from '../telemetry'
 import Icon from './Icon.vue'
 import SelectField from './SelectField.vue'
@@ -32,8 +32,8 @@ function titleEnter(event:KeyboardEvent){if(!event.isComposing)event.preventDefa
 watch(()=>draft.title,resizeTitle,{flush:'post'})
 onMounted(()=>{if(titleInput.value){titleObserver=new ResizeObserver(entries=>{const width=entries[0]?.contentRect.width||0;if(Math.abs(width-titleWidth)<.5)return;titleWidth=width;resizeTitle()});titleObserver.observe(titleInput.value)}void nextTick(resizeTitle);void document.fonts.ready.then(resizeTitle)})
 onBeforeUnmount(()=>titleObserver?.disconnect())
-const initialized=ref(false),initializationError=ref(''),restoring=ref(false),restoreNeedsReload=ref(false),mergePending=ref(false),conflictLoading=ref(false)
-const editorLocked=computed(()=>loading.value||!initialized.value||restoring.value||restoreNeedsReload.value)
+const initialized=ref(false),initializationError=ref(''),restoring=ref(false),restoreNeedsReload=ref(false),endingSession=ref(false),mergePending=ref(false),conflictLoading=ref(false)
+const editorLocked=computed(()=>loading.value||!initialized.value||restoring.value||restoreNeedsReload.value||endingSession.value)
 const sourceAccess=new Compartment()
 watch(editorLocked,locked=>editor?.dispatch({effects:sourceAccess.reconfigure([EditorState.readOnly.of(locked),EditorView.editable.of(!locked)])}),{flush:'sync'})
 const propertiesQuery=matchMedia('(min-width:1360px)'),propertiesOpen=ref(propertiesQuery.matches)
@@ -82,7 +82,10 @@ const editorHighlight=HighlightStyle.define([
  {tag:syntaxTags.strikethrough,textDecoration:'line-through'},
  {tag:syntaxTags.invalid,color:'var(--danger)'}
 ])
-const recoveryKey=computed(()=>`painter:${location.origin}:${session.user?.id}:${draft.id||clientID.value}`)
+const recoveryActorID=String(session.user?.id||'')
+const recoveryKey=computed(()=>`painter:${location.origin}:${recoveryActorID}:${draft.id||clientID.value}`)
+const recoveryWrites=new Set<Promise<boolean>>()
+const removeSessionEnd=onSessionEnd(async reason=>{if(reason==='expired'){try{documentEditor.value?.flush()}catch{/* Preserve the last serialised Markdown if the document view cannot flush. */}}endingSession.value=true;clearTimeout(saveTimer);clearTimeout(persistTimer);clearTimeout(previewTimer);clearTimeout(coverTimer);previewAbort?.abort();coverAbort?.abort();if(reason==='expired')await persist(true);await Promise.allSettled([...recoveryWrites])})
 const isDirty=computed(()=>state.value!=='已保存')
 function defaultDates(value:Row={}){return {created:typeof value.created==='boolean'?value.created:true,updated:typeof value.updated==='boolean'?value.updated:true,published:typeof value.published==='boolean'?value.published:true}}
 function defaultCover(value:Row={}){return {mode:value.mode||'auto',template:value.template||'editorial',color:value.color||'ink',...((value.mode==='upload'&&value.media_id)?{media_id:String(value.media_id)}:{})}}
@@ -94,14 +97,14 @@ async function renderCover(){coverAbort?.abort();const cover=defaultCover(draft.
 async function coverUpload(event:Event){const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file||editorLocked.value)return;if(file.size>10*1024*1024){error.value='封面超过 10 MiB，请压缩后重试。';return}uploadCount.value++;error.value='';try{const form=new FormData();form.append('file',file);const result=await api<Row>('/media',{method:'POST',body:form});draft.cover={...defaultCover(draft.cover),mode:'upload',media_id:result.media_id};notice.value='封面已上传，随草稿保存后生效。'}catch(e){error.value='封面上传失败：'+(e as Error).message}finally{uploadCount.value--}}
 function coverName(value:Row={}){const cover=defaultCover(value);return cover.mode==='none'?'不显示封面':cover.mode==='upload'?'上传图片 · '+(cover.media_id||'尚未上传'):({editorial:'深邃渐变',geometric:'流彩渐变',minimal:'柔光渐变'} as Row)[cover.template]+' · '+({ink:'墨蓝',moss:'苔绿',clay:'陶土',plum:'梅紫'} as Row)[cover.color]}
 function changed(){if(editorLocked.value)return;seq++;state.value='有未保存的修改';error.value='';clearTimeout(persistTimer);persistTimer=setTimeout(()=>void persist(),250);clearTimeout(saveTimer);if(!conflict.value&&!mergePending.value&&!working.value&&!composing())saveTimer=setTimeout(()=>void autoSave(),1000);schedulePreview()}
-async function persist(){if(!initialized.value||loading.value||!clientID.value||(!draft.id&&!seq))return false;try{await recoveryPut(recoveryKey.value,{...snapshot(),post_id:draft.id||null,base_version:draft.version,base_draft_version:draft.draft_version,manual_merge_required:mergePending.value,conflict_snapshot:mergePending.value?JSON.parse(JSON.stringify(conflict.value)):null,seq,ack_seq:ackSeq,client_draft_id:clientID.value,saved_at:Date.now()});return true}catch{notice.value='浏览器无法保存恢复点。请导出 Markdown，避免离线内容丢失。';return false}}
+async function persist(finalSnapshot=false){if((endingSession.value&&!finalSnapshot)||!recoveryActorID||!initialized.value||loading.value||!clientID.value||(!draft.id&&!seq))return false;const write=(async()=>{try{await recoveryPut(recoveryKey.value,{...snapshot(),post_id:draft.id||null,base_version:draft.version,base_draft_version:draft.draft_version,manual_merge_required:mergePending.value,conflict_snapshot:mergePending.value?JSON.parse(JSON.stringify(conflict.value)):null,seq,ack_seq:ackSeq,client_draft_id:clientID.value,saved_at:Date.now()});return true}catch{notice.value='浏览器无法保存恢复点。请导出 Markdown，避免离线内容丢失。';return false}})();recoveryWrites.add(write);try{return await write}finally{recoveryWrites.delete(write)}}
 async function finishMapping(oldKey:string){if(await persist()){try{await recoveryDelete(oldKey)}catch{notice.value='文章已保存。旧本地恢复点尚未清理，下次会先核对服务器映射。'}}}
 function schedulePreview(){clearTimeout(previewTimer);if(composing())return;previewTimer=setTimeout(()=>void renderPreview(),700)}
 async function renderPreview(){if(!navigator.onLine){notice.value='当前离线，预览保留上一次联机结果。';return}previewAbort?.abort();const controller=new AbortController();previewAbort=controller;const at=seq,text=draft.markdown;previewBusy.value=true;try{const data=await api('/editor/preview',{method:'POST',body:body({markdown:text,seq:at}),signal:controller.signal});if(seq===at&&draft.markdown===text)preview.value=data.sanitized_html||data.html||''}catch(e){if((e as Error).name!=='AbortError')notice.value='预览暂不可用；正文和本地修改仍然保留。'}finally{if(previewAbort===controller)previewBusy.value=false}}
 function applyServer(data:Row){Object.assign(draft,data.draft?{...data,...data.draft}:data);draft.tag_ids=(data.tag_ids||data.tags?.map((x:Row)=>x.id)||draft.tag_ids||[]).map(String);draft.cover=defaultCover(data.cover||data.draft?.cover);draft.date_display=defaultDates(data.date_display||data.draft?.date_display);draft.publication=data.publication||null}
 function validServerDraft(data:Row|null,id:string){const d=data?.draft?{...data,...data.draft}:data;return !!d&&String(data?.id||data?.post_id)===String(id)&&Number.isSafeInteger(Number(data?.version))&&Number(data?.version)>0&&Number.isSafeInteger(Number(d.draft_version))&&Number(d.draft_version)>0&&typeof d.title==='string'&&typeof d.summary==='string'&&typeof d.markdown==='string'&&Array.isArray(d.tag_ids)}
 function requireServerDraft(data:Row,id:string){if(!validServerDraft(data,id))throw new Error('服务器草稿数据不完整，请重新载入。')}
-async function performSave(manual=false,restoreFlush=false){if(!initialized.value||loading.value||restoreNeedsReload.value||(restoring.value&&!restoreFlush)||stopped||(conflict.value&&!mergePending.value)||(mergePending.value&&!manual))return;if(composing()){state.value='正在输入，组合结束后保存';return}if(!navigator.onLine){state.value='离线 · 已保留本地修改';await persist();return}if(seq===ackSeq&&draft.id)return;if(draft.cover.mode==='upload'&&!draft.cover.media_id){state.value='封面待选图片 · 已保留本地修改';error.value='';await persist();return}
+async function performSave(manual=false,restoreFlush=false){if(endingSession.value||!initialized.value||loading.value||restoreNeedsReload.value||(restoring.value&&!restoreFlush)||stopped||(conflict.value&&!mergePending.value)||(mergePending.value&&!manual))return;if(composing()){state.value='正在输入，组合结束后保存';return}if(!navigator.onLine){state.value='离线 · 已保留本地修改';await persist();return}if(seq===ackSeq&&draft.id)return;if(draft.cover.mode==='upload'&&!draft.cover.media_id){state.value='封面待选图片 · 已保留本地修改';error.value='';await persist();return}
  saving.value=true;error.value='';state.value='正在保存…'
  const command=pendingSave||{key:randomID(),snapshot:snapshot(),seq};pendingSave=command
  try{let res:Row|undefined;const oldKey=!draft.id?recoveryKey.value:''
@@ -116,7 +119,7 @@ function historyReplace(id:string){window.history.replaceState({},'',`/studio/po
 function enqueueSave(manual:boolean){if(editorLocked.value||(!manual&&(working.value||mergePending.value||conflict.value)))return Promise.resolve();clearTimeout(saveTimer);queue=queue.catch(()=>{}).then(()=>performSave(manual));return queue.catch(()=>{})}
 function save(){return enqueueSave(true)}
 function autoSave(){return enqueueSave(false)}
-async function flush(restoreFlush=false){if(!initialized.value||loading.value||restoreNeedsReload.value)throw new Error('编辑器尚未安全加载，请先重新加载。');clearTimeout(saveTimer);await queue.catch(()=>{});if(uploadCount.value)throw new Error('图片仍在上传，请稍后发布。');if(composing())throw new Error('请先完成中文输入，再继续操作。');if(conflict.value||mergePending.value)throw new Error('请先比较并合并内容，再手动保存草稿。');if(/\[图片上传(?:失败|中)|blob:/.test(draft.markdown))throw new Error('请先处理正文中的图片上传占位，再发布。');if(draft.cover.mode==='upload'&&!draft.cover.media_id)throw new Error('请先上传封面，或选择自动封面。');if(seq!==ackSeq||!draft.id)await performSave(false,restoreFlush);if(seq!==ackSeq||!draft.id)throw new Error('修改尚未保存。请联网后重试。')}
+async function flush(restoreFlush=false){if(endingSession.value||!initialized.value||loading.value||restoreNeedsReload.value)throw new Error('编辑器尚未安全加载，请先重新加载。');clearTimeout(saveTimer);await queue.catch(()=>{});if(uploadCount.value)throw new Error('图片仍在上传，请稍后发布。');if(composing())throw new Error('请先完成中文输入，再继续操作。');if(conflict.value||mergePending.value)throw new Error('请先比较并合并内容，再手动保存草稿。');if(/\[图片上传(?:失败|中)|blob:/.test(draft.markdown))throw new Error('请先处理正文中的图片上传占位，再发布。');if(draft.cover.mode==='upload'&&!draft.cover.media_id)throw new Error('请先上传封面，或选择自动封面。');if(seq!==ackSeq||!draft.id)await performSave(false,restoreFlush);if(seq!==ackSeq||!draft.id)throw new Error('修改尚未保存。请联网后重试。')}
 async function command(action:string){if(editorLocked.value||working.value||saving.value)return;documentEditor.value?.flush();working.value=true;error.value='';try{await flush();const res=await api<Row>(`/studio/posts/${draft.id}/${action}`,{method:action==='publication'?'DELETE':'POST',version:draft.version,idempotent:true,body:body({expected_draft_version:draft.draft_version})});if(res.version)draft.version=res.version;if(res.draft_version)draft.draft_version=res.draft_version;if(action==='publish'){draft.publication={revision_id:res.revision_id};notice.value='文章已发布。后续草稿修改不会改变当前公开版本。'}else if(action==='publication'){draft.publication=null;notice.value='文章已撤回，草稿和历史修订保留。'}else{notice.value='已创建不可变检查点。';await loadRevisions()}}catch(e){error.value=(e as Error).message}finally{working.value=false;if(seq!==ackSeq&&!conflict.value&&!mergePending.value)saveTimer=setTimeout(()=>void autoSave(),1000)}}
 function insert(before:string,after=''){if(editorLocked.value)return;if(viewMode.value==='document'){documentEditor.value?.insertMarkdown(before+after);return}if(!editor)return;const {from,to}=editor.state.selection.main;const selected=editor.state.sliceDoc(from,to);editor.dispatch({changes:{from,to,insert:before+selected+after},selection:{anchor:from+before.length,head:from+before.length+selected.length}});editor.focus()}
 async function upload(file:File){if(editorLocked.value)return;if(file.size>10*1024*1024){error.value='图片超过 10 MiB，请压缩后重试。';return}const token=`[图片上传中 ${randomID()}]`;insert(`\n\n${token}\n\n`);uploadCount.value++;const form=new FormData();form.append('file',file);try{const res=await api<Row>('/media',{method:'POST',body:form,idempotent:true});replaceUpload(token,`![${file.name.replace(/[\[\]\\]/g,'')}](/media/${res.media_id})`)}catch(e){replaceUpload(token,`[图片上传失败：${file.name.replace(/[\[\]\\]/g,'')}]`);error.value=`图片上传失败：${(e as Error).message}。请删除上传占位后重试。`}finally{uploadCount.value--}}
@@ -188,14 +191,14 @@ async function initializeEditor(){
   const local=await recoveryGet(recoveryKey.value).catch(()=>null)
   if(stopped)return
   if(props.postId&&local&&local.seq>local.ack_seq&&(local.manual_merge_required||recoveryDiffers(local)))recovered.value=local
-  if(!props.postId)localNewDrafts.value=await uncreatedRecoveries(session.user.id).catch(()=>[])
+  if(!props.postId)localNewDrafts.value=await uncreatedRecoveries(recoveryActorID).catch(()=>[])
   void renderPreview();void renderCover()
  }catch(e){initialized.value=false;initializationError.value=(e as Error).message;state.value='载入失败 · 编辑已暂停'}finally{loading.value=false}
 }
 onMounted(()=>{window.addEventListener('beforeunload',beforeUnload);window.addEventListener('online',autoSave);void initializeEditor()})
 watch(()=>[draft.title,draft.summary,JSON.stringify(draft.tag_ids),JSON.stringify(draft.cover),JSON.stringify(draft.date_display)],changed,{flush:'sync'})
 watch(()=>[draft.title,JSON.stringify(draft.cover)],()=>{if(initialized.value&&!loading.value)scheduleCover()})
-onBeforeUnmount(()=>{stopped=true;clearInterval(interval);clearTimeout(saveTimer);clearTimeout(previewTimer);clearTimeout(persistTimer);previewAbort?.abort();coverAbort?.abort();clearTimeout(coverTimer);if(coverObjectURL)URL.revokeObjectURL(coverObjectURL);void persist();editor?.destroy();window.removeEventListener('beforeunload',beforeUnload);window.removeEventListener('online',autoSave)})
+onBeforeUnmount(()=>{removeSessionEnd();stopped=true;clearInterval(interval);clearTimeout(saveTimer);clearTimeout(previewTimer);clearTimeout(persistTimer);previewAbort?.abort();coverAbort?.abort();clearTimeout(coverTimer);if(coverObjectURL)URL.revokeObjectURL(coverObjectURL);void persist();editor?.destroy();window.removeEventListener('beforeunload',beforeUnload);window.removeEventListener('online',autoSave)})
 </script>
 <template>
  <section class="editor-page editor-unified" :class="{'is-source':viewMode==='source','is-phone-editor':editorPhone}" :data-phone-step="phoneEditorStep">

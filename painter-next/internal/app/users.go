@@ -62,7 +62,7 @@ func (a *App) userGet(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	var posts, followers, following int64
-	e = a.Pool.QueryRow(r.Context(), "SELECT (SELECT count(*) FROM public_posts WHERE author_user_id=$1),(SELECT count(*) FROM follows WHERE followed_user_id=$1),(SELECT count(*) FROM follows WHERE follower_user_id=$1)", id).Scan(&posts, &followers, &following)
+	e = a.Pool.QueryRow(r.Context(), "SELECT (SELECT count(*) FROM public_posts WHERE author_user_id=$1),(SELECT count(*) FROM follows WHERE followed_user_id=$1),(SELECT count(*) FROM follows WHERE follower_user_id=$1) FROM users WHERE id=$1 AND disabled_at_ms IS NULL", id).Scan(&posts, &followers, &following)
 	if e != nil {
 		return e
 	}

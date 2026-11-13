@@ -80,10 +80,10 @@ func v31NavigationLinks(root *nethtml.Node) []*nethtml.Node {
 
 func v31AssertBrowseLinks(t *testing.T, root *nethtml.Node) {
 	t.Helper()
-	want := map[string]string{"/posts": "文章", "/moments": "动态", "/phrases": "片语"}
+	want := map[string]string{"/posts": "文章", "/moments": "动态", "/phrases": "片语", "/series": "专栏"}
 	links := v31NavigationLinks(root)
 	if len(links) != len(want) {
-		t.Fatalf("public browsing should expose three native links, got %d", len(links))
+		t.Fatalf("public browsing should expose four native links, got %d", len(links))
 	}
 	for _, link := range links {
 		href := friendWebAttr(link, "href")

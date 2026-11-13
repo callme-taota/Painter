@@ -2,6 +2,8 @@
 
 2026-11-02 更新，含网页安装、本地账号、可选GitHub、统一标签、封面/搜索、友链、部署维护/管理员工具与作者主页。本文描述当前代码，设计背景见[完整技术设计](../../docs/next/TECHNICAL_DESIGN.md)。数据库仅支持 PostgreSQL 18，DDL 以 [`migrations`](../migrations) 为准，禁止 SQLite 降级。
 
+2026-11-14 增量：连载专栏、三层分享、个人中心与请求协调已落地，详见 [专栏与分享](SERIALS_AND_SHARING.md)、[请求审计](REQUEST_AND_PROFILE_AUDIT_V49.md)。数据库迁移更新至 24；继续使用单进程服务与 PostgreSQL 18。
+
 ## 运行结构与分层
 
 ```mermaid

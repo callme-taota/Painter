@@ -6,6 +6,7 @@ export function navigation(role:string):NavigationGroup[]{
  const groups:NavigationGroup[]=[
   {id:'content',label:'内容管理',icon:'posts',children:[
    {id:'posts',label:role==='owner'?'文章管理':'我的文章',url:'/studio/posts',roles:writer,article:true},
+   {id:'series',label:'专栏管理',url:'/studio/series',roles:writer},
    {id:'moments',label:role==='owner'?'动态管理':'我的动态',url:'/studio/moments',roles:writer},
    {id:'phrases',label:'片语',url:'/studio/phrases',roles:owner},
    {id:'friends',label:'友链',url:'/studio/friends',roles:owner},
@@ -21,7 +22,7 @@ export function navigation(role:string):NavigationGroup[]{
    {id:'site-security',label:'登录安全',url:'/studio/settings#security',section:'security',roles:owner},
    {id:'members',label:'成员权限',url:'/studio/members',roles:owner}]},
   {id:'personal',label:'个人空间',icon:'user',children:[
-   {id:'profile',label:'个人资料',url:'/me'},
+   {id:'profile',label:'个人中心',url:'/me'},
    {id:'bookmarks',label:'收藏文章',url:'/me/bookmarks'},
    {id:'following',label:'关注与粉丝',url:'/me/following',aliases:['/me/followers']},
    {id:'history',label:'阅读足迹',url:'/me/history'},

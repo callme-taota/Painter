@@ -85,3 +85,8 @@ initMobileViewport()
 initMobileNavigation()
 const searchDialog=document.querySelector<HTMLDialogElement>('#site-search')
 if(searchDialog)registerMobileOverlay(searchDialog,()=>document.querySelector<HTMLElement>('[data-search-open]')?.click())
+
+import './series.css'
+import './sharing.css'
+import {initSharing} from './sharing'
+initSharing()

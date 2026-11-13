@@ -1,0 +1,21 @@
+{{define "sharing"}}<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{.Title}} · {{.SiteName}}</title>
+<meta name="description" content="{{.Summary}}"><meta name="robots" content="noindex, follow">
+<link rel="canonical" href="{{.Canonical}}"><link rel="icon" href="{{.Favicon}}">
+<meta property="og:title" content="{{.Title}}"><meta property="og:description" content="{{.Summary}}"><meta property="og:type" content="article"><meta property="og:url" content="{{.Canonical}}"><meta property="og:site_name" content="{{.SiteName}}">{{if .CoverURL}}<meta property="og:image" content="{{.CoverURL}}">{{end}}
+{{range .CSS}}<link rel="stylesheet" href="{{.}}">{{end}}
+</head>
+<body class="share-document{{if .Embed}} share-document--embed{{end}}" data-page-kind="share">
+{{if not .Embed}}<header class="share-document-brand"><a href="/" aria-label="{{.SiteName}}首页">{{.SiteName}}</a></header>{{end}}
+<main class="share-document-main">
+<article class="share-document-content">
+{{if .CoverURL}}<a class="share-document-cover" href="{{.Canonical}}"{{if .Embed}} target="_blank" rel="noopener noreferrer"{{end}} tabindex="-1" aria-hidden="true"><img src="{{.CoverURL}}" alt="" decoding="async"></a>{{end}}
+<div class="share-document-copy"><h1>{{.Title}}</h1>{{if .Summary}}<p class="share-document-summary">{{.Summary}}</p>{{end}}
+<div class="share-document-footer">{{if .Author}}<span class="share-document-author">{{.Author}}</span>{{end}}<a class="share-document-cta" href="{{.Canonical}}"{{if .Embed}} target="_blank" rel="noopener noreferrer"{{end}}>{{if eq .Kind "post"}}阅读完整文章{{else if eq .Kind "series"}}查看完整专栏{{else if eq .Kind "moment"}}查看这条动态{{else}}查看这则片语{{end}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div>
+</div></article>
+{{if not .Embed}}<p class="share-document-source">在 <a href="/">{{.SiteName}}</a> 继续阅读与发现</p>{{end}}
+</main>
+</body></html>{{end}}

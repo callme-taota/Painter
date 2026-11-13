@@ -222,6 +222,8 @@ func New(ctx context.Context, c Config) (*App, error) {
 	a.Handle("POST /api/v1/admin/home/psn/sync", a.homePSNSync)
 	a.RegisterFriends()
 	a.RegisterAuthorProfiles()
+	a.RegisterSeries()
+	a.RegisterSharing(a.PublicSeriesSummary)
 	return a, nil
 }
 func (a *App) Close() { a.Pool.Close() }
