@@ -3,12 +3,14 @@
 .point-calendar-active .point-calendar-day.is-future{opacity:calc(var(--point-day-alpha,1) * .35)}
 .point-calendar-active .point-calendar-day:is(.point-card-landing,.point-record-origin){opacity:0}
 .point-calendar-moving .activity-scroll{overflow:visible}
-.point-calendar-moving .activity-calendar{transform:translateX(calc(-1 * var(--point-scroll-left,0px)))}
+.point-calendar-moving :is(.activity-calendar,.activity-months){transform:translateX(calc(-1 * var(--point-scroll-left,0px)))}
 .point-record-layer{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden;contain:layout style;isolation:isolate}
 .point-record-layer[hidden],.point-record-surface[hidden]{display:none}
 .point-record-surface{position:absolute;overflow:hidden;transform-origin:0 0;pointer-events:none}
 .point-record-layer.is-moving .point-record-surface{will-change:transform}
 .point-record-surface>img{display:block;width:100%;height:100%;object-fit:cover;opacity:var(--point-cover-alpha,0)}
 .point-record-surface>img[hidden]{display:none}
+/* The real game slot already carries this base shade before it expands. */
+.point-record-surface[data-point-game]:after{content:'';position:absolute;inset:0;pointer-events:none;opacity:calc(.12 * var(--point-cover-alpha,0));background:linear-gradient(180deg,rgb(0 0 0 / .62) 0,rgb(0 0 0 / .62) 120px,transparent 260px),linear-gradient(180deg,transparent 35%,rgb(0 0 0 / .16) 50%,rgb(0 0 0 / .78))}
 @media(prefers-reduced-motion:reduce){.point-calendar-active .point-calendar-day{transform:none;opacity:1}.point-calendar-active .point-calendar-day.is-future{opacity:.35}.point-record-layer{display:none}}
 @media print{.point-calendar-active .point-calendar-day{transform:none;opacity:1}.point-record-layer{display:none}}

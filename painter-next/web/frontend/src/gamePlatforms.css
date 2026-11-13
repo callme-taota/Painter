@@ -1,0 +1,30 @@
+/* Platform metadata extends the existing game wall without changing its layout. */
+.game-platforms{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:7px 0}
+.game-platform-badge,.game-platform-device{display:inline-flex;align-items:center;min-height:22px;padding:2px 6px;border-radius:var(--radius-item);background:var(--subtle);color:var(--muted);font:400 12px/18px var(--font-ui)}
+.game-platform-device{background:transparent;padding-inline:3px}
+.home-game-frame .game-platform-badge,.home-game-frame .game-platform-device{color:var(--game-ink);background:rgb(0 0 0 / .3)}
+.games-platform-filter,.homepage-platform-filter{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:0 0 24px}
+.games-platform-filter>a,.homepage-platform-filter>button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--control-height);padding:var(--control-pad-y) 12px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--muted);font:400 13px/20px var(--font-ui)}
+.games-platform-filter>a:hover,.homepage-platform-filter>button:hover,.games-platform-filter>a[aria-current=page],.homepage-platform-filter>button[aria-pressed=true]{background:var(--subtle);color:var(--ink)}
+.game-cover-missing{position:absolute;left:16px;bottom:12px;z-index:1;font-size:12px;line-height:1.5;color:var(--muted)}
+.game-library-art:has(img:not([hidden]))>.game-cover-missing{display:none}
+.game-library-details .game-link-missing{font-size:12px;color:var(--muted);margin-top:5px}
+.homepage-platform-devices{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;font-size:13px;color:var(--muted)}
+.homepage-platform-devices>.check{font-size:13px;margin:0}
+.homepage-psn-section{margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
+.homepage-psn-section>.homepage-help{max-width:75ch}
+.homepage-psn-section>button{margin:0 0 24px}
+.homepage-psn-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,.8fr);gap:36px;align-items:start;max-width:1100px}
+.homepage-psn-form{min-width:0;max-width:600px}
+.homepage-psn-status{min-width:0}
+.homepage-psn-status h3{margin:0 0 16px;font:600 15px/24px var(--font-ui)}
+.homepage-psn-status dl{display:grid;grid-template-columns:82px minmax(0,1fr);gap:10px 16px;font-size:13px;line-height:1.7;margin:0 0 20px}
+.homepage-psn-status dt{color:var(--muted)}
+.homepage-psn-status dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.homepage-psn-actions{display:flex;flex-wrap:wrap;gap:8px}
+.homepage-psn-guide{font-size:13px;line-height:1.8;color:var(--muted)}
+.homepage-psn-guide>summary{cursor:pointer;color:var(--ink);min-height:36px;display:list-item}
+.homepage-psn-guide ol{margin:12px 0;padding-left:20px;display:grid;gap:8px}
+.homepage-psn-guide a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+@media(max-width:900px){.homepage-psn-grid{grid-template-columns:minmax(0,1fr);gap:28px}.homepage-psn-status{padding-top:24px;border-top:1px solid var(--line)}}
+@media(max-width:720px){.games-platform-filter,.homepage-platform-filter{gap:4px;margin-bottom:20px}.game-platforms{gap:4px}.game-platform-badge,.game-platform-device{font-size:12px}.homepage-psn-section{margin-top:30px;padding-top:24px}.homepage-psn-status dl{grid-template-columns:76px minmax(0,1fr);gap:9px 13px}.homepage-psn-guide{font-size:13px}.homepage-psn-actions>button{white-space:normal}}

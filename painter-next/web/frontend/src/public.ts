@@ -32,7 +32,9 @@ if(isHome)void (async()=>{
  const story=await import('./homeStory');story.initHomeStory()
  const showcase=await import('./homeShowcase');showcase.initHomeShowcase()
  dispatchEvent(new Event('painter:home-work-measure'))
- const glass=await import('./homeControlGlass');glass.initHomeControlGlass()
+ const snap=await import('./homeSnap');snap.initHomeSnap()
+ // V31 lenses are independent; the former media effect painted a single rail.
+ if(!document.querySelector('[data-site-dock]')){const glass=await import('./homeControlGlass');glass.initHomeControlGlass()}
 })().catch(()=>{})
 
 if(document.querySelector('[data-phrase-gallery]'))void import('./phrases').then(m=>m.initPhrases()).catch(()=>{})
@@ -65,3 +67,12 @@ import './homeExtras.css'
 if(!isHome&&document.querySelector('[data-activity-calendar],[data-project-deck]'))void import('./homeExtras').then(m=>m.initHomeExtras()).catch(()=>{})
 import {initArticleCards} from './contentCards'
 initArticleCards()
+
+import {initLiquidGlass} from './liquidGlass'
+import './public-chrome.css'
+initLiquidGlass()
+import {initDock} from './dock'
+initDock()
+
+import './gamePlatforms.css'
+import './searchGlass.css'

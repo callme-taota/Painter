@@ -214,6 +214,9 @@ func New(ctx context.Context, c Config) (*App, error) {
 	a.RegisterPhrases()
 	a.RegisterMoments()
 	a.RegisterHome()
+	a.Handle("GET /api/v1/admin/home/psn", a.homePSNGet)
+	a.Handle("PUT /api/v1/admin/home/psn", a.homePSNPut)
+	a.Handle("POST /api/v1/admin/home/psn/sync", a.homePSNSync)
 	a.RegisterFriends()
 	a.RegisterAuthorProfiles()
 	return a, nil
@@ -234,6 +237,10 @@ func (a *App) Handler() http.Handler {
 				Error(w, E(500, "INTERNAL_ERROR", "服务暂不可用"))
 			}
 		}()
+		r = a.securityHeaders(w, r)
+		if a.redirectPublicHTTP(w, r) {
+			return
+		}
 		r.Header.Set("X-Request-ID", w.Header().Get("X-Request-ID"))
 		*r = *r.WithContext(context.WithValue(r.Context(), requestIDKey, w.Header().Get("X-Request-ID")))
 		if !a.allowRequest(r) {

@@ -13,7 +13,7 @@ func TestGameHoursDistinguishesUnknownAndZero(t *testing.T) {
 	for _, sample := range []struct {
 		value any
 		want  string
-	}{{nil, "时长未公开"}, {int64(0), "0 小时"}, {int64(1), "不足 0.1 小时"}, {int64(6), "0.1 小时"}, {int64(90), "1.5 小时"}, {float64(120), "2.0 小时"}, {int64(-1), "时长未公开"}} {
+	}{{nil, "时长未提供"}, {int64(0), "0 小时"}, {int64(1), "不足 0.1 小时"}, {int64(6), "0.1 小时"}, {int64(90), "1.5 小时"}, {float64(120), "2.0 小时"}, {int64(-1), "时长未提供"}} {
 		if got := gameHours(sample.value); got != sample.want {
 			t.Fatalf("%v: got %q, want %q", sample.value, got, sample.want)
 		}
@@ -55,7 +55,7 @@ func TestGameShowcaseSSRCapFullLibraryAndHandoff(t *testing.T) {
 	if len(frames) != 5 {
 		t.Fatal("homepage must render only five games", len(frames))
 	}
-	if text := friendWebText(doc); strings.Contains(text, "Game F") || strings.Contains(text, "Game G") || !strings.Contains(text, "0 小时") || !strings.Contains(text, "1.5 小时") || !strings.Contains(text, "时长未公开") {
+	if text := friendWebText(doc); strings.Contains(text, "Game F") || strings.Contains(text, "Game G") || !strings.Contains(text, "0 小时") || !strings.Contains(text, "1.5 小时") || !strings.Contains(text, "时长未提供") {
 		t.Fatal("homepage snapshot or real-time distinction lost", text)
 	}
 	if len(friendWebClass(doc, "home-collection-journey")) != 1 || len(friendWebClass(doc, "home-record-tile")) != 1 {
@@ -76,7 +76,7 @@ func TestGameShowcaseSSRCapFullLibraryAndHandoff(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(friendWebClass(library, "game-library-card")) != 2 || !strings.Contains(friendWebText(library), "6 款游戏") || !strings.Contains(w.Body.String(), "cursor=") {
+	if len(friendWebClass(library, "game-library-card")) != 2 || !strings.Contains(friendWebText(library), "6 条游戏记录") || !strings.Contains(w.Body.String(), "cursor=") {
 		t.Fatal("full library must paginate all visible games")
 	}
 	homeSSRSave(t, a, owner, csrf, func(c map[string]any) { c["sections"].(map[string]any)["steam"].(map[string]any)["limit"] = 0 })

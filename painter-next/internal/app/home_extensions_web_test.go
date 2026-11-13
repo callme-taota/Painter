@@ -29,8 +29,14 @@ func TestHomeExtensionsSSRTruthVisibilityAndEscaping(t *testing.T) {
 		t.Fatal("new sections did not use actual saved visibility")
 	}
 	text := friendWebText(doc)
-	if !strings.Contains(text, "0 次发布") || strings.Contains(text, "Hidden project must remain private") || !strings.Contains(text, "按首次发布时间计数") {
+	if !strings.Contains(text, "0 次发布") || strings.Contains(text, "Hidden project must remain private") {
 		t.Fatal("activity semantics or private project leaked", text)
+	}
+	announcements := friendWebNodes(doc, func(n *nethtml.Node) bool {
+		return n.Type == nethtml.ElementNode && friendWebHasAttr(n, "data-activity-detail")
+	})
+	if len(announcements) != 1 || friendWebAttr(announcements[0], "aria-live") != "polite" || !strings.Contains(friendWebAttr(announcements[0], "class"), "sr-only") {
+		t.Fatal("calendar needs a nonvisual current-date announcement")
 	}
 	for _, n := range friendWebNodes(doc, func(n *nethtml.Node) bool {
 		return n.Type == nethtml.ElementNode && (friendWebHasAttr(n, "onerror") || n.Data == "script" && strings.Contains(friendWebText(n), "metadata"))

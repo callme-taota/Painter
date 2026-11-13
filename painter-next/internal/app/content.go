@@ -85,6 +85,7 @@ func (a *App) RegisterContent() {
 	a.Handle("POST /api/v1/studio/posts/{id}/restore", a.restoreRevision)
 	a.Handle("POST /api/v1/editor/preview", a.previewMarkdown)
 	a.Handle("POST /api/v1/editor/cards/resolve", a.resolveContentCard)
+	a.Handle("GET /api/v1/content-cards/{kind}/{id}", a.publicContentCard)
 	a.registerCovers()
 }
 
@@ -277,6 +278,12 @@ func (a *App) PublicPost(ctx context.Context, id string) (map[string]any, error)
 	}
 	v, e := contentObject(ctx, a.Pool, "SELECT "+publicPostJSON+` || jsonb_build_object('sanitized_html',v.sanitized_html,'toc',v.toc_json,'renderer_version',v.renderer_version)`+publicPostFrom+" WHERE v.post_id=$1", id)
 	if e == nil {
+		htmlValue, _ := v["sanitized_html"].(string)
+		expanded, err := a.ExpandInternalContentCards(ctx, htmlValue)
+		if err != nil {
+			return nil, err
+		}
+		v["sanitized_html"] = expanded
 		v["read_receipt"] = a.ReadReceipt(id, v["revision_id"].(string))
 	}
 	return v, e
@@ -997,6 +1004,12 @@ func (a *App) getRevision(w http.ResponseWriter, r *http.Request) error {
 	}
 	v, e := contentObject(r.Context(), a.Pool, `SELECT jsonb_build_object('id',id,'revision_id',id,'post_id',post_id::text,'revision_no',revision_no,'title',title,'summary',summary,'markdown',markdown,'sanitized_html',sanitized_html,'toc',toc_json,'reason',reason,'cover',cover,'date_display',date_display,'updated_at',`+contentTimeSQL("content_updated_at_ms")+`,'tag_ids',COALESCE((SELECT jsonb_agg(tag_id::text ORDER BY tag_id) FROM effective_revision_tags WHERE revision_id=r.id),'[]'::jsonb),'media_ids',COALESCE((SELECT jsonb_agg(media_id ORDER BY media_id) FROM post_revision_media_refs WHERE revision_id=r.id),'[]'::jsonb),'created_at',`+contentTimeSQL("created_at_ms")+`) FROM post_revisions r WHERE post_id=$1 AND id=$2`, id, r.PathValue("rid"))
 	if e == nil {
+		htmlValue, _ := v["sanitized_html"].(string)
+		expanded, err := a.ExpandInternalContentCards(r.Context(), htmlValue)
+		if err != nil {
+			return err
+		}
+		v["sanitized_html"] = expanded
 		JSON(w, 200, v)
 	}
 	return e
@@ -1087,7 +1100,13 @@ func (a *App) previewMarkdown(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	result, e := a.Write(r, []string{"author", "owner"}, false, false, func(tx pgx.Tx, p Principal) (any, error) {
-		return map[string]any{"sanitized_html": rendered.HTML, "toc": rendered.TOC, "content_hash": rendered.Hash, "seq": in.Seq, "renderer_version": RendererVersion}, nil
+		// Reuse the writer transaction; a second pool acquisition can deadlock
+		// concurrent previews when each already holds a transaction connection.
+		expanded, err := a.expandInternalContentCards(r.Context(), tx, rendered.HTML)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"sanitized_html": expanded, "toc": rendered.TOC, "content_hash": rendered.Hash, "seq": in.Seq, "renderer_version": RendererVersion}, nil
 	})
 	if e == nil {
 		JSON(w, 200, result)

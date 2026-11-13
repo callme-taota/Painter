@@ -1,5 +1,7 @@
 # 局域网预览
 
+2026-11-11 访问更新：正式入口为 **https://blog.taota.cc**，Tunnel 回源仍为 `http://192.168.2.209:18080`。原局域网 HTTP 地址可公开阅读与诊断，登录和管理使用正式 HTTPS 域名。当前持久服务为 `painter.service`、`painter-postgres.service`、`painter-tunnel.service`；配置文件为 `~/.config/painter/runtime-v33.env`。下文旧预览实例与临时目录属于历史记录，维护当前实例请使用 [Tunnel 操作说明](TUNNEL_QUICKSTART.md)。
+
 2026-11-02 新版已切换到当前地址：<http://192.168.2.209:18080>。同一局域网的电脑/手机可以使用该地址；承载服务的机器需要保持运行。当前接口为 `ens2`，IPv4子网为 `192.168.2.0/24`。
 
 ## 当前运行配置

@@ -26,14 +26,15 @@
 .work-journey-ready .work-card-intro-face{display:flex;position:absolute;inset:0;flex-direction:column;justify-content:center;padding:30px;color:var(--hero-sheet-ink);opacity:var(--work-intro-alpha,0);pointer-events:none}
 .work-journey-ready .work-card-intro-face .story-sheet-title{font-size:clamp(2.25rem,4vw,4rem)}
 .work-journey-ready .work-card-intro-face .story-sheet-signature{left:30px;bottom:28px}
-.work-journey-ready .home-activity{z-index:3}
-.work-journey-ready .home-activity>.home-section-heading,.work-journey-ready .activity-summary,.work-journey-ready .activity-foot,.work-journey-ready .activity-day-detail{opacity:var(--work-calendar-chrome,0)}
+.work-journey-ready .home-activity{z-index:3;width:min(920px,calc(100% - 160px))}
+.work-journey-ready .home-activity>.home-section-heading,.work-journey-ready .activity-summary,.work-journey-ready .activity-months,.work-journey-ready .activity-foot,.work-journey-ready .activity-day-detail{opacity:var(--work-calendar-chrome,0)}
 .work-journey-ready .work-record-caption{display:flex;position:absolute;inset:auto 0 0;margin:0;width:100%;z-index:7;pointer-events:none}
 .work-journey-ready .work-record-caption .home-music-badge{margin:0 -6px -6px 0;flex:none}
 .home-collection-journey.has-work-record-bridge{margin-top:-100svh}
 .work-measuring .project-playing-card{transform:none!important;opacity:1!important}
 @media(max-width:720px){
  .work-journey-ready .home-projects,.work-journey-ready .home-activity{left:24px;right:72px;width:auto;transform:translateY(-50%)}
+ .work-journey-ready .home-activity{width:auto}
  .work-journey-ready .story-scene{padding:110px 72px 40px 24px;align-items:start}
  .work-journey-ready .story-scene-intro{padding-top:130px}
  .work-journey-ready .project-deck{padding-inline:0;margin-left:0;width:100%}

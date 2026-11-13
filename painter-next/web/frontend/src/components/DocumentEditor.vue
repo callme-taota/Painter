@@ -44,6 +44,8 @@ const commands=[
   {label:'Steam 游戏',hint:'商店游戏卡片',search:'steam game card youxi',run:()=>{openCards('steam');return true}},
   {label:'Apple Music',hint:'专辑或歌单卡片',search:'apple music album playlist card yinyue',run:()=>{openCards('apple_music');return true}},
   {label:'网页参考',hint:'文字、Emoji 与来源预览',search:'link reference emoji card wangye',run:()=>{openCards('link');return true}},
+  {label:'站内动态',hint:'引用已公开的动态与照片',search:'moment internal card dongtai',run:()=>{openCards('moment');return true}},
+  {label:'站内片语',hint:'引用已公开的句子或词语',search:'phrase sentence word internal card pianyu',run:()=>{openCards('phrase');return true}},
   {label:'分隔线',hint:'分开两段内容',search:'divider horizontal rule fengexian',run:(e:Editor)=>e.chain().focus().setHorizontalRule().run()}
 ]
 const filteredCommands=computed(()=>{const query=(slash.value?.query||'').toLowerCase();return commands.filter(c=>(c.label+' '+c.search).toLowerCase().includes(query))})

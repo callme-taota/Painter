@@ -8,18 +8,24 @@ import (
 )
 
 type homeWebSection struct {
-	Key, Title, Description, LinkLabel, LinkURL                string
-	Name, WritingTitle, WritingDescription, ScrollLabel, Brand string
-	Roles                                                      []string
-	Items                                                      []map[string]any
-	MusicBadgeURL                                              string
-	MusicPlaylist                                              map[string]any
-	FollowingMusic                                             *homeWebSection
-	FollowingGames                                             *homeWebSection
-	GroupedWithGames                                           bool
-	GroupedWithMusic                                           bool
-	WorkJourneyStart, WorkJourneyEnd                           bool
-	Activity                                                   HomeActivity
+	Key, Title, Description, LinkLabel, LinkURL                          string
+	Name, CardName, WritingTitle, WritingDescription, ScrollLabel, Brand string
+	Roles                                                                []string
+	Items                                                                []map[string]any
+	MusicBadgeURL                                                        string
+	MusicPlaylist                                                        map[string]any
+	FollowingMusic                                                       *homeWebSection
+	FollowingGames                                                       *homeWebSection
+	GroupedWithGames                                                     bool
+	GroupedWithMusic                                                     bool
+	WorkJourneyStart, WorkJourneyEnd                                     bool
+	Activity                                                             HomeActivity
+}
+
+// Homepage display headings omit a trailing Chinese full stop. Saved profile
+// text, public article titles, body copy and their punctuation stay untouched.
+func homeHeadingText(value string) string {
+	return strings.TrimRight(strings.TrimSpace(value), "。")
 }
 
 // Provider imports and synchronization happen separately. Rendering only reads
@@ -40,18 +46,23 @@ func (a *App) homepagePage(ctx context.Context, site map[string]any) (webPage, e
 		description = webString(site["tagline"])
 		roles, _ = site["intro_roles"].([]string)
 	}
+	name = homeHeadingText(name)
+	cardName := homeHeadingText(cfg.IntroCardName)
+	if cardName == "" {
+		cardName = name
+	}
 	p := webPage{Kind: "home", Site: site, HomeConfig: &cfg}
 	for _, key := range cfg.Order {
 		s := cfg.Sections[key]
 		if !s.Enabled {
 			continue
 		}
-		section := homeWebSection{Key: key, Title: s.Title, Description: s.Description, LinkLabel: s.LinkLabel, LinkURL: s.LinkURL,
-			Name: name, Roles: roles, WritingTitle: cfg.WritingTitle, WritingDescription: cfg.WritingDescription,
+		section := homeWebSection{Key: key, Title: homeHeadingText(s.Title), Description: s.Description, LinkLabel: s.LinkLabel, LinkURL: s.LinkURL,
+			Name: name, CardName: cardName, Roles: roles, WritingTitle: homeHeadingText(cfg.WritingTitle), WritingDescription: cfg.WritingDescription,
 			ScrollLabel: cfg.ScrollLabel, Brand: webString(site["display_name"])}
 		switch key {
 		case "intro":
-			section.Description = description
+			section.Description = homeHeadingText(description)
 			p.HomeHasIntro = section.Title != "" || name != ""
 			// The default article jump remains useful if its destination is hidden.
 			if (section.LinkURL == "/#home-writing" || section.LinkURL == "#home-writing") && (!cfg.Sections["articles"].Enabled || cfg.Sections["articles"].Limit == 0) {
@@ -94,10 +105,6 @@ func (a *App) homepagePage(ctx context.Context, site map[string]any) (webPage, e
 					}
 				}
 			}
-		case "closing":
-			if section.Description == "" && cfg.UseSiteIntro {
-				section.Description = name
-			}
 		}
 		if p.HomeFirst == "" {
 			p.HomeFirst = key
@@ -133,11 +140,11 @@ func groupHomeSections(sections []homeWebSection) {
 
 func gameHours(value any) string {
 	if value == nil {
-		return "时长未公开"
+		return "时长未提供"
 	}
 	minutes, err := strconv.ParseInt(webString(value), 10, 64)
 	if err != nil || minutes < 0 {
-		return "时长未公开"
+		return "时长未提供"
 	}
 	if minutes == 0 {
 		return "0 小时"

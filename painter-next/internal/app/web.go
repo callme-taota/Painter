@@ -20,21 +20,38 @@ import (
 )
 
 type webPage struct {
-	Kind, Title, Description, Canonical, JS, Next, TopicParam, ReturnTo, Error, SearchID, PreviewImage string
-	Site, Post, User, Featured, FriendSettings                                                         map[string]any
-	Items, Categories, Tags, Topics, Related                                                           []map[string]any
-	CSS                                                                                                []string
-	Query                                                                                              url.Values
-	TOC                                                                                                []TOCEntry
-	HTML                                                                                               template.HTML
-	JSONLD                                                                                             template.JS
-	SearchActive, NoIndex, Registration, LoginError, Creator                                           bool
-	ReadTime, Status, QueryLength, ResultCount                                                         int
-	HomeConfig                                                                                         *HomeConfig
-	HomeSections                                                                                       []homeWebSection
-	HomeFirst                                                                                          string
-	HomeHasIntro                                                                                       bool
+	Kind, Title, Description, Canonical, JS, Next, TopicParam, ReturnTo, Error, SearchID, PreviewImage, ViewerID string
+	ScriptNonce                                                                                                  string
+	Site, Post, User, Featured, FriendSettings                                                                   map[string]any
+	Items, Categories, Tags, Topics, Related                                                                     []map[string]any
+	CSS                                                                                                          []string
+	Query                                                                                                        url.Values
+	TOC                                                                                                          []TOCEntry
+	HTML                                                                                                         template.HTML
+	JSONLD                                                                                                       template.JS
+	SearchActive, NoIndex, Registration, LoginError, Creator, Authenticated                                      bool
+	ReadTime, Status, QueryLength, ResultCount                                                                   int
+	HomeConfig                                                                                                   *HomeConfig
+	HomeSections                                                                                                 []homeWebSection
+	HomeFirst                                                                                                    string
+	HomeHasIntro                                                                                                 bool
 }
+
+const siteFaviconPath = "images/painter-favicon-d4d342f8b170.ico"
+
+func (p webPage) DocumentTitle() string {
+	site := strings.TrimSpace(webString(p.Site["display_name"]))
+	if site == "" {
+		site = "Painter"
+	}
+	title := strings.TrimSpace(p.Title)
+	if title == "" || strings.EqualFold(title, site) {
+		return site
+	}
+	return title + " · " + site
+}
+
+func (p webPage) FaviconURL() string { return "/assets/" + siteFaviconPath }
 
 func webString(v any) string {
 	if v == nil {
@@ -153,6 +170,7 @@ func (a *App) RegisterWeb() {
 		return strings.TrimPrefix(u.Host, "www.")
 	}}).ParseFS(web.FS, "templates/*.html"))
 	render := func(w http.ResponseWriter, r *http.Request, p webPage) {
+		p.ScriptNonce = requestScriptNonce(r.Context())
 		if p.Kind == "home" || p.Kind == "login" || p.Kind == "register" {
 			installed, e := a.installationComplete(r.Context(), a.Pool)
 			if e != nil {
@@ -182,6 +200,8 @@ func (a *App) RegisterWeb() {
 		}
 		if p.Kind != "studio" && p.Kind != "setup" {
 			if actor, err := a.Principal(r); err == nil {
+				p.Authenticated = true
+				p.ViewerID = actor.ID
 				p.Creator = actor.Role == "owner" || actor.Role == "author"
 			}
 		}
@@ -237,14 +257,12 @@ func (a *App) RegisterWeb() {
 		}
 		render(w, r, webPage{Kind: "error", Status: code, Title: title, Error: message, NoIndex: true})
 	}
-	a.Mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, ".vite/") {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		http.FileServer(http.FS(web.AssetFS())).ServeHTTP(w, r)
-	})))
+	a.Mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHTTPHandler(web.AssetFS())))
+	a.Mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/x-icon")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		http.ServeFileFS(w, r, web.AssetFS(), siteFaviconPath)
+	})
 	a.Mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		site, e := a.webSite(r.Context())
 		if e != nil {
@@ -397,7 +415,12 @@ func (a *App) RegisterWeb() {
 			failure(w, r, e)
 			return
 		}
-		render(w, r, webPage{Kind: "about", Title: "关于", Site: site, HTML: template.HTML(rendered.HTML)})
+		expanded, e := a.ExpandInternalContentCards(r.Context(), rendered.HTML)
+		if e != nil {
+			failure(w, r, e)
+			return
+		}
+		render(w, r, webPage{Kind: "about", Title: "关于", Site: site, HTML: template.HTML(expanded)})
 	})
 	authPage := func(w http.ResponseWriter, r *http.Request) {
 		var registration bool
@@ -412,6 +435,14 @@ func (a *App) RegisterWeb() {
 		}
 		render(w, r, webPage{Kind: kind, Title: title, NoIndex: true, Registration: registration, ReturnTo: returnTo, LoginError: r.URL.Query().Get("error") != ""})
 	}
+	a.Mux.HandleFunc("GET /phrases/{id}", func(w http.ResponseWriter, r *http.Request) {
+		item, e := a.PublicContentCard(r.Context(), "phrase", r.PathValue("id"))
+		if e != nil {
+			failure(w, r, e)
+			return
+		}
+		render(w, r, webPage{Kind: "phrases", Title: "片语", Description: webString(item["text"]), Items: []map[string]any{item}})
+	})
 	a.Mux.HandleFunc("GET /phrases", func(w http.ResponseWriter, r *http.Request) {
 		data, e := a.PublicPhrases(r.Context(), r.URL.Query())
 		if e != nil {

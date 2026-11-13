@@ -65,9 +65,9 @@ func run() error {
 		return nil
 	}
 	switch command {
-	case "serve", "migrate", "setup", "setup-token", "seed-demo", "backup", "restore-check", "import-legacy", "create-local-user", "reset-local-password":
+	case "serve", "migrate", "setup", "setup-token", "seed-demo", "backup", "restore-check", "import-legacy", "create-local-user", "reset-local-password", "psn-connect":
 	default:
-		return fmt.Errorf("usage: painter [serve|migrate|seed-demo|backup <directory>|restore-check <directory>|import-legacy <file> [--dry-run]|create-local-user|reset-local-password]")
+		return fmt.Errorf("usage: painter [serve|migrate|seed-demo|backup <directory>|restore-check <directory>|import-legacy <file> [--dry-run]|create-local-user|reset-local-password|psn-connect]")
 	}
 	config, err := app.ConfigFromEnv()
 	if err != nil {
@@ -90,6 +90,9 @@ func run() error {
 	}
 	if command == "create-local-user" || command == "reset-local-password" {
 		return runLocalAccountCommand(ctx, a, command, os.Args[2:])
+	}
+	if command == "psn-connect" {
+		return runPSNConnectCommand(ctx, a, os.Args[2:])
 	}
 	if command == "migrate" || command == "setup" {
 		slog.Info("database migrations verified")
@@ -134,11 +137,14 @@ func run() error {
 	a.RegisterAdmin()
 	a.RegisterAnalytics()
 	a.RegisterWeb()
-	go a.RunWorkers(ctx)
+	if config.BackgroundWorkersEnabled() {
+		go a.RunWorkers(ctx)
+		go a.RunHomePSN(ctx)
+	}
 	server := &http.Server{Addr: config.ListenAddr, Handler: a.OperationsHandler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
 	errors := make(chan error, 1)
 	go func() { errors <- server.ListenAndServe() }()
-	slog.Info("painter serving", "address", config.ListenAddr)
+	slog.Info("painter serving", "address", config.ListenAddr, "background_workers", config.BackgroundWorkersEnabled())
 	select {
 	case err = <-errors:
 		if err != http.ErrServerClosed {

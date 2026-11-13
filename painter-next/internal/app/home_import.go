@@ -56,6 +56,9 @@ func homeRemoteImage(kind, raw string) bool {
 	if kind == "steam" {
 		return h == "steamstatic.com" || strings.HasSuffix(h, ".steamstatic.com")
 	}
+	if kind == "psn" {
+		return u.Fragment == "" && (h == "image.api.playstation.com" || h == "image.api.np.km.playstation.net")
+	}
 	return false
 }
 func (a *App) homeProviderGET(ctx context.Context, target, key string, max int64) ([]byte, error) {
@@ -141,12 +144,13 @@ func homeParseImport(kind, input string) (id, country string, err error) {
 	return id, country, nil
 }
 func homeMetadata(in homeItemInput) map[string]any {
-	return map[string]any{"kind": in.Kind, "title": in.Title, "subtitle": in.Subtitle, "alt": in.Alt, "url": in.URL, "image_url": in.ImageURL, "hero_url": in.HeroURL, "logo_url": in.LogoURL, "playtime_minutes": in.PlaytimeMinutes, "media_id": "", "provider_id": in.ProviderID, "source": "manual", "position": 0, "visible": true}
+	normalizeHomeItemPlatform(&in)
+	return map[string]any{"kind": in.Kind, "platform": in.Platform, "platforms": append([]string{}, in.Platforms...), "title": in.Title, "subtitle": in.Subtitle, "alt": in.Alt, "url": in.URL, "image_url": in.ImageURL, "hero_url": in.HeroURL, "logo_url": in.LogoURL, "playtime_minutes": in.PlaytimeMinutes, "media_id": "", "provider_id": in.ProviderID, "source": "manual", "position": 0, "visible": true}
 }
 func (a *App) homeFetchImport(ctx context.Context, kind, id, country string) (homeItemInput, error) {
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
-	in := homeItemInput{Kind: kind, ProviderID: id, Visible: true}
+	in := homeItemInput{Kind: kind, Platform: homeItemPlatform(kind, ""), Platforms: []string{}, ProviderID: id, Visible: true}
 	if kind == "steam" {
 		raw, e := a.homeProviderGET(ctx, "https://store.steampowered.com/api/appdetails?appids="+id+"&cc=us&l=schinese", "", 2<<20)
 		if e != nil {

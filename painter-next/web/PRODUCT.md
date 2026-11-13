@@ -75,6 +75,10 @@ New deployments use a server-issued installation code and three browser steps (e
 
 The full search page has one leading keyword field and compact tag/sort/reset controls. Tags are a searchable OR multi-selection with removable choices, a 20-selection limit, and an explicit pending-filter notice until submission. Tag-only and author-only search work without a keyword; relevance and recent publication ordering use the same published-only projection and cursor binding. Legacy /tags redirects to /search; the homepage tag directory is removed. Native semantic checkboxes and radio inputs share project rendering across public and studio screens. At 320px search results prioritize matching text over thumbnails.
 
+V37 gives the global Raycast search panel and full-search controls the same Liquid Glass material as public navigation. A stable outer lens contains fixed input/footer and a scrolling suggestion list; filter popovers soften the underlying page without blurring their own text. Existing search, keyboard and IME behavior remains. Reduced transparency and contrast preferences select solid surfaces. Scope, validation and browser limits are recorded in ../docs/EXPERIENCE_V37.md.
+
+V39 adds identity-only article references to currently public moments and phrases, with picker insertion/re-editing and fresh read-time SSR. Source withdrawal removes referenced text/photos on subsequent reads without retaining them in article search or media references. The current site's ambient home warmth is disabled; structural links are quieter while inline prose and reading actions stay blue. Author pages keep configured backgrounds with a more compact open layout. Custom game uploads remain selected in the full wall, and detaching one restores its real platform artwork. Details and isolated verification: ../docs/EXPERIENCE_V39.md.
+
 Deployment and maintenance commands reuse the fixed Compose project, private configuration and persistent volumes. Backup verification restores to a disposable database. Administrator CLI and stdio MCP use normal owner sessions and existing HTTP content transactions, with server-side owner enforcement, CAS and idempotency. AI reads are enabled by default; writes require an explicit MCP option. No SQLite, additional runtime daemon, model API key or hosted AI service is introduced.
 
 ### Continuous administration and author identity (V16)
@@ -157,3 +161,8 @@ Schema 20 adds only the first-publication index, homepage projects and project r
 ### 首页连续叙事（V26）
 
 首页在站长保存的顺序下可连贯呈现介绍、真实项目、发布日历、可选照片、唱片、最多五个游戏、收束和最后的最近文章。SSR先筛除禁用或无内容区块，再只组合相邻的介绍/项目/日历及任一方向的唱片/游戏，不强制重排其他配置。游戏原生控件持有焦点时保持完整画面，离开焦点后恢复滚动位置；无 JavaScript、减少动态效果和关闭动态效果保留普通文档流。沿用既有公开内容、提供方身份、可见性和数量合同，没有 schema 迁移或已发布正文全量重渲染；候选数据与正式启用证据分别记录于 ../docs/EXPERIENCE_V26.md。
+
+
+### 首页连续性修订（V35）
+
+用户确认首页延续个人介绍/Painter卡片、GitHub项目、真实发布日历、唱片、最多五个游戏及末尾阅读入口。V33首页样式曾撤回，V35按重新确认后的要求实现：唱片网格随原生滚动实际移动一屏，真实首游戏从SSR起属于同一网格并原位成长，所有专辑身份与原生链接保持；阶段吸附仅在用户真实滚动后同方向小范围发生。无JS、关闭动态和减少动态保持自然文档流。可配置开关、顺序、数量、内容与权限合同不变，不增加schema或外部服务。实现与验收见../docs/EXPERIENCE_V35.md。

@@ -4,11 +4,14 @@ import Link,{isAllowedUri} from '@tiptap/extension-link'
 import {NodeSelection} from '@tiptap/pm/state'
 import './articleCards.css'
 
-export type ArticleCardType='github'|'steam'|'apple_music'|'link'
-export type ArticleCard={v:1;type:ArticleCardType;url:string;title:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string}
-export const articleCardKinds=[{value:'github',label:'GitHub 仓库'},{value:'steam',label:'Steam 游戏'},{value:'apple_music',label:'Apple Music'},{value:'link',label:'网页参考'}] as const
-const labels:Record<ArticleCardType,string>={github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:'网页参考'}
+export type ArticleCardType='github'|'steam'|'apple_music'|'link'|'moment'|'phrase'
+export type ArticleCard={v:1;type:ArticleCardType;url:string;title?:string;ref_id?:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string}
+export const articleCardKinds=[{value:'github',label:'GitHub 仓库'},{value:'steam',label:'Steam 游戏'},{value:'apple_music',label:'Apple Music'},{value:'link',label:'网页参考'},{value:'moment',label:'站内动态'},{value:'phrase',label:'站内片语'}] as const
+const labels:Record<ArticleCardType,string>={github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:'网页参考',moment:'动态',phrase:'片语'}
 export const articleReferencePrefix='painter:v1:'
+export const isInternalArticleCard=(type:string)=>type==='moment'||type==='phrase'
+export const internalArticleCardURL=(type:string,id:string)=>(type==='moment'?'/moments/':'/phrases/')+id
+const internalID=(value:unknown):value is string=>typeof value==='string'&&/^[1-9][0-9]{0,18}$/.test(value)&&BigInt(value)<=9223372036854775807n
 const mediaURL=/^\/media\/[a-fA-F0-9-]{16,128}$/
 
 function text(value:unknown,max:number,required=false):value is string{return typeof value==='string'&&[...value].length<=max&&(!required||!!value.trim())&&!/[\u0000-\u001f\u007f-\u009f]/.test(value)}
@@ -22,8 +25,14 @@ function publicURL(value:unknown):URL|null {
 export function parseArticleCard(raw:string):ArticleCard|null {
   if(new TextEncoder().encode(raw).length>8192)return null
   try{
-    const c=JSON.parse(raw),u=publicURL(c?.url)
-    if(!c||c.v!==1||!articleCardKinds.some(k=>k.value===c.type)||!u||!text(c.title,200,true)||!text(c.description??'',1000)||!text(c.subtitle??'',200))return null
+    const c=JSON.parse(raw)
+    if(!c||c.v!==1||!articleCardKinds.some(k=>k.value===c.type))return null
+    if(isInternalArticleCard(c.type)){
+      if(!internalID(c.ref_id)||c.url!==internalArticleCardURL(c.type,c.ref_id)||Object.keys(c).some(k=>!['v','type','url','ref_id'].includes(k)))return null
+      return c as ArticleCard
+    }
+    const u=publicURL(c.url)
+    if(!u||!text(c.title,200,true)||!text(c.description??'',1000)||!text(c.subtitle??'',200))return null
     if(Object.keys(c).some(k=>!['v','type','url','title','description','subtitle','image_url','stats','metadata_source','resolved_at'].includes(k)))return null
     if(c.type==='github'&&(u.host!=='github.com'||u.search||u.hash||!/^\/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\/?$/.test(u.pathname)))return null
     if(c.type==='steam'&&(u.host!=='store.steampowered.com'||!/^\/app\/[1-9][0-9]{0,9}(?:\/[^/]*)?\/?$/.test(u.pathname)))return null
@@ -48,11 +57,11 @@ export function parseArticleReference(title:unknown,href:unknown):ArticleCard|nu
 }
 export function articleCardMarkdown(card:ArticleCard){return '```painter-card\n'+JSON.stringify(card)+'\n```'}
 export function articleReferenceTitle(card:ArticleCard){return articleReferencePrefix+encodeArticleCard(JSON.stringify(card))}
-export function articleReferenceMarkdown(card:ArticleCard,label=card.title){return '['+label.replace(/[\\`*_{}\[\]<>()#+.!|&~-]/g,'\\$&')+'](<'+card.url.replace(/</g,'%3C').replace(/>/g,'%3E')+'> "'+articleReferenceTitle(card)+'")'}
+export function articleReferenceMarkdown(card:ArticleCard,label=card.title||labels[card.type]){return '['+label.replace(/[\\`*_{}\[\]<>()#+.!|&~-]/g,'\\$&')+'](<'+card.url.replace(/</g,'%3C').replace(/>/g,'%3E')+'> "'+articleReferenceTitle(card)+'")'}
 
 const span=(name:string,value:string):DOMOutputSpec=>['span',{class:name},value]
 function detailSpec(card:ArticleCard):DOMOutputSpec[]{
-  const children:DOMOutputSpec[]=[span('content-card__title',card.title)]
+  const children:DOMOutputSpec[]=[span('content-card__title',card.title||labels[card.type])]
   if(card.subtitle)children.push(span('content-card__subtitle',card.subtitle))
   if(card.description)children.push(span('content-card__description',card.description))
   const stats=[]
@@ -63,6 +72,7 @@ function detailSpec(card:ArticleCard):DOMOutputSpec[]{
   return children
 }
 export function articleCardSpec(card:ArticleCard):DOMOutputSpec {
+  if(isInternalArticleCard(card.type))return ['a',{class:'content-card content-card--'+card.type,href:card.url,'data-internal-card-state':'pending'},['span',{class:'content-card__body'},span('content-card__title',labels[card.type]+'引用'),span('content-card__description','正在读取公开内容…')]]
   const children:DOMOutputSpec[]=[]
   if(card.image_url)children.push(['img',{class:'content-card__image',src:card.image_url,alt:'',loading:'lazy',referrerpolicy:'no-referrer'}])
   children.push(['span',{class:'content-card__body'},span('content-card__eyebrow',labels[card.type]),...detailSpec(card)])
@@ -81,10 +91,11 @@ export const ArticleCardNode=TiptapNode.create<{onEdit?:(position:number)=>void}
   parseMarkdown(token,helpers){if(token.lang!=='painter-card'||typeof token.text!=='string'||!parseArticleCard(token.text))return [];return helpers.createNode('articleCard',{snapshot:token.text})},
   renderMarkdown(node){return '```painter-card\n'+String(node.attrs?.snapshot||'')+'\n```'},
   addNodeView(){return ({node,editor,getPos})=>{
-    const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node';wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
+    const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
     if(card)wrapper.append(DOMSerializer.renderSpec(document,articleCardSpec(card)).dom)
     const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent='编辑卡片';edit.setAttribute('aria-label','编辑'+(card?.title||'内容')+'卡片');edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
-    wrapper.querySelector('a')?.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
+    wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
+    // DocumentEditor rescans through initArticleCards after initial mount and every document update.
     return {dom:wrapper,stopEvent:event=>event.target===edit,ignoreMutation:()=>true}
   }},
 })

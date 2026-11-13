@@ -1,3 +1,5 @@
+import {registerHomeSnapSource} from './homeSnap'
+
 const clamp = (v: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v))
 const smooth = (a: number, b: number, v: number) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t) }
 
@@ -11,23 +13,32 @@ export function initHomeShowcase() {
   const record = document.querySelector<HTMLElement>('[data-record-wall]')
   const reverse = journey?.dataset.collectionDirection === 'music-games'
   const recordStage = record?.querySelector<HTMLElement>('.home-record-stage')
+  const recordGrid = record?.querySelector<HTMLElement>('.home-record-grid')
+  const gameTile = reverse ? record?.querySelector<HTMLElement>('[data-record-game-tile]') : undefined
+  const gameTileArt = gameTile?.querySelector<HTMLImageElement>('[data-game-tile-hero]')
+  const firstGameArt = frames[0]?.querySelector<HTMLImageElement>('[data-game-hero]')
+  let tile = {left:0, top:0, width:0, height:0}, recordTravel = 0
   let origin = {top:37.5,right:33.33,bottom:37.5,left:50}
-  const nav = story?.querySelector<HTMLElement>('[data-game-nav]')
-  const jumps = Array.from(nav?.querySelectorAll<HTMLButtonElement>('[data-game-jump]') || [])
   const reduced = matchMedia('(prefers-reduced-motion:reduce)')
   const configured = document.body.dataset.homeMotion !== 'false'
-  let queued = 0, near = true, viewport = 1, active = -1
+  let queued = 0, near = true, viewport = 1, viewportWidth = 1, active = -1
   const notifyMediaLayout = () => { if (story || record) dispatchEvent(new Event('painter:home-media-layout')) }
 
-  document.querySelectorAll<HTMLImageElement>('[data-game-hero],[data-game-logo],[data-library-cover]').forEach(img => {
+  if (firstGameArt) firstGameArt.loading = 'eager'
+  if (gameTile && !gameTileArt) gameTile.classList.add('has-missing-art')
+  document.querySelectorAll<HTMLImageElement>('[data-game-hero],[data-game-tile-hero],[data-game-logo],[data-library-cover]').forEach(img => {
     const fail = () => {
-      if ((img.hasAttribute('data-game-hero') || img.hasAttribute('data-library-cover')) && img.dataset.fallback && img.src !== new URL(img.dataset.fallback, location.href).href) {
-        img.src = img.dataset.fallback
-        delete img.dataset.fallback
-        img.closest('.home-game-frame')?.classList.add('has-fallback-art')
+      // Both real surfaces must use the same fallback, including a failure that
+      // occurs while the wall cell is growing into the first full game scene.
+      const linked = img === firstGameArt || img === gameTileArt
+      const images = linked ? [firstGameArt, gameTileArt].filter((image): image is HTMLImageElement => !!image) : [img]
+      if (!img.hasAttribute('data-game-logo') && img.dataset.fallback && img.src !== new URL(img.dataset.fallback, location.href).href) {
+        const fallback = img.dataset.fallback
+        images.forEach(image => { image.src = fallback; delete image.dataset.fallback; image.hidden = false; image.closest('.home-game-frame')?.classList.add('has-fallback-art') })
         return
       }
-      img.hidden = true
+      images.forEach(image => { image.hidden = true })
+      if (linked) gameTile?.classList.add('has-missing-art')
       if (img.hasAttribute('data-game-logo')) img.closest('.game-identity')?.classList.add('has-missing-logo')
     }
     img.addEventListener('error', fail)
@@ -42,9 +53,15 @@ export function initHomeShowcase() {
     story?.style.removeProperty('height')
     if (aperture) { aperture.inert = false; aperture.removeAttribute('style') }
     frames.forEach(frame => { frame.inert = false; frame.removeAttribute('aria-hidden'); frame.removeAttribute('style'); frame.classList.remove('is-current') })
-    if (nav) nav.hidden = true
     record?.style.removeProperty('--record-drift')
-    record?.querySelector('[data-record-game-origin]')?.removeAttribute('data-record-game-origin')
+    record?.style.removeProperty('--record-caption-opacity')
+    recordGrid?.style.removeProperty('--record-cell')
+    recordGrid?.style.removeProperty('--record-columns')
+    gameTile?.classList.remove('is-record-game-tile-enhanced')
+    if (gameTile) {
+      gameTile.inert = false
+      for (const name of ['column','row','width','height','x','y','opacity','progress','shade']) gameTile.style.removeProperty('--record-game-' + name)
+    }
     active = -1
     if (story) delete story.dataset.gameFocusRetained
     notifyMediaLayout()
@@ -61,16 +78,34 @@ export function initHomeShowcase() {
     story.dataset.gameFocusRetained = String(focused)
     const opening = enter * (1 - exit)
     if (reverse) {
+      // A scroll distance of one viewport moves the actual square-cell sheet
+      // upward by one viewport. No cover copies, stretching or pinned still.
+      const recordUnits = record ? -record.getBoundingClientRect().top / viewport : 0
+      record?.style.setProperty('--record-drift', `${-recordTravel * clamp(recordUnits)}px`)
+      record?.style.setProperty('--record-caption-opacity', String(1 - smooth(0,.28,units)))
       for (const side of ['top','right','bottom','left'] as const) {
         const end = side === 'top' || side === 'bottom' ? 40 : 24
         aperture.style.setProperty('--game-mask-' + side, (origin[side] * (1 - enter) + end * exit).toFixed(3) + '%')
       }
       aperture.style.setProperty('--game-mask-radius', String(12 * (1 - enter) + 20 * exit) + 'px')
-      aperture.style.setProperty('--game-reveal-opacity', String(focused ? 1 : smooth(0,.12,units) * (1 - smooth(.78,1,exit))))
-      // Finish the identity/control fade before the aperture begins closing.
-      const ui = focused ? 1 : smooth(.55,1,enter) * (1 - smooth(frames.length+.7,frames.length+1,units))
+      // Until 1.2H, the only visible game image is the real grid cell itself.
+      // At the handoff its image crop and shading exactly match the full frame.
+      const handedOff = enter >= 1
+      aperture.style.setProperty('--game-reveal-opacity', String(focused ? 1 : (handedOff ? 1 : 0) * (1 - smooth(.78,1,exit))))
+      const ui = focused ? 1 : smooth(1.2,1.55,units) * (1 - smooth(frames.length+.7,frames.length+1,units))
       aperture.style.setProperty('--game-ui-opacity', String(ui))
-      aperture.inert = !focused && (enter < .65 || ui < .1)
+      aperture.style.pointerEvents = handedOff || focused ? '' : 'none'
+      aperture.inert = !focused && (!handedOff || ui < .1)
+      if (gameTile) {
+        gameTile.style.setProperty('--record-game-x', `${-tile.left * enter}px`)
+        gameTile.style.setProperty('--record-game-y', `${-(tile.top - recordTravel) * enter}px`)
+        gameTile.style.setProperty('--record-game-width', `${tile.width + (viewportWidth - tile.width) * enter}px`)
+        gameTile.style.setProperty('--record-game-height', `${tile.height + (viewport - tile.height) * enter}px`)
+        gameTile.style.setProperty('--record-game-opacity', handedOff ? '0' : '1')
+        gameTile.style.setProperty('--record-game-progress', String(enter))
+        gameTile.style.setProperty('--record-game-shade', String(.12 + .88 * enter))
+        gameTile.inert = enter > 0
+      }
     } else {
       aperture.style.setProperty('--game-mask-y', ((1 - opening) * 50).toFixed(3) + '%')
       aperture.style.setProperty('--game-mask-x', ((1 - opening) * 12).toFixed(3) + '%')
@@ -90,7 +125,7 @@ export function initHomeShowcase() {
       frame.inert = i !== current
       frame.setAttribute('aria-hidden', String(i !== current))
     })
-    if (active !== current) { active = current; jumps.forEach((button, i) => button.setAttribute('aria-pressed', String(i === current))); story.dataset.gameActive = String(current) }
+    if (active !== current) { active = current; story.dataset.gameActive = String(current) }
     story.dataset.gamePhase = units < (reverse ? 1.2 : .45) ? 'enter' : exit > 0 ? 'exit' : 'scenes'
     if (record && !reverse) record.style.setProperty('--record-drift', (clamp((innerHeight - record.getBoundingClientRect().top) / (innerHeight * 2)) * -40).toFixed(2) + 'px')
     notifyMediaLayout()
@@ -101,30 +136,48 @@ export function initHomeShowcase() {
     story.classList.add('is-enhanced')
     journey?.classList.add(reverse ? 'is-record-game-journey' : 'is-game-journey')
     viewport = Math.max(1, stage.clientHeight)
+    viewportWidth = Math.max(1, stage.clientWidth)
     story.style.height = String(viewport * (frames.length + (reverse ? 3 : 2))) + 'px'
-    if (reverse && recordStage) {
+    if (reverse && recordStage && recordGrid && gameTile) {
       const box = recordStage.getBoundingClientRect()
-      const tiles = Array.from(recordStage.querySelectorAll<HTMLElement>('.home-record-tile'))
-      const tile = tiles.reduce<HTMLElement | undefined>((best,item) => {
-        const score = (node:HTMLElement) => { const r=node.getBoundingClientRect();return Math.hypot((r.left+r.width/2-box.left)/box.width-.52,(r.top+r.height/2-box.top)/box.height-.46) }
-        return !best || score(item)<score(best) ? item : best
-      },undefined)
-      if (tile && box.width && box.height) {
-        record?.querySelector('[data-record-game-origin]')?.removeAttribute('data-record-game-origin')
-        tile.dataset.recordGameOrigin = 'true'
-        const r=tile.getBoundingClientRect()
-        origin={top:clamp((r.top-box.top)/box.height)*100,right:clamp((box.right-r.right)/box.width)*100,bottom:clamp((box.bottom-r.bottom)/box.height)*100,left:clamp((r.left-box.left)/box.width)*100}
-      }
+      const preferredColumns = matchMedia('(max-width:720px)').matches ? 2 : 4
+      const itemCount = recordGrid.children.length
+      let columns = preferredColumns
+      // A tall viewport needs fewer real, square-cover columns to supply a
+      // full viewport of travel. Sparse collections never acquire fake tiles.
+      while (columns > 1 && Math.ceil(itemCount / columns) * (box.width / columns) < viewport * 2) columns--
+      const cell = box.width / columns
+      const rows = Math.max(1, Math.ceil(itemCount / columns))
+      recordGrid.style.setProperty('--record-columns', String(columns))
+      recordGrid.style.setProperty('--record-cell', `${cell}px`)
+      recordTravel = Math.min(viewport, Math.max(0, rows * cell - viewport))
+      const row = clamp(Math.round((recordTravel + viewport * .5 - cell / 2) / cell), 0, rows - 1)
+      const column = matchMedia('(max-width:720px)').matches ? 0 : Math.floor(columns / 2)
+      gameTile.style.setProperty('--record-game-column', String(column + 1))
+      gameTile.style.setProperty('--record-game-row', String(row + 1))
+      tile = {left:column * cell, top:row * cell, width:cell, height:cell}
+      const top = tile.top - recordTravel
+      origin = {top:clamp(top / viewport) * 100, right:clamp((box.width - tile.left - cell) / box.width) * 100, bottom:clamp((viewport - top - cell) / viewport) * 100, left:clamp(tile.left / box.width) * 100}
+      gameTile.classList.add('is-record-game-tile-enhanced')
     }
-    if (nav) nav.hidden = false
     render()
+    // Work/point morph initializes first; its 25th surface must use this final
+    // square-grid slot, not the pre-enhancement layout or a transformed rect.
+    dispatchEvent(new Event('painter:home-work-measure'))
   }
   function jump(index: number) {
     if (!enabled() || !story) return
     scrollTo({top: scrollY + story.getBoundingClientRect().top + (index + (reverse ? 1.6 : .8)) * viewport, behavior: 'instant'})
     render()
   }
-  jumps.forEach((button, i) => button.addEventListener('click', () => jump(i)))
+  if (story) registerHomeSnapSource(story, () => {
+    if (!enabled()) return []
+    const start = scrollY + story.getBoundingClientRect().top
+    return frames.map((_, index) => {
+      const offset = index + (reverse ? 1.4 : .6)
+      return {key:`game-${index}`, top:start + (offset + .24) * viewport, from:start + (offset + .08) * viewport, to:start + (offset + .48) * viewport}
+    })
+  })
   story?.addEventListener('focusin', event => {
     const frame = (event.target as HTMLElement).closest<HTMLElement>('[data-game-frame]')
     if (frame && enabled()) jump(frames.indexOf(frame))
@@ -137,6 +190,7 @@ export function initHomeShowcase() {
   addEventListener('scroll', () => schedule(), {passive: true})
   addEventListener('resize', measure, {passive: true})
   reduced.addEventListener('change', measure)
+  document.fonts.ready.then(measure)
   document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelAnimationFrame(queued); queued = 0 } else schedule() })
   measure()
 }

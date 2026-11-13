@@ -315,15 +315,28 @@ func TestHomeSSRDefaultsPreserveIntroductionAndEmptyWalls(t *testing.T) {
 	a, calls := homeSSRApp(t)
 	_, owner, _ := testIdentity(t, a, "owner")
 	homeSSRProfile(t, a)
+	// Legacy writing copy remains configurable, but the introduction now renders
+	// the inherited profile rather than the old writing scene.
+	config, _ := homeTestConfig(t, a, owner)
+	for key, want := range map[string]string{
+		"writing_title":       "把想法，\n变成文字。",
+		"writing_description": "技术笔记，也有日常。\n把想法写下来，和你分享。",
+	} {
+		if config[key] != want {
+			t.Fatalf("default %s changed: got %q, want %q", key, config[key], want)
+		}
+	}
+	compactText := func(value string) string { return strings.Join(strings.Fields(value), "") }
 	for _, cookie := range []*http.Cookie{nil, owner} {
 		doc := homeSSRDocument(t, a, cookie)
 		if !reflect.DeepEqual(homeSSRSections(doc), []string{"intro", "articles", "closing"}) {
 			t.Fatal("migration changed existing sections", homeSSRSections(doc))
 		}
 		intro := homeSSRSection(doc, "intro")
-		text := friendWebText(intro)
-		for _, want := range []string{"你好，我是", "SiteInheritedNameFixture", "SiteInheritedDescriptionFixture", "SiteInheritedRoleFixture", "把想法，\n变成文字。", "技术笔记，也有日常。\n把想法写下来，和你分享。", "向下探索"} {
-			if !strings.Contains(text, want) {
+		// Presentation may split the same copy across spans or whitespace.
+		text := compactText(friendWebText(intro))
+		for _, want := range []string{"你好，我是", "SiteInheritedNameFixture", "SiteInheritedDescriptionFixture", "SiteInheritedRoleFixture", "向下探索"} {
+			if !strings.Contains(text, compactText(want)) {
 				t.Fatal("default introduction copy/real profile missing", want)
 			}
 		}

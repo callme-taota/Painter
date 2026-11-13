@@ -1,9 +1,68 @@
+import './raycast-search.css'
+
 type Suggestion={kind:'post'|'tag';label:string;url:string}
-export function initSearch(){const dialog=document.querySelector<HTMLDialogElement>('#site-search');if(!dialog||!dialog.showModal)return;const input=dialog.querySelector<HTMLInputElement>('input[name=q]')!,list=dialog.querySelector<HTMLElement>('[role=listbox]')!,status=dialog.querySelector<HTMLElement>('[data-search-status]')!,form=dialog.querySelector<HTMLFormElement>('form')!;let items:Suggestion[]=[],active=-1,timer:ReturnType<typeof setTimeout>,abort:AbortController|undefined,seq=0,composing=false,opener:HTMLElement|null=null
-function select(index:number){active=index;list.querySelectorAll('[role=option]').forEach((el,i)=>el.setAttribute('aria-selected',String(i===active)));if(index<0)input.removeAttribute('aria-activedescendant');else input.setAttribute('aria-activedescendant','search-option-'+index);list.children[index]?.scrollIntoView({block:'nearest'})}
-function clear(){items=[];active=-1;list.replaceChildren();input.removeAttribute('aria-activedescendant')}
-async function suggest(){abort?.abort();const controller=new AbortController();abort=controller;const at=++seq,q=input.value.trim();clear();status.textContent='正在查找…';try{const r=await fetch('/api/v1/search/suggestions?q='+encodeURIComponent(q),{signal:controller.signal});if(!r.ok)throw new Error();const data=await r.json();if(at!==seq||input.value.trim()!==q||!dialog!.open||composing)return;items=(data.items||[]).filter((x:Suggestion)=>typeof x.url==='string'&&x.url.startsWith('/')&&!x.url.startsWith('//'));for(const [i,item]of items.entries()){const option=document.createElement('li');option.id='search-option-'+i;option.role='option';option.setAttribute('aria-selected','false');const link=document.createElement('a');link.href=item.url;link.tabIndex=-1;const kind=document.createElement('small');kind.className='suggestion-kind';kind.textContent=item.kind==='tag'?'标签':'文章';const label=document.createElement('span');label.textContent=item.label;link.append(kind,label);option.append(link);option.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&!e.buttons)select(i)});list.append(option)}status.textContent=items.length?(q?'建议结果':'最近的文章与标签'):(q?'没有建议，按 Enter 查看完整搜索。':'还没有公开内容。')}catch(e){if((e as Error).name!=='AbortError'&&at===seq)status.textContent='建议暂不可用，仍可按 Enter 搜索。'}}
-function open(e?:Event){e?.preventDefault();if(dialog!.open)return;opener=document.activeElement as HTMLElement;dialog!.showModal();input.focus();input.setAttribute('aria-expanded','true');void suggest()}
-document.querySelectorAll('[data-search-open]').forEach(el=>el.addEventListener('click',open));dialog.addEventListener('close',()=>{abort?.abort();seq++;input.setAttribute('aria-expanded','false');opener?.focus()});dialog.querySelector('[data-search-close]')?.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const box=dialog.getBoundingClientRect();if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)dialog.close()}})
-input.addEventListener('input',()=>{clearTimeout(timer);abort?.abort();seq++;clear();if(!composing){status.textContent='正在查找…';timer=setTimeout(()=>void suggest(),180)}});input.addEventListener('compositionstart',()=>{composing=true;clearTimeout(timer);abort?.abort();seq++});input.addEventListener('compositionend',()=>{composing=false;clearTimeout(timer);timer=setTimeout(()=>void suggest(),180)});input.addEventListener('keydown',e=>{if(e.isComposing||composing)return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(items.length)select(active<0?(e.key==='ArrowDown'?0:items.length-1):(active+(e.key==='ArrowDown'?1:-1)+items.length)%items.length)}else if(e.key==='Enter'&&active>=0){e.preventDefault();list.children[active]?.querySelector<HTMLAnchorElement>('a')?.click()}});form.addEventListener('submit',e=>{if(composing){e.preventDefault();return}if(!input.value.trim())e.preventDefault()});document.addEventListener('keydown',e=>{if(e.isComposing||e.repeat)return;const editing=(e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true],.cm-editor');if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){if(editing&&!dialog.open)return;e.preventDefault();open()}else if(e.key==='/'&&!editing&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();open()}})
+type SearchItem=Suggestion|{kind:'command';label:string;url:string;detail:string;icon:'post'|'image'|'quote'}
+const commands:SearchItem[]=[
+  {kind:'command',label:'浏览文章',url:'/posts',detail:'文章列表',icon:'post'},
+  {kind:'command',label:'查看动态',url:'/moments',detail:'日常与图片',icon:'image'},
+  {kind:'command',label:'读一句片语',url:'/phrases',detail:'句子与词语',icon:'quote'},
+]
+const paths={search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',post:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',tag:'<path d="M20 13 13 20a2 2 0 0 1-3 0l-8-8V3h9l9 8a2 2 0 0 1 0 2Z"/><circle cx="7" cy="7" r="1"/>',image:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="m4 17 5-5 4 3 3-5 5 6"/><circle cx="8" cy="9" r="1"/>',quote:'<path d="M10 7H4v6h6V7Zm10 0h-6v6h6V7ZM4 13c0 4 2 5 4 5m6-5c0 4 2 5 4 5"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>'}
+function icon(name:keyof typeof paths){const el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.classList.add('raycast-search-icon');el.setAttribute('viewBox','0 0 24 24');el.setAttribute('aria-hidden','true');el.innerHTML=paths[name];return el}
+function safeSuggestion(value:unknown):Suggestion|undefined{
+  if(!value||typeof value!=='object')return
+  const item=value as Partial<Suggestion>
+  if((item.kind!=='post'&&item.kind!=='tag')||typeof item.label!=='string'||typeof item.url!=='string'||!item.url.startsWith('/')||item.url.startsWith('//'))return
+  try{const url=new URL(item.url,location.origin);if(url.origin===location.origin)return{kind:item.kind,label:item.label,url:url.pathname+url.search+url.hash}}catch{return}
+}
+export function initSearch(){
+  const found=document.querySelector<HTMLDialogElement>('#site-search')
+  if(!found?.showModal||found.dataset.raycastSearchReady)return
+  const foundInput=found.querySelector<HTMLInputElement>('input[name=q]'),foundList=found.querySelector<HTMLElement>('[role=listbox]'),foundStatus=found.querySelector<HTMLElement>('[data-search-status]'),foundForm=found.querySelector<HTMLFormElement>('form')
+  if(!foundInput||!foundList||!foundStatus||!foundForm)return
+  const dialog=found,input=foundInput,list=foundList,status=foundStatus,form=foundForm
+  dialog.dataset.raycastSearchReady='true';dialog.classList.add('raycast-search')
+  // Progressive enhancement keeps the original SSR form and established selectors.
+  const row=input.closest('.quick-search-row')
+  if(row){const lens=icon('search');lens.classList.add('raycast-search-input-icon');row.prepend(lens);const submit=row.querySelector<HTMLButtonElement>('button');if(submit){submit.setAttribute('aria-label','查看完整搜索结果');submit.title='查看完整搜索结果';submit.replaceChildren(icon('arrow'));submit.classList.add('raycast-search-submit')}const close=dialog.querySelector<HTMLButtonElement>('[data-search-close]');if(close){close.type='button';close.title='关闭搜索（Esc）';row.append(close)}}
+  input.placeholder='搜索文章、标签，或跳转…';input.setAttribute('aria-describedby','raycast-search-status');status.id='raycast-search-status';status.setAttribute('aria-live','polite')
+  const footer=dialog.querySelector<HTMLElement>('.search-dialog-foot'),fullSearch=footer?.querySelector<HTMLAnchorElement>('a')
+  if(footer){const hints=document.createElement('div');hints.className='raycast-search-keys';for(const [label,keys,css] of [['选择',['↑','↓'],''],['打开',['Enter'],''],['关闭',['Esc'],'raycast-search-key-close']] as const){const group=document.createElement('span');group.className=css;const text=document.createElement('span');text.textContent=label;group.append(text);for(const key of keys){const kbd=document.createElement('kbd');kbd.textContent=key;group.append(kbd)}hints.append(group)}footer.replaceChildren(hints);if(fullSearch){fullSearch.replaceChildren(document.createTextNode('完整搜索'),icon('arrow'));footer.append(fullSearch)}}
+  let items:SearchItem[]=[],options:HTMLElement[]=[],active=-1,timer:ReturnType<typeof setTimeout>|undefined,abort:AbortController|undefined,seq=0,composing=false,opener:HTMLElement|null=null
+  function select(index:number){active=index;options.forEach((el,i)=>el.setAttribute('aria-selected',String(i===index)));if(index<0)input.removeAttribute('aria-activedescendant');else{input.setAttribute('aria-activedescendant','search-option-'+index);options[index]?.scrollIntoView({block:'nearest'})}}
+  function clear(){items=[];options=[];active=-1;list.replaceChildren();input.removeAttribute('aria-activedescendant')}
+  function showStatus(text:string,quiet=false){status.textContent=text;status.classList.toggle('raycast-search-status-quiet',quiet)}
+  function busy(value:boolean){dialog.toggleAttribute('data-search-loading',value);list.setAttribute('aria-busy',String(value))}
+  function cancelPending(){clearTimeout(timer);abort?.abort();seq++}
+  function render(suggestions:Suggestion[],q:string){
+    clear();items=q?suggestions:[...suggestions,...commands];let previousGroup='';const fragment=document.createDocumentFragment()
+    for(const [index,item] of items.entries()){
+      const group=item.kind==='command'?'站内入口':item.kind==='tag'?'标签':q?'匹配文章':'最近文章'
+      if(group!==previousGroup){const heading=document.createElement('li');heading.role='presentation';heading.className='raycast-search-group';heading.textContent=group;fragment.append(heading);previousGroup=group}
+      const option=document.createElement('li');option.id='search-option-'+index;option.role='option';option.setAttribute('aria-selected','false');option.dataset.searchKind=item.kind
+      const link=document.createElement('a');link.href=item.url;link.tabIndex=-1
+      const mark=document.createElement('span');mark.className='raycast-search-item-icon';mark.append(icon(item.kind==='command'?item.icon:item.kind))
+      const label=document.createElement('span');label.className='raycast-search-label';label.textContent=item.label
+      const detail=document.createElement('small');detail.className='suggestion-kind';detail.textContent=item.kind==='command'?item.detail:item.kind==='tag'?'标签':'文章'
+      const action=icon('arrow');action.classList.add('raycast-search-item-action');link.append(mark,label,detail,action);option.append(link)
+      option.addEventListener('pointermove',event=>{if(event.pointerType==='mouse'&&!event.buttons)select(index)});options.push(option);fragment.append(option)
+    }
+    list.append(fragment);if(fullSearch)fullSearch.href=q?'/search?q='+encodeURIComponent(q):'/search'
+  }
+  async function suggest(){
+    abort?.abort();const controller=new AbortController();abort=controller;const at=++seq,q=input.value.trim();clear();busy(true);showStatus('正在查找…')
+    try{const response=await fetch('/api/v1/search/suggestions?q='+encodeURIComponent(q),{signal:controller.signal});if(!response.ok)throw new Error('suggestions unavailable');const data=await response.json();if(at!==seq||input.value.trim()!==q||!dialog.open||composing)return;const suggestions:Suggestion[]=Array.isArray(data.items)?data.items.map(safeSuggestion).filter((x:Suggestion|undefined):x is Suggestion=>!!x):[];render(suggestions,q);showStatus(suggestions.length?(q?'搜索建议':'最近的文章与标签'):(q?'没有建议，按 Enter 查看完整搜索。':'从站内入口开始，或输入关键词。'),suggestions.length>0)}
+    catch(error){if((error as Error).name!=='AbortError'&&at===seq&&dialog.open&&!composing){render([],q);showStatus(q?'建议暂不可用，仍可按 Enter 搜索。':'建议暂不可用，可先打开站内页面。')}}finally{if(at===seq)busy(false)}
+  }
+  function schedule(){cancelPending();clear();if(fullSearch)fullSearch.href=input.value.trim()?'/search?q='+encodeURIComponent(input.value.trim()):'/search';if(composing){busy(false);showStatus('输入完成后查找。');return}busy(true);showStatus('正在查找…');timer=setTimeout(()=>void suggest(),180)}
+  function open(event?:Event){event?.preventDefault();if(dialog.open)return;opener=document.activeElement instanceof HTMLElement?document.activeElement:null;dialog.showModal();input.focus();input.setAttribute('aria-expanded','true');void suggest()}
+  document.querySelectorAll('[data-search-open]').forEach(el=>el.addEventListener('click',open))
+  dialog.addEventListener('close',()=>{cancelPending();busy(false);input.setAttribute('aria-expanded','false');if(opener?.isConnected)opener.focus({preventScroll:true})})
+  dialog.addEventListener('cancel',event=>{if(composing)event.preventDefault()})
+  dialog.querySelector('[data-search-close]')?.addEventListener('click',()=>dialog.close())
+  dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)dialog.close()})
+  input.addEventListener('input',schedule);input.addEventListener('compositionstart',()=>{composing=true;schedule()});input.addEventListener('compositionend',()=>{composing=false;schedule()})
+  input.addEventListener('keydown',event=>{if(event.isComposing||composing)return;if(event.key==='Escape'){event.preventDefault();dialog.close();return}if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();if(items.length)select(active<0?(event.key==='ArrowDown'?0:items.length-1):(active+(event.key==='ArrowDown'?1:-1)+items.length)%items.length)}else if(event.key==='Enter'&&active>=0){event.preventDefault();options[active]?.querySelector<HTMLAnchorElement>('a')?.click()}})
+  form.addEventListener('submit',event=>{if(composing||!input.value.trim())event.preventDefault()})
+  document.addEventListener('keydown',event=>{if(event.isComposing||event.repeat)return;const editing=(event.target as HTMLElement)?.closest('input,textarea,select,[contenteditable]:not([contenteditable=false]),.cm-editor');if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){if(editing&&!dialog.open)return;event.preventDefault();open()}else if(event.key==='/'&&!editing&&!event.ctrlKey&&!event.metaKey&&!event.altKey){event.preventDefault();open()}})
 }

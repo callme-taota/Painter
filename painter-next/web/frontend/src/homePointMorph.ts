@@ -24,14 +24,46 @@ function sample<T>(items: T[], count: number): T[] {
   return Array.from({length: size}, (_, index) => items[Math.floor((index + .5) * items.length / size)]!)
 }
 
+// A complete cartesian block, never the diamond produced by radial sampling.
+// Keep the same visual (row, column) at both ends so every in-between frame is
+// a regular grid too, including when the game occupies an earlier visual slot.
+function centralBlock(pool: DayFrame[], columns: number, rows: number): DayFrame[] {
+  if (!pool.length || !columns || !rows) return []
+  const coordinate = (value: number) => Math.round(value * 100) / 100
+  const xs = [...new Set(pool.map(frame => coordinate(frame.left)))].sort((a, b) => a - b)
+  const ys = [...new Set(pool.map(frame => coordinate(frame.top)))].sort((a, b) => a - b)
+  const cells = new Map(pool.map(frame => [`${coordinate(frame.left)}:${coordinate(frame.top)}`, frame]))
+  const middle = {
+    x: (Math.min(...pool.map(frame => frame.left)) + Math.max(...pool.map(frame => frame.left + frame.width))) / 2,
+    y: (Math.min(...pool.map(frame => frame.top)) + Math.max(...pool.map(frame => frame.top + frame.height))) / 2,
+  }
+  let best: DayFrame[] = [], score = Infinity
+  for (let row = 0; row <= ys.length - rows; row++) {
+    for (let column = 0; column <= xs.length - columns; column++) {
+      const block: DayFrame[] = []
+      for (let y = row; y < row + rows; y++) for (let x = column; x < column + columns; x++) {
+        const cell = cells.get(`${xs[x]}:${ys[y]}`)
+        if (cell) block.push(cell)
+      }
+      if (block.length !== columns * rows) continue
+      const first = block[0]!, last = block[block.length - 1]!
+      const x = (first.left + last.left + last.width) / 2
+      const y = (first.top + last.top + last.height) / 2
+      const distance = (x - middle.x) ** 2 + (y - middle.y) ** 2
+      if (distance < score) { best = block; score = distance }
+    }
+  }
+  return best
+}
+
 // Geometry is read only during measure(). Scroll frames update a few shared
-// calendar scalars and the 24 saved cover surfaces; no new activity is authored.
+// calendar scalars and saved cover surfaces; no new activity is authored.
 export function createPointMorph(stage: HTMLElement, activity: HTMLElement, record?: HTMLElement) {
   const calendar = activity.querySelector<HTMLElement>('[data-activity-calendar]')
   const scroll = activity.querySelector<HTMLElement>('.activity-scroll')
   const days = Array.from(calendar?.querySelectorAll<HTMLElement>('[data-date]') || [])
   const recordStage = record?.querySelector<HTMLElement>('.home-record-stage')
-  const tiles = Array.from(record?.querySelectorAll<HTMLElement>('.home-record-tile') || []).slice(0, 24)
+  const tiles = Array.from(record?.querySelectorAll<HTMLElement>('.home-record-tile') || [])
   const layer = document.createElement('div')
   layer.className = 'point-record-layer'
   layer.setAttribute('aria-hidden', 'true')
@@ -39,18 +71,38 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
   layer.hidden = true
   stage.append(layer)
 
+  const sourceImages = new Map<HTMLImageElement, HTMLImageElement>()
+  function syncImage(source: HTMLImageElement, image: HTMLImageElement) {
+    for (const name of ['src', 'srcset', 'sizes']) {
+      const value = source.getAttribute(name)
+      if (value === null) image.removeAttribute(name)
+      else if (image.getAttribute(name) !== value) image.setAttribute(name, value)
+    }
+    image.hidden = source.hidden
+  }
+  const imageChanges = new MutationObserver(changes => {
+    for (const source of new Set(changes.map(change => change.target as HTMLImageElement))) {
+      const image = sourceImages.get(source)
+      if (image) syncImage(source, image)
+    }
+  })
   const surfaces = tiles.map(tile => {
     const surface = document.createElement('div')
     surface.className = 'point-record-surface'
+    if (tile.hasAttribute('data-record-game-tile')) surface.dataset.pointGame = 'true'
     const source = tile.querySelector<HTMLImageElement>('img')
     if (source) {
       const image = source.cloneNode(false) as HTMLImageElement
-      image.removeAttribute('id')
-      image.removeAttribute('data-home-cover')
+      // The projection follows its real image; it must not be registered as
+      // another native game hero or acquire its independent fallback handler.
+      for (const name of ['id', 'data-home-cover', 'data-game-tile-hero', 'data-game-hero', 'data-fallback']) image.removeAttribute(name)
       image.alt = ''
       image.loading = 'eager'
       image.decoding = 'async'
       image.addEventListener('error', () => { image.hidden = true })
+      image.addEventListener('load', () => { image.hidden = source.hidden })
+      sourceImages.set(source, image)
+      imageChanges.observe(source, {attributes: true, attributeFilter: ['src', 'srcset', 'sizes', 'hidden']})
       surface.append(image)
     }
     layer.append(surface)
@@ -116,48 +168,74 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
       return x + frame.width > viewport.left && x < viewport.right
     })
 
+    const recordBox = recordStage?.getBoundingClientRect()
+    const grid = record?.querySelector<HTMLElement>('.home-record-grid')
+    const cell = Number.parseFloat(grid?.style.getPropertyValue('--record-cell') || '')
+    const squareGrid = record?.closest('.is-record-game-journey') && Number.isFinite(cell) && cell > 0
+    const targets = surfaces.flatMap(({tile, surface}, index) => {
+      surface.hidden = true
+      const box = tile.getBoundingClientRect()
+      if (!recordBox || box.width <= 0 || box.height <= 0) return []
+      // Native offsets survive wall scrolling and expansion of its game cell.
+      const target = squareGrid ? {left: tile.offsetLeft, top: tile.offsetTop, width: cell, height: cell} : localRect(box, recordBox)
+      return [{tile, surface, index, target}]
+    }).sort((a, b) => a.target.top - b.target.top || a.target.left - b.target.left)
+    const columns = targets.filter(item => Math.abs(item.target.top - (targets[0]?.target.top || 0)) < .5).length
+    const nativeRows = [...new Set(targets.map(item => item.target.top))].sort((a, b) => a - b)
+    const selectedTargets: typeof targets = []
+    let rows = 0
+    for (const top of nativeRows) {
+      if (!recordBox || top >= recordBox.height || rows >= 7) break
+      const row = targets.filter(item => Math.abs(item.target.top - top) < .5)
+      if (row.length !== columns) break
+      selectedTargets.push(...row)
+      rows++
+    }
+    // Only the complete first-screen rectangle participates. The rest of the
+    // actual wall is below the viewport and enters through its native scroll.
     const past = visible.filter(frame => !frame.element.classList.contains('is-future'))
-    const sourcePool = past.length >= surfaces.length ? past : visible
-    const sources = sample(sourcePool, surfaces.length)
+    let sources = centralBlock(past, columns, rows)
+    if (!sources.length) sources = centralBlock(visible, columns, rows)
     chosenSources.forEach(day => day.classList.remove('point-record-origin'))
     chosenSources = new Set(sources.map(frame => frame.element))
     sourcesHidden = false
-    const recordBox = recordStage?.getBoundingClientRect()
+    layer.dataset.pointColumns = String(columns)
+    layer.dataset.pointRows = String(rows)
     covers = []
-    surfaces.forEach(({tile, surface}, index) => {
-      const source = sources[index]
-      const tileBox = tile.getBoundingClientRect()
-      if (!source || !recordBox || tileBox.width <= 0 || tileBox.height <= 0) {
-        surface.hidden = true
-        return
-      }
-      const target = localRect(tileBox, recordBox)
+    selectedTargets.forEach(({tile, surface, index, target}, position) => {
+      const source = sources[position]
+      if (!source) return
       surface.hidden = false
       surface.dataset.pointSourceDate = source.element.dataset.date || ''
       surface.dataset.pointRecordIndex = String(index)
+      surface.dataset.pointRow = String(Math.floor(position / columns))
+      surface.dataset.pointColumn = String(position % columns)
       surface.style.left = `${target.left}px`
       surface.style.top = `${target.top}px`
       surface.style.width = `${target.width}px`
       surface.style.height = `${target.height}px`
       surface.style.backgroundColor = source.color
       surface.style.boxShadow = source.shadow
+      if (tile.hasAttribute('data-record-game-tile')) {
+        const art = tile.querySelector<HTMLImageElement>('img'), image = surface.querySelector<HTMLImageElement>('img')
+        if (art && image) {
+          image.style.position = 'absolute'
+          image.style.inset = '-10% 0 auto'
+          image.style.height = '120%'
+          image.style.objectPosition = getComputedStyle(art).objectPosition
+        }
+      }
       covers.push({element: surface, source, target})
     })
 
     frames.forEach((frame, index) => {
       const point = center(frame)
       const origin = cards[index % cards.length] || fallback
-      const nearest = sources.reduce<DayFrame | undefined>((best, candidate) => {
-        if (!best) return candidate
-        const a = center(candidate), b = center(best)
-        return (a.x - point.x) ** 2 + (a.y - point.y) ** 2 < (b.x - point.x) ** 2 + (b.y - point.y) ** 2 ? candidate : best
-      }, undefined)
-      const destination = nearest ? center(nearest) : point
       frame.element.classList.add('point-calendar-day')
       frame.element.style.setProperty('--point-gather-x', `${origin.x - point.x}px`)
       frame.element.style.setProperty('--point-gather-y', `${origin.y - point.y}px`)
-      frame.element.style.setProperty('--point-resolve-x', `${destination.x - point.x}px`)
-      frame.element.style.setProperty('--point-resolve-y', `${destination.y - point.y}px`)
+      frame.element.style.setProperty('--point-resolve-x', '0px')
+      frame.element.style.setProperty('--point-resolve-y', '0px')
     })
     measured = true
     render(restoreCalendar, restoreRecords)
@@ -169,9 +247,9 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
     if (!measured) return
     activity.classList.add('point-calendar-active')
     const gather = 1 - smooth(0, 1, calendarProgress)
-    const resolve = smooth(0, .62, recordProgress)
     activity.style.setProperty('--point-gather', gather.toFixed(5))
-    activity.style.setProperty('--point-resolve', resolve.toFixed(5))
+    // Unselected days fade in place; only the central cover surfaces grow.
+    activity.style.setProperty('--point-resolve', '0')
     activity.style.setProperty('--point-day-alpha', (1 - smooth(.05, .62, recordProgress)).toFixed(5))
     setMoving((calendarProgress > 0 && calendarProgress < 1) || (recordProgress > 0 && recordProgress < 1))
 
@@ -216,6 +294,8 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
 
   function destroy() {
     reset()
+    imageChanges.disconnect()
+    sourceImages.clear()
     days.forEach(day => {
       day.classList.remove('point-calendar-day')
       for (const property of ['--point-gather-x', '--point-gather-y', '--point-resolve-x', '--point-resolve-y']) day.style.removeProperty(property)

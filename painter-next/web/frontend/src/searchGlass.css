@@ -1,0 +1,117 @@
+/* Search shares the navigation lens; only the backdrop is filtered. */
+[data-search-glass]{
+ --search-glass-tint:rgb(255 255 255 / .74);
+ --search-glass-line:rgb(24 24 27 / .12);
+ --search-glass-fill:rgb(24 24 27 / .055);
+ --muted:color-mix(in srgb,var(--ink) 78%,var(--paper));
+}
+html[data-theme=dark] [data-search-glass]{
+ --search-glass-tint:rgb(18 21 28 / .78);
+ --search-glass-line:rgb(255 255 255 / .15);
+ --search-glass-fill:rgb(255 255 255 / .07);
+}
+html[data-theme] [data-search-glass].liquid-glass-surface{
+ --liquid-glass-tint:var(--search-glass-tint);
+ --liquid-glass-blur:18px;
+}
+/* The panel owns its shadow so its rounded clip can contain one stable lens. */
+#site-search.raycast-search{
+ --raycast-line:var(--search-glass-line);
+ --raycast-shadow:0 20px 64px rgb(0 0 0 / .18),0 6px 20px rgb(0 0 0 / .06);
+ --raycast-backdrop:rgb(0 0 0 / .18);
+ border-radius:24px;
+ overflow:hidden;
+ scroll-padding:0;
+}
+#site-search.raycast-search[open]{display:flex;flex-direction:column}
+#site-search.raycast-search.liquid-glass-surface{box-shadow:var(--raycast-shadow)!important}
+#site-search.raycast-search>.liquid-glass-optics{box-shadow:none}
+#site-search.raycast-search[data-liquid-glass-mode=refract]>.liquid-glass-optics>.liquid-glass-backdrop,
+.search-filter-popover[data-search-glass][data-liquid-glass-mode=refract]>.liquid-glass-optics>.liquid-glass-backdrop{
+ -webkit-backdrop-filter:blur(14px) var(--liquid-glass-filter) saturate(1.35);
+ backdrop-filter:blur(14px) var(--liquid-glass-filter) saturate(1.35);
+}
+/* A single outer lens stays still while only suggestions scroll. */
+#site-search.raycast-search>form,
+#site-search.raycast-search .search-dialog-foot{
+ position:relative;
+ flex:none;
+ background:transparent;
+}
+#site-search.raycast-search [data-search-status]{flex:none}
+#site-search.raycast-search ul{
+ flex:0 1 auto;
+ min-height:0;
+ overflow:auto;
+ overscroll-behavior:contain;
+ scroll-padding-block:8px;
+ scrollbar-width:thin;
+ scrollbar-color:var(--search-glass-line) transparent;
+}
+#site-search.raycast-search .quick-search-row:focus-within{
+ box-shadow:inset 0 -1px color-mix(in srgb,var(--link) 65%,transparent);
+}
+#site-search.raycast-search .raycast-search-submit,
+#site-search.raycast-search .raycast-search-item-icon,
+#site-search.raycast-search kbd{
+ background:var(--search-glass-fill);
+}
+#site-search.raycast-search .raycast-search-submit:hover,
+#site-search.raycast-search [data-search-close]:hover,
+#site-search.raycast-search li[aria-selected=true]>a,
+#site-search.raycast-search li[role=option]>a:hover{
+ background:var(--search-glass-fill);
+ color:var(--ink);
+}
+#site-search.raycast-search li[aria-selected=true] .raycast-search-item-icon{
+ background:var(--search-glass-fill);
+}
+#site-search.raycast-search li[aria-selected=true] .suggestion-kind{color:var(--ink)}
+#site-search.raycast-search .raycast-search-submit{border-radius:10px}
+#site-search.raycast-search [data-search-close]{min-height:32px;height:32px;border-radius:8px}
+#site-search.raycast-search kbd{color:var(--ink)}
+#site-search.raycast-search .search-dialog-foot>a{color:color-mix(in srgb,var(--link) 60%,var(--ink))}
+html[data-theme=dark] #site-search.raycast-search{
+ --raycast-shadow:0 20px 64px rgb(0 0 0 / .38),0 6px 20px rgb(0 0 0 / .2);
+ --raycast-backdrop:rgb(0 0 0 / .26);
+}
+/* Results remain a reading surface; search tools use the same material. */
+.search-query-field[data-search-glass]{border-radius:var(--radius-surface)}
+.search-filter summary[data-search-glass]{border-radius:var(--radius-menu)}
+.search-filter summary[data-search-glass]>span:not(.liquid-glass-optics){color:var(--ink);font-weight:500}
+.search-filter summary[data-search-glass]>span:is([data-tag-count],[data-sort-label]){color:var(--muted);font-weight:400}
+.search-filter summary[data-search-glass]:hover{color:var(--ink)}
+.search-filter[open] summary[data-search-glass]{outline:1px solid var(--link);outline-offset:1px}
+.search-filter-popover[data-search-glass]{
+ display:flex;
+ flex-direction:column;
+ max-height:min(560px,65dvh);
+ overflow:visible;
+}
+.search-filter-popover[data-search-glass]>.filter-popover-heading,
+.search-filter-popover[data-search-glass]>input,
+.search-filter-popover[data-search-glass]>.filter-help,
+.search-filter-popover[data-search-glass]>.filter-done{flex:none}
+.search-filter-popover[data-search-glass] .search-tag-options{min-height:0;flex:0 1 auto}
+.search-filter-popover[data-search-glass] input[type=search]{background:var(--search-glass-fill);border-color:var(--search-glass-line)}
+.search-filter-popover[data-search-glass].sort-options fieldset{min-height:0;overflow:auto;overscroll-behavior:contain}
+@media(max-width:720px),(pointer:coarse){
+ #site-search.raycast-search{border-radius:22px}
+ #site-search.raycast-search .quick-search-row{min-height:76px;padding-block:10px}
+ #site-search.raycast-search .raycast-search-submit,
+ #site-search.raycast-search [data-search-close]{width:44px;min-width:44px;height:44px;min-height:44px}
+ #site-search.raycast-search .search-dialog-foot>a{min-height:28px}
+}
+/* Native fallback is solid; these modes also remove the compositing cost. */
+#site-search.raycast-search[data-liquid-glass-mode=solid],
+.reduce-transparency #site-search.raycast-search{
+ --raycast-line:var(--line);
+ --search-glass-fill:var(--subtle);
+}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
+ #site-search.raycast-search{--raycast-line:var(--line);--search-glass-fill:var(--subtle)}
+}
+@media(forced-colors:active){
+ #site-search.raycast-search.liquid-glass-surface{box-shadow:none!important}
+ #site-search.raycast-search .quick-search-row:focus-within{box-shadow:none;border-bottom:1px solid Highlight}
+}

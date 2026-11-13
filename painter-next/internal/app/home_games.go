@@ -17,15 +17,36 @@ type homeGamePage struct {
 	Title string `json:"t"`
 }
 
+func homeGameFilter(q url.Values) (string, error) {
+	platform := q.Get("platform")
+	if platform == "" {
+		platform = "all"
+	}
+	if len(q["platform"]) > 1 || (platform != "all" && platform != "steam" && platform != "psn") {
+		return "", E(400, "VALIDATION_FAILED", "游戏平台筛选可选 all、steam 或 psn")
+	}
+	return platform, nil
+}
+func homeGamesScope(order, platform string, limit int) string {
+	return "games:v2:" + platform + ":" + order + ":" + strconv.Itoa(limit)
+}
+
 func homePublicItem(item map[string]any) {
 	for _, field := range []string{"version", "created_at", "updated_at", "visible", "local_override"} {
 		delete(item, field)
 	}
 	if item["kind"] == "steam" {
+		platform, _ := item["platform"].(string)
+		platform = homeItemPlatform("steam", platform)
+		item["platform"] = platform
 		item["poster_url"] = item["image_url"]
 		id, _ := item["provider_id"].(string)
-		if homeDigits(id, 1, 10) {
-			item["poster_url"] = "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/library_600x900.jpg"
+		if platform == "steam" && homeDigits(id, 1, 10) {
+			// A ready upload is the owner's selected cover. Automatic Steam
+			// portrait art is only the default, never a replacement for that upload.
+			if media, _ := item["media_id"].(string); media == "" {
+				item["poster_url"] = "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/library_600x900.jpg"
+			}
 			if item["hero_url"] == "" {
 				item["hero_url"] = "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/library_hero.jpg"
 			}
@@ -47,6 +68,10 @@ func (a *App) gamesList(w http.ResponseWriter, r *http.Request) error {
 // apply to all readers, including owners. Home's display cap does not constrain
 // this collection. A zero homepage count hides that shelf, not the full library.
 func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, error) {
+	platform, e := homeGameFilter(q)
+	if e != nil {
+		return nil, e
+	}
 	order := q.Get("sort")
 	if order == "" {
 		order = "position"
@@ -58,7 +83,7 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 	if e != nil {
 		return nil, e
 	}
-	scope := "games:v1:" + order + ":" + strconv.Itoa(limit)
+	scope := homeGamesScope(order, platform, limit)
 	page := homeGamePage{Scope: scope, ID: "0", Value: -1}
 	cursor := q.Get("cursor")
 	if cursor != "" {
@@ -85,7 +110,7 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 		return nil, NotFound()
 	}
 	var total int
-	if e = tx.QueryRow(ctx, `SELECT count(*) FROM homepage_items WHERE kind='steam' AND visible`).Scan(&total); e != nil {
+	if e = tx.QueryRow(ctx, `SELECT count(*) FROM homepage_items WHERE kind='steam' AND visible AND ($1::text='all' OR platform=$1)`, platform).Scan(&total); e != nil {
 		return nil, e
 	}
 	condition, sorting := `(position,id)>($2::bigint,$3::bigint)`, `position,id`
@@ -97,10 +122,10 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 		condition = `(title COLLATE "C",id)>($4::text COLLATE "C",$3::bigint)`
 		sorting = `title COLLATE "C",id`
 	}
-	// Every branch references all four typed placeholders; order is a fixed enum,
+	// Every branch references all five typed placeholders; order is a fixed enum,
 	// never a user-supplied SQL expression. No query can widen public visibility.
-	statement := `SELECT ` + homeItemColumns + ` FROM homepage_items WHERE kind='steam' AND visible AND ($3::bigint=0 OR ` + condition + `) AND $4::text IS NOT NULL AND $2::bigint IS NOT NULL ORDER BY ` + sorting + ` LIMIT $1`
-	rows, e := tx.Query(ctx, statement, limit+1, page.Value, page.ID, page.Title)
+	statement := `SELECT ` + homeItemColumns + ` FROM homepage_items WHERE kind='steam' AND visible AND ($5::text='all' OR platform=$5) AND ($3::bigint=0 OR ` + condition + `) AND $4::text IS NOT NULL AND $2::bigint IS NOT NULL ORDER BY ` + sorting + ` LIMIT $1`
+	rows, e := tx.Query(ctx, statement, limit+1, page.Value, page.ID, page.Title, platform)
 	if e != nil {
 		return nil, e
 	}
@@ -141,7 +166,7 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 	if e = tx.Commit(ctx); e != nil {
 		return nil, e
 	}
-	return map[string]any{"items": items, "next_cursor": next, "cursor": next, "has_more": more, "limit": limit, "max_limit": 50, "total": total, "sort": order}, nil
+	return map[string]any{"items": items, "next_cursor": next, "cursor": next, "has_more": more, "limit": limit, "max_limit": 50, "total": total, "sort": order, "platform": platform}, nil
 }
 
 func steamAssetURL(id, format, filename string) string {

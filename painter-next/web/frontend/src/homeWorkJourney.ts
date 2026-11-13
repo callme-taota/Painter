@@ -1,5 +1,6 @@
 import './homeWorkJourney.css'
 import {createPointMorph, type PointMorphRect} from './homePointMorph'
+import {registerHomeSnapSource} from './homeSnap'
 
 const clamp=(value:number)=>Math.max(0,Math.min(1,value))
 const smooth=(a:number,b:number,v:number)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)}
@@ -49,6 +50,11 @@ export function initHomeWorkJourney(){
   let frames:CardFrame[]=[],source:PointMorphRect={left:0,top:0,width:1,height:1},queued=0,near=true,needsMeasure=true,enhanced=false,measuring=false,focusPin:number|undefined
   const end=record?6:4.45
   const enabled=()=>document.body.dataset.homeMotion!=='false'&&!reduced.matches&&CSS.supports('position','sticky')&&CSS.supports('background','color-mix(in srgb,white,black)')
+  registerHomeSnapSource(journey,()=>{
+   if(!enhanced||!enabled())return[]
+   const h=stage.clientHeight,start=scrollY+journey.getBoundingClientRect().top
+   return [['intro',.2,.1,.3],['projects',2.25,2.13,2.37],['calendar',4.05,3.93,4.17]].map(([key,at,from,to])=>({key:String(key),top:start+Number(at)*h,from:start+Number(from)*h,to:start+Number(to)*h}))
+  })
 
   function clearCard(card:HTMLElement){card.style.removeProperty('transform');card.style.removeProperty('opacity');card.style.removeProperty('--work-repo-alpha');card.style.removeProperty('--work-native-strength');card.style.removeProperty('--work-card-z');const link=card.querySelector<HTMLElement>('.project-card-link');if(link)for(const p of['background','border-radius','box-shadow'])link.style.removeProperty(p)}
   function reset(){

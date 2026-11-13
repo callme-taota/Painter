@@ -275,9 +275,24 @@ type contentCardResolveInput struct {
 	URL         string `json:"url"`
 	Title       string `json:"title,omitempty"`
 	Description string `json:"description,omitempty"`
+	RefID       string `json:"ref_id,omitempty"`
 }
 
 func (a *App) contentCardResolve(ctx context.Context, in contentCardResolveInput) (contentCard, error) {
+	if contentCardIsInternal(in.Type) {
+		id, e := contentCardInputReference(in)
+		if e != nil {
+			return contentCard{}, e
+		}
+		c := contentCard{V: 1, Type: in.Type, URL: contentCardInternalURL(in.Type, id), RefID: id}
+		if _, e = a.PublicContentCard(ctx, in.Type, id); e != nil {
+			return c, e
+		}
+		return c, nil
+	}
+	if in.RefID != "" {
+		return contentCard{}, contentCardInvalid("外部卡片不能包含站内引用编号")
+	}
 	c := contentCard{V: 1, Type: in.Type, URL: in.URL, MetadataSource: "provider", ResolvedAt: time.Now().UTC().Format(time.RFC3339)}
 	switch in.Type {
 	case "github":
@@ -439,8 +454,19 @@ func (a *App) resolveContentCard(w http.ResponseWriter, r *http.Request) error {
 	if e != nil {
 		return e
 	}
-	result, e := a.Write(r, []string{"author", "owner"}, false, false, func(_ pgx.Tx, _ Principal) (any, error) {
+	result, e := a.Write(r, []string{"author", "owner"}, false, false, func(tx pgx.Tx, _ Principal) (any, error) {
 		value := map[string]any{"card": c, "markdown": contentCardMarkdown(c)}
+		if contentCardIsInternal(c.Type) {
+			references, e := contentCardLookup(r.Context(), tx, []contentCard{c})
+			if e != nil {
+				return nil, e
+			}
+			reference, ok := references[c.Type+":"+c.RefID]
+			if !ok {
+				return nil, NotFound()
+			}
+			value["reference"] = reference
+		}
 		if c.Type == "link" {
 			value["inline_markdown"] = contentCardInlineMarkdown(c)
 		}

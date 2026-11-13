@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -13,29 +14,49 @@ import (
 
 // Config is trusted process configuration, never populated from HTTP parameters.
 type Config struct {
-	DatabaseURL        string
-	ListenAddr         string
-	PublicBaseURL      string
-	MediaDir           string
-	Environment        string
-	Demo               bool
-	EncryptionKey      []byte
-	AnalyticsHMACKey   []byte
-	MaxConnections     int32
-	UploadLimit        int64
-	GitHubClientID     string
-	GitHubClientSecret string
-	GitHubCallbackURL  string
-	BootstrapGitHubID  string
-	SetupToken         string
-	OAuthURL           string
-	TokenURL           string
-	ProfileURL         string
-	HTTPClient         *http.Client
+	DatabaseURL          string
+	ListenAddr           string
+	PublicBaseURL        string
+	EnforcePublicHTTPS   bool
+	TrustedProxyCIDRs    string
+	trustedProxyPrefixes []netip.Prefix
+	publicHTTPSOrigin    *url.URL
+	MediaDir             string
+	Environment          string
+	RunBackgroundWorkers *bool
+	Demo                 bool
+	EncryptionKey        []byte
+	AnalyticsHMACKey     []byte
+	MaxConnections       int32
+	UploadLimit          int64
+	GitHubClientID       string
+	GitHubClientSecret   string
+	GitHubCallbackURL    string
+	BootstrapGitHubID    string
+	SetupToken           string
+	OAuthURL             string
+	TokenURL             string
+	ProfileURL           string
+	HTTPClient           *http.Client
 }
 
 func ConfigFromEnv() (Config, error) {
 	c := Config{DatabaseURL: os.Getenv("DATABASE_URL"), ListenAddr: os.Getenv("LISTEN_ADDR"), PublicBaseURL: os.Getenv("PUBLIC_BASE_URL"), MediaDir: os.Getenv("MEDIA_DIR"), Environment: os.Getenv("ENVIRONMENT"), GitHubClientID: os.Getenv("GITHUB_CLIENT_ID"), GitHubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"), GitHubCallbackURL: os.Getenv("GITHUB_CALLBACK_URL"), BootstrapGitHubID: os.Getenv("BOOTSTRAP_GITHUB_ID")}
+	c.TrustedProxyCIDRs = os.Getenv("TRUSTED_PROXY_CIDRS")
+	if raw, present := os.LookupEnv("ENFORCE_PUBLIC_HTTPS"); present {
+		enabled, err := strconv.ParseBool(raw)
+		if err != nil {
+			return c, errors.New("ENFORCE_PUBLIC_HTTPS must be a valid boolean (true or false)")
+		}
+		c.EnforcePublicHTTPS = enabled
+	}
+	if raw, present := os.LookupEnv("RUN_BACKGROUND_WORKERS"); present {
+		enabled, err := strconv.ParseBool(raw)
+		if err != nil {
+			return c, errors.New("RUN_BACKGROUND_WORKERS must be a valid boolean (true or false)")
+		}
+		c.RunBackgroundWorkers = &enabled
+	}
 	var err error
 	c.SetupToken = os.Getenv("SETUP_TOKEN")
 	key := os.Getenv("APP_ENCRYPTION_KEY")
@@ -51,6 +72,12 @@ func ConfigFromEnv() (Config, error) {
 		return c, errors.New("ANALYTICS_HMAC_KEY must be base64 encoded 32 bytes")
 	}
 	return c, c.defaults()
+}
+
+// BackgroundWorkersEnabled preserves the established worker behavior when the
+// optional setting is absent, including callers that construct Config directly.
+func (c Config) BackgroundWorkersEnabled() bool {
+	return c.RunBackgroundWorkers == nil || *c.RunBackgroundWorkers
 }
 func decodeKey(s string) ([]byte, error) {
 	b, e := base64.StdEncoding.DecodeString(s)
@@ -88,6 +115,9 @@ func (c *Config) defaults() error {
 	c.PublicBaseURL = strings.TrimRight(c.PublicBaseURL, "/")
 	if c.Environment == "production" && u.Scheme != "https" {
 		return errors.New("production requires HTTPS PUBLIC_BASE_URL")
+	}
+	if err := c.configureTransportSecurity(u); err != nil {
+		return err
 	}
 	if len(c.EncryptionKey) != 32 || len(c.AnalyticsHMACKey) != 32 {
 		return errors.New("independent 32-byte EncryptionKey and AnalyticsHMACKey required")

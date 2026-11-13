@@ -13,6 +13,8 @@ colors:
   subtle: "#f4f4f5"
   primary-ink: "#fafafa"
   focus-ring: "#52525b"
+  link: "#0066cc"
+  link-hover: "#004d99"
   danger: "#b42318"
   success: "#146b4d"
   dark-accent: "#fafafa"
@@ -26,6 +28,8 @@ colors:
   dark-subtle: "#27272a"
   dark-primary-ink: "#18181b"
   dark-focus-ring: "#a1a1aa"
+  dark-link: "#2997ff"
+  dark-link-hover: "#72bbff"
   dark-danger: "#ffb4ab"
   dark-success: "#8ed9b5"
 typography:
@@ -72,8 +76,8 @@ rounded:
   control: "6px"
   menu: "8px"
   surface: "12px"
-  navigation: "24px"
-  navigation-mobile: "20px"
+  navigation: "999px"
+  navigation-mobile: "999px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -185,9 +189,11 @@ The normative values are in the frontmatter and implemented by `frontend/src/sha
 - **Hairline** (`line`): control strokes, table rows, panel boundaries and subtle structural separation.
 - **Destructive and saved state** (`danger`, `success`): actual errors, destructive actions and confirmed saves. Color supplements text and state semantics.
 
-**The Neutral Chrome Rule.** Shared interface chrome uses the neutral roles. Article artwork and user-selected author backgrounds remain saved content and do not define interface tokens.
+**The Neutral Chrome Rule.** Shared interface chrome uses the neutral roles. V31 adds a single blue role for text links and navigation selection; primary buttons and ordinary content surfaces remain neutral. Article artwork and user-selected author backgrounds remain saved content and do not define interface tokens.
 
-The legacy `glass` variable resolves to solid paper in both themes. Public navigation, floating tools and studio surfaces use no backdrop blur.
+V39 narrows that blue role to ordinary inline prose links, explicit reading actions and active navigation. Footer links, author metadata, structural navigation and secondary destinations use ink/muted with an underline on hover. Block reference cards retain neutral text. See [the V39 refinement brief](.impeccable/surfaces/details-v39.md).
+
+The legacy `glass` variable still resolves to solid paper. The explicitly requested public header, individual Dock controls and V37 search commands opt into a separate Liquid Glass functional layer: a generated rounded-edge displacement map, subtle channel separation, tint and highlight. Search uses one stable lens with a separately scrolling suggestion list; its filter popovers soften the underlying page so text never competes with text. Unsupported renderers use CSS blur/highlights, while reduced transparency and increased contrast use solid paper. Reading and studio surfaces stay solid. See [the V31 navigation brief](.impeccable/surfaces/navigation-v31.md) and [V37 search brief](.impeccable/surfaces/search-v37.md).
 
 ## Typography
 
@@ -218,19 +224,19 @@ The V17 density contract remains normative: ordinary controls and single-line op
 
 ## Elevation & Depth
 
-Fine borders and neutral surface changes carry most depth. The studio task surface, sidebar and panels are flat; popovers use one small shadow. Public controls may use the smallest shadow. Navigation and floating tools are solid, with no glass treatment.
+Fine borders and neutral surface changes carry most depth. The studio task surface, sidebar and panels are flat; popovers use one small shadow. V31 public navigation and individual Dock commands use the bounded glass material described above; the positioning rail has no surface of its own.
 
 ### Shadow Vocabulary
 
 - **Small control:** `0 1px 2px rgb(0 0 0 / .05)`; dark mode uses `.2` opacity.
 - **Popover:** `0 4px 14px rgb(0 0 0 / .09)`; dark mode uses `0 4px 16px rgb(0 0 0 / .24)`.
-- **Search dialog:** `0 12px 36px rgb(0 0 0 / .16)` above an unblurred dim backdrop.
+- **Search dialog:** `0 20px 64px rgb(0 0 0 / .18), 0 6px 20px rgb(0 0 0 / .06)` above an unblurred dim backdrop. Dark mode uses `.38` and `.2` opacities. The panel alone blurs its underlying content.
 
 The home paper illustration has its own artwork shadow. It is not a reusable elevation level for forms or panels.
 
 ## Shapes
 
-Central `style.css` variables own the radius scale: items/tags 4px, fields/buttons 6px, menus 8px and containers 12px. Public navigation retains its established 24px desktop / 20px mobile silhouette. Avatars and radio marks stay circular. The fullscreen mobile task surface has square outer corners; its inner components retain their normal radii.
+Central `style.css` variables own the radius scale: items/tags 4px, fields/buttons 6px, menus 8px and containers 12px. The V31 public header uses a fully rounded capsule at desktop and mobile sizes. Each Dock command has its own circular lens; its outer positioning rail is transparent. Avatars and radio marks stay circular. The fullscreen mobile task surface has square outer corners; its inner components retain their normal radii.
 
 **The Shared Shape Rule.** Reuse the semantic radius token for the element's role. Component-specific values must not create an independent control scale.
 
@@ -250,7 +256,7 @@ Studio panels use paper, a hairline border and surface corners, usually with 24p
 
 ### Navigation and search
 
-The public header keeps Painter identity, articles, moments, phrases and search. Search shortcut hints appear on hover or keyboard focus; filters remain on the full search page. The footer remains centered and compact. Non-home navigation returns on upward scrolling and hides on downward scrolling while preserving document space; focus, menus and dialogs hold it visible.
+The public header keeps Painter identity and search only, inside the existing fully rounded bar. Articles, moments and phrases move to three independent icon links in the right-side Dock. At heights up to 600px, a labelled disclosure holds those same destinations; normal phone and desktop views keep the independent icons. No index page is added. Tool visibility and creator authorization remain scene-configured; an empty tool array does not remove the permanent browsing navigation. Search uses a Raycast-inspired command panel with real suggestions, grouped results, station-entry commands on empty input, keyboard selection and focus restoration. Shortcut hints appear on hover or keyboard focus; filters remain on the full search page. The footer remains centered and compact. Non-home navigation returns on upward scrolling and hides on downward scrolling while preserving document space; focus, menus and dialogs hold it visible. The homepage retains its existing absolute header and scroll composition.
 
 The workbench uses the existing two-level grouped sidebar and a breadcrumb inside its task surface. Active destinations use a neutral fill and ink text. A modal drawer serves narrow screens. The public header, footer and right action rail do not appear inside the workbench.
 
@@ -339,3 +345,14 @@ These are scoped extensions of the existing system. Their composition and behavi
 - **Don't** resize controls by adding nested vertical padding, clip choice text or allow page-wide horizontal overflow.
 - **Don't** turn article artwork, user backgrounds or home motion into global interface tokens.
 - **Don't** imply that a visual rewrite changes permissions, settings, data or publication behavior.
+
+
+### 连续收藏墙（V35）
+
+在用户确认的首页主线中，日历采用更紧凑的纸面、共享蓝色色阶与真实月份刻度；空数据如实显示0，不用示例活动填满画面。项目卡片收为真实日期格，日期格展开为收藏墙的实测网格位置。此规则只改变首页表现，不改变统计口径或全站控件。
+
+唱片墙使用相贴的正方形封面，列数结合视口与实际条目数量计算，使有足够内容时实际移动一屏。首个游戏从SSR起就是墙内独立网格项，保留全部专辑，在原位成长并以同裁切/同遮罩接入全屏场景；没有固定浮层或横向圆点。手机把源格安排在左列，已有Steam271590艺术图使用局部82%主体焦点，其他艺术图默认居中，焦点变量可覆盖。静态或减少动态时恢复自然排布。
+
+磁吸是少量完整场景的渐进增强：只响应实际纵向用户手势，同方向且不超过min(12vh,120px)，新手势立即打断。移动唱片、过渡、内部滚动、交互焦点、键盘与减少动态模式不吸附。全局导航、Liquid Glass和搜索外观沿用V31。范围与证据见[V35](../docs/EXPERIENCE_V35.md)。
+
+V38 将日历到唱片墙的来源改成中央连续完整矩形，与真实唱片墙首屏使用相同行列并按视觉位置配对。整个放大过程保持每行、每列对齐，所有格同步变化；屏外封面保留原生滚入，不把25项强行重排。V36首页文案与V37搜索材质保留。见[V38](../docs/EXPERIENCE_V38.md)。

@@ -31,18 +31,20 @@ type HomeSection struct {
 	LinkURL     string `json:"link_url"`
 }
 type HomeConfig struct {
-	Activity           HomeActivityOptions `json:"activity"`
-	activityPresent    bool
-	Order              []string               `json:"order"`
-	Sections           map[string]HomeSection `json:"sections"`
-	UseSiteIntro       bool                   `json:"use_site_intro"`
-	IntroName          string                 `json:"intro_name"`
-	IntroRoles         []string               `json:"intro_roles"`
-	WritingTitle       string                 `json:"writing_title"`
-	WritingDescription string                 `json:"writing_description"`
-	ScrollLabel        string                 `json:"scroll_label"`
-	MotionEnabled      bool                   `json:"motion_enabled"`
-	WarmthEnabled      bool                   `json:"warmth_enabled"`
+	Activity             HomeActivityOptions `json:"activity"`
+	activityPresent      bool
+	introCardNamePresent bool
+	Order                []string               `json:"order"`
+	Sections             map[string]HomeSection `json:"sections"`
+	UseSiteIntro         bool                   `json:"use_site_intro"`
+	IntroName            string                 `json:"intro_name"`
+	IntroCardName        string                 `json:"intro_card_name"`
+	IntroRoles           []string               `json:"intro_roles"`
+	WritingTitle         string                 `json:"writing_title"`
+	WritingDescription   string                 `json:"writing_description"`
+	ScrollLabel          string                 `json:"scroll_label"`
+	MotionEnabled        bool                   `json:"motion_enabled"`
+	WarmthEnabled        bool                   `json:"warmth_enabled"`
 }
 
 func (c *HomeConfig) UnmarshalJSON(raw []byte) error {
@@ -57,8 +59,12 @@ func (c *HomeConfig) UnmarshalJSON(raw []byte) error {
 	if e := json.Unmarshal(raw, &fields); e != nil {
 		return e
 	}
+	if value, ok := fields["intro_card_name"]; ok && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+		return E(400, "VALIDATION_FAILED", "卡片署名必须为字符串，留空可沿用首页姓名")
+	}
 	*c = HomeConfig(v)
 	_, c.activityPresent = fields["activity"]
+	_, c.introCardNamePresent = fields["intro_card_name"]
 	return nil
 }
 func homeAdditionSection(key string) HomeSection {
@@ -87,6 +93,9 @@ func normalizeHomeConfig(c *HomeConfig) {
 func mergeHomeAdditions(c *HomeConfig, old HomeConfig) {
 	if c.Sections == nil {
 		return
+	}
+	if !c.introCardNamePresent {
+		c.IntroCardName = old.IntroCardName
 	}
 	legacyOrder := len(c.Order) == 6
 	seen := map[string]bool{}
@@ -119,21 +128,25 @@ type homeSettings struct {
 	LastError     string
 }
 type homeItemInput struct {
-	Kind            string `json:"kind"`
-	Title           string `json:"title"`
-	Subtitle        string `json:"subtitle"`
-	Alt             string `json:"alt"`
-	URL             string `json:"url"`
-	ImageURL        string `json:"image_url"`
-	MediaID         string `json:"media_id"`
-	ProviderID      string `json:"provider_id"`
-	Position        int    `json:"position"`
-	Visible         bool   `json:"visible"`
-	HeroURL         string `json:"hero_url"`
-	LogoURL         string `json:"logo_url"`
-	PlaytimeMinutes *int64 `json:"playtime_minutes"`
-	heroPresent     bool
-	logoPresent     bool
+	Kind             string   `json:"kind"`
+	Platform         string   `json:"platform"`
+	Platforms        []string `json:"platforms"`
+	Title            string   `json:"title"`
+	Subtitle         string   `json:"subtitle"`
+	Alt              string   `json:"alt"`
+	URL              string   `json:"url"`
+	ImageURL         string   `json:"image_url"`
+	MediaID          string   `json:"media_id"`
+	ProviderID       string   `json:"provider_id"`
+	Position         int      `json:"position"`
+	Visible          bool     `json:"visible"`
+	HeroURL          string   `json:"hero_url"`
+	LogoURL          string   `json:"logo_url"`
+	PlaytimeMinutes  *int64   `json:"playtime_minutes"`
+	heroPresent      bool
+	logoPresent      bool
+	platformPresent  bool
+	platformsPresent bool
 }
 
 // New presentation fields are optional on old clients' full draft writes.
@@ -153,9 +166,11 @@ func (in *homeItemInput) UnmarshalJSON(raw []byte) error {
 	*in = homeItemInput(value)
 	_, in.heroPresent = fields["hero_url"]
 	_, in.logoPresent = fields["logo_url"]
-	for _, key := range []string{"hero_url", "logo_url"} {
+	_, in.platformPresent = fields["platform"]
+	_, in.platformsPresent = fields["platforms"]
+	for _, key := range []string{"hero_url", "logo_url", "platform"} {
 		if raw, ok := fields[key]; ok && bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-			return E(400, "VALIDATION_FAILED", "素材网址必须为字符串，自动素材请留空")
+			return E(400, "VALIDATION_FAILED", "游戏平台和素材网址必须为字符串")
 		}
 	}
 	return nil
@@ -165,7 +180,7 @@ type homeQuery interface {
 	QueryRow(context.Context, string, ...any) pgx.Row
 }
 
-const homeItemColumns = `id::text,kind,title,subtitle,alt,url,image_url,COALESCE(media_id,''),provider_id,source,position,visible,version,created_at_ms,updated_at_ms,local_override,hero_url,logo_url,playtime_minutes`
+const homeItemColumns = `id::text,kind,title,subtitle,alt,url,image_url,COALESCE(media_id,''),provider_id,source,position,visible,version,created_at_ms,updated_at_ms,local_override,hero_url,logo_url,playtime_minutes,platform,platforms`
 
 func (a *App) RegisterHome() {
 	a.Handle("GET /api/v1/admin/home/activity", a.homeActivityPreview)
@@ -294,7 +309,7 @@ func validateHome(c HomeConfig) error {
 		s     string
 		n     int
 		multi bool
-	}{{c.IntroName, 80, false}, {c.WritingTitle, 80, true}, {c.WritingDescription, 600, true}, {c.ScrollLabel, 60, false}} {
+	}{{c.IntroName, 80, false}, {c.IntroCardName, 80, false}, {c.WritingTitle, 80, true}, {c.WritingDescription, 600, true}, {c.ScrollLabel, 60, false}} {
 		if e := homeText(v.s, v.n, v.multi); e != nil {
 			return e
 		}
@@ -404,6 +419,42 @@ func (a *App) homePut(w http.ResponseWriter, r *http.Request) error {
 	return e
 }
 func homeKind(s string) bool { return s == "steam" || s == "music" || s == "photos" }
+func homeItemPlatform(kind, platform string) string {
+	if kind == "steam" && platform == "" {
+		return "steam"
+	}
+	return platform
+}
+func normalizeHomeItemPlatform(in *homeItemInput) {
+	in.Platform = homeItemPlatform(in.Kind, in.Platform)
+	if in.Platforms == nil {
+		in.Platforms = []string{}
+	}
+}
+func inheritHomeItemPlatform(in *homeItemInput, platform string, platforms []string) error {
+	if !in.platformPresent {
+		in.Platform = platform
+	}
+	if !in.platformsPresent {
+		in.Platforms = append([]string{}, platforms...)
+	}
+	normalizeHomeItemPlatform(in)
+	if in.Platform != platform {
+		return E(400, "VALIDATION_FAILED", "不能改变已有条目的游戏平台")
+	}
+	return nil
+}
+func homePSNProviderID(id string) bool {
+	if len(id) < 1 || len(id) > 64 {
+		return false
+	}
+	for _, r := range id {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == ':' || r == '_' || r == '-') {
+			return false
+		}
+	}
+	return true
+}
 func homeDigits(s string, min, max int) bool {
 	if len(s) < min || len(s) > max || s[0] == '0' {
 		return false
@@ -416,8 +467,19 @@ func homeDigits(s string, min, max int) bool {
 	return true
 }
 func validateHomeItem(in homeItemInput) error {
+	normalizeHomeItemPlatform(&in)
 	if !homeKind(in.Kind) || in.Position < 0 || in.Position > 1000000 {
 		return E(400, "VALIDATION_FAILED", "首页条目类型或排序无效")
+	}
+	if (in.Kind == "steam" && in.Platform != "steam" && in.Platform != "psn") || (in.Kind != "steam" && (in.Platform != "" || len(in.Platforms) != 0)) || (in.Platform != "psn" && len(in.Platforms) != 0) {
+		return E(400, "VALIDATION_FAILED", "游戏平台或主机类型无效")
+	}
+	seenPlatforms := map[string]bool{}
+	for _, platform := range in.Platforms {
+		if (platform != "PS4" && platform != "PS5") || seenPlatforms[platform] {
+			return E(400, "VALIDATION_FAILED", "主机类型仅支持不重复的 PS4、PS5")
+		}
+		seenPlatforms[platform] = true
 	}
 	for _, v := range []struct {
 		s string
@@ -430,7 +492,7 @@ func validateHomeItem(in homeItemInput) error {
 	if e := homeURL(in.URL); e != nil {
 		return e
 	}
-	if in.ProviderID != "" && !homeDigits(in.ProviderID, 1, 20) {
+	if (in.Platform == "psn" && !homePSNProviderID(in.ProviderID)) || (in.Platform != "psn" && in.ProviderID != "" && !homeDigits(in.ProviderID, 1, 20)) {
 		return E(400, "VALIDATION_FAILED", "供应商 ID 无效")
 	}
 	if in.MediaID != "" {
@@ -439,18 +501,22 @@ func validateHomeItem(in homeItemInput) error {
 		}) {
 			return E(400, "VALIDATION_FAILED", "图片 ID 无效")
 		}
-	} else if in.Kind == "photos" || in.ImageURL == "" {
+	} else if in.Kind == "photos" || (in.ImageURL == "" && in.Platform != "psn") {
 		return E(400, "VALIDATION_FAILED", "照片需要上传图片；其它条目需要图片或官方封面")
 	}
-	if in.ImageURL != "" && !homeRemoteImage(in.Kind, in.ImageURL) {
+	imageKind := in.Kind
+	if in.Kind == "steam" {
+		imageKind = in.Platform
+	}
+	if in.ImageURL != "" && !homeRemoteImage(imageKind, in.ImageURL) {
 		return E(400, "VALIDATION_FAILED", "请上传图片或使用官方封面地址")
 	}
 	if in.Kind != "steam" && (in.HeroURL != "" || in.LogoURL != "" || in.PlaytimeMinutes != nil) {
-		return E(400, "VALIDATION_FAILED", "游戏素材与游玩时长仅适用于 Steam 游戏")
+		return E(400, "VALIDATION_FAILED", "游戏素材与游玩时长仅适用于游戏条目")
 	}
 	for _, art := range []string{in.HeroURL, in.LogoURL} {
-		if art != "" && !homeRemoteImage("steam", art) {
-			return E(400, "VALIDATION_FAILED", "游戏素材必须使用官方 Steam HTTPS 图片地址")
+		if art != "" && !homeRemoteImage(imageKind, art) {
+			return E(400, "VALIDATION_FAILED", "游戏素材必须使用对应平台的官方 HTTPS 图片地址")
 		}
 	}
 	if in.PlaytimeMinutes != nil && (*in.PlaytimeMinutes < 0 || *in.PlaytimeMinutes > 52704000) {
@@ -464,9 +530,10 @@ func scanHomeItem(row interface{ Scan(...any) error }) (map[string]any, error) {
 	var visible bool
 	var localOverride bool
 	var version, created, updated int64
-	var hero, logo string
+	var hero, logo, platform string
+	var platforms []string
 	var minutes *int64
-	e := row.Scan(&id, &kind, &title, &subtitle, &alt, &target, &image, &media, &provider, &source, &position, &visible, &version, &created, &updated, &localOverride, &hero, &logo, &minutes)
+	e := row.Scan(&id, &kind, &title, &subtitle, &alt, &target, &image, &media, &provider, &source, &position, &visible, &version, &created, &updated, &localOverride, &hero, &logo, &minutes, &platform, &platforms)
 	if e != nil {
 		return nil, e
 	}
@@ -477,7 +544,10 @@ func scanHomeItem(row interface{ Scan(...any) error }) (map[string]any, error) {
 	if minutes != nil {
 		played = *minutes
 	}
-	return map[string]any{"id": id, "kind": kind, "title": title, "subtitle": subtitle, "alt": alt, "url": target, "image_url": image, "media_id": media, "provider_id": provider, "source": source, "position": position, "visible": visible, "version": version, "created_at": TimeString(created), "updated_at": TimeString(updated), "local_override": localOverride, "hero_url": hero, "logo_url": logo, "playtime_minutes": played}, nil
+	if platforms == nil {
+		platforms = []string{}
+	}
+	return map[string]any{"id": id, "kind": kind, "title": title, "subtitle": subtitle, "alt": alt, "url": target, "image_url": image, "media_id": media, "provider_id": provider, "source": source, "position": position, "visible": visible, "version": version, "created_at": TimeString(created), "updated_at": TimeString(updated), "local_override": localOverride, "hero_url": hero, "logo_url": logo, "playtime_minutes": played, "platform": homeItemPlatform(kind, platform), "platforms": platforms}, nil
 }
 
 // HomepageData uses one repeatable-read snapshot, no network access and no secret
@@ -544,11 +614,18 @@ func (a *App) homeItems(w http.ResponseWriter, r *http.Request) error {
 	if !homeKind(kind) {
 		return E(400, "VALIDATION_FAILED", "请选择首页条目类型")
 	}
+	platform, e := homeGameFilter(r.URL.Query())
+	if e != nil {
+		return e
+	}
+	if kind != "steam" && platform != "all" {
+		return E(400, "VALIDATION_FAILED", "游戏平台筛选仅适用于游戏条目")
+	}
 	limit, e := momentLimit(r.URL.Query())
 	if e != nil {
 		return e
 	}
-	scope := "home:" + p.ID + ":" + kind + ":" + strconv.Itoa(limit)
+	scope := "home:v2:" + p.ID + ":" + kind + ":" + platform + ":" + strconv.Itoa(limit)
 	if len(r.URL.Query().Get("cursor")) > 2048 {
 		return E(400, "VALIDATION_FAILED", "分页游标过长")
 	}
@@ -559,7 +636,16 @@ func (a *App) homeItems(w http.ResponseWriter, r *http.Request) error {
 	if !positiveID(cursor.ID) && cursor.ID != "0" || cursor.Time < 0 || cursor.Time > 1000000 {
 		return E(400, "VALIDATION_FAILED", "分页游标无效")
 	}
-	rows, e := a.Pool.Query(r.Context(), `SELECT `+homeItemColumns+` FROM homepage_items WHERE kind=$1 AND ($2='0' OR (position,id)>($3,$2::bigint)) ORDER BY position,id LIMIT $4`, kind, cursor.ID, cursor.Time, limit+1)
+	tx, e := a.Pool.BeginTx(r.Context(), pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(context.Background())
+	var total int
+	if e = tx.QueryRow(r.Context(), `SELECT count(*) FROM homepage_items WHERE kind=$1 AND ($2::text='all' OR platform=$2)`, kind, platform).Scan(&total); e != nil {
+		return e
+	}
+	rows, e := tx.Query(r.Context(), `SELECT `+homeItemColumns+` FROM homepage_items WHERE kind=$1 AND ($5::text='all' OR platform=$5) AND ($2='0' OR (position,id)>($3,$2::bigint)) ORDER BY position,id LIMIT $4`, kind, cursor.ID, cursor.Time, limit+1, platform)
 	if e != nil {
 		return e
 	}
@@ -575,6 +661,7 @@ func (a *App) homeItems(w http.ResponseWriter, r *http.Request) error {
 	if e = rows.Err(); e != nil {
 		return e
 	}
+	rows.Close()
 	more := len(items) > limit
 	next := ""
 	if more {
@@ -582,7 +669,10 @@ func (a *App) homeItems(w http.ResponseWriter, r *http.Request) error {
 		last := items[len(items)-1]
 		next = a.interactionNext(scope, last["id"].(string), int64(last["position"].(int)))
 	}
-	JSON(w, 200, map[string]any{"items": items, "cursor": next, "next_cursor": next, "has_more": more, "limit": limit, "max_limit": 50, "max_items": homeItemLimit})
+	if e = tx.Commit(r.Context()); e != nil {
+		return e
+	}
+	JSON(w, 200, map[string]any{"items": items, "cursor": next, "next_cursor": next, "has_more": more, "limit": limit, "max_limit": 50, "max_items": homeItemLimit, "total": total, "platform": platform})
 	return nil
 }
 func (a *App) homeItemGet(w http.ResponseWriter, r *http.Request) error {
@@ -625,8 +715,9 @@ func (a *App) homeItemCreate(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	if in.PlaytimeMinutes != nil {
-		return E(400, "READ_ONLY_FIELD", "游玩时长仅从 Steam 同步，不支持手工设置")
+		return E(400, "READ_ONLY_FIELD", "游玩时长仅从游戏平台同步，不支持手工设置")
 	}
+	normalizeHomeItemPlatform(&in)
 	if e := validateHomeItem(in); e != nil {
 		return e
 	}
@@ -646,7 +737,7 @@ func (a *App) homeItemCreate(w http.ResponseWriter, r *http.Request) error {
 			return nil, e
 		}
 		now := NowMillis()
-		item, e := scanHomeItem(tx.QueryRow(r.Context(), `INSERT INTO homepage_items(kind,title,subtitle,alt,url,image_url,media_id,provider_id,position,visible,created_at_ms,updated_at_ms,hero_url,logo_url) VALUES($1,$2,$3,$4,$5,$6,NULLIF($7,''),$8,$9,$10,$11,$11,$12,$13) RETURNING `+homeItemColumns, in.Kind, in.Title, in.Subtitle, in.Alt, in.URL, in.ImageURL, in.MediaID, in.ProviderID, in.Position, in.Visible, now, in.HeroURL, in.LogoURL))
+		item, e := scanHomeItem(tx.QueryRow(r.Context(), `INSERT INTO homepage_items(kind,title,subtitle,alt,url,image_url,media_id,provider_id,position,visible,created_at_ms,updated_at_ms,hero_url,logo_url,platform,platforms) VALUES($1,$2,$3,$4,$5,$6,NULLIF($7,''),$8,$9,$10,$11,$11,$12,$13,$14,$15) RETURNING `+homeItemColumns, in.Kind, in.Title, in.Subtitle, in.Alt, in.URL, in.ImageURL, in.MediaID, in.ProviderID, in.Position, in.Visible, now, in.HeroURL, in.LogoURL, in.Platform, in.Platforms))
 		if e != nil {
 			return nil, e
 		}
@@ -674,14 +765,11 @@ func (a *App) homeItemUpdate(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	if in.PlaytimeMinutes != nil {
-		return E(400, "READ_ONLY_FIELD", "游玩时长仅从 Steam 同步，不支持手工设置")
+		return E(400, "READ_ONLY_FIELD", "游玩时长仅从游戏平台同步，不支持手工设置")
 	}
 	// A read DTO's effective /media URL can be round-tripped with its media_id.
 	if in.MediaID != "" && in.ImageURL == "/media/"+in.MediaID {
 		in.ImageURL = ""
-	}
-	if e := validateHomeItem(in); e != nil {
-		return e
 	}
 	value, e := a.Write(r, []string{"owner"}, false, true, func(tx pgx.Tx, p Principal) (any, error) {
 		if _, e := homeRead(r.Context(), tx, true); e != nil {
@@ -694,11 +782,11 @@ func (a *App) homeItemUpdate(w http.ResponseWriter, r *http.Request) error {
 		if old["version"] != version {
 			return nil, E(409, "VERSION_CONFLICT", "首页条目已变化，请重新加载")
 		}
+		if e := inheritHomeItemPlatform(&in, old["platform"].(string), old["platforms"].([]string)); e != nil {
+			return nil, e
+		}
 		if old["kind"] != in.Kind || (old["source"] != "manual" && old["provider_id"] != in.ProviderID) {
 			return nil, E(400, "VALIDATION_FAILED", "不能改变条目类型或同步游戏 ID")
-		}
-		if e = homeLockMedia(r.Context(), tx, p, in.MediaID, old["media_id"].(string)); e != nil {
-			return nil, e
 		}
 		if !in.heroPresent {
 			in.HeroURL = old["hero_url"].(string)
@@ -706,7 +794,13 @@ func (a *App) homeItemUpdate(w http.ResponseWriter, r *http.Request) error {
 		if !in.logoPresent {
 			in.LogoURL = old["logo_url"].(string)
 		}
-		item, e := scanHomeItem(tx.QueryRow(r.Context(), `UPDATE homepage_items SET title=$2,subtitle=$3,alt=$4,url=$5,image_url=$6,media_id=NULLIF($7,''),provider_id=$8,position=$9,visible=$10,local_override=(source<>'manual' OR local_override),version=version+1,updated_at_ms=$11,hero_url=$12,logo_url=$13 WHERE id=$1 RETURNING `+homeItemColumns, id, in.Title, in.Subtitle, in.Alt, in.URL, in.ImageURL, in.MediaID, in.ProviderID, in.Position, in.Visible, NowMillis(), in.HeroURL, in.LogoURL))
+		if e := validateHomeItem(in); e != nil {
+			return nil, e
+		}
+		if e = homeLockMedia(r.Context(), tx, p, in.MediaID, old["media_id"].(string)); e != nil {
+			return nil, e
+		}
+		item, e := scanHomeItem(tx.QueryRow(r.Context(), `UPDATE homepage_items SET title=$2,subtitle=$3,alt=$4,url=$5,image_url=$6,media_id=NULLIF($7,''),provider_id=$8,position=$9,visible=$10,local_override=(source<>'manual' OR local_override),version=version+1,updated_at_ms=$11,hero_url=$12,logo_url=$13,platforms=$14 WHERE id=$1 RETURNING `+homeItemColumns, id, in.Title, in.Subtitle, in.Alt, in.URL, in.ImageURL, in.MediaID, in.ProviderID, in.Position, in.Visible, NowMillis(), in.HeroURL, in.LogoURL, in.Platforms))
 		if e != nil {
 			return nil, e
 		}

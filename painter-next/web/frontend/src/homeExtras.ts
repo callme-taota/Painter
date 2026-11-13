@@ -3,6 +3,8 @@ export function initHomeExtras(){
     const detail=section.querySelector<HTMLElement>('[data-activity-detail]'),calendar=section.querySelector<HTMLElement>('[data-activity-calendar]')
     if(!detail||!calendar)continue
     const days=Array.from(calendar.querySelectorAll<HTMLElement>('[data-date]'))
+    const months=section.querySelector<HTMLElement>('[data-activity-months]')
+    if(months&&!months.children.length)Array.from(calendar.children).forEach((week,index)=>{const dates=Array.from(week.querySelectorAll<HTMLElement>('[data-date]')).map(day=>day.dataset.date!);const date=dates.find(value=>value.endsWith('-01'))||(index===0?dates[0]:undefined);const label=document.createElement('span');label.textContent=date?`${Number(date.slice(5,7))}月`:'';months.append(label)})
     let selected=days.length-1;while(selected>0&&days[selected].classList.contains('is-future'))selected--
     const scroll=section.querySelector<HTMLElement>('.activity-scroll');if(scroll&&days[selected])requestAnimationFrame(()=>{const edge=days[selected].getBoundingClientRect().right-scroll.getBoundingClientRect().right;scroll.scrollLeft+=edge+6})
     const describe=(day:HTMLElement)=>{detail.textContent=`${day.dataset.date} · ${day.dataset.count} 次发布 · 左右滑动查看更多日期`;days.forEach(d=>d.tabIndex=d===day?0:-1);selected=days.indexOf(day)}

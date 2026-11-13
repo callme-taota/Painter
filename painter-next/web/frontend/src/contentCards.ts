@@ -11,6 +11,7 @@ type LinkPreview = {
   closeTimer?: number
 }
 const previews = new WeakMap<HTMLElement, LinkPreview>()
+const internalRequests = new WeakSet<HTMLElement>()
 let active: LinkPreview | undefined
 let globalHandlers = false
 let positionFrame = 0
@@ -187,9 +188,83 @@ function within(root: ParentNode, selector: string): HTMLElement[] {
   return elements
 }
 
+// Internal references are fetched only from this fixed same-origin public API.
+// No snapshot body, provider request, session permission or cross-render cache
+// can make a withdrawn moment/phrase remain visible in the document editor.
+export function initInternalArticleCards(root: ParentNode, signal?: AbortSignal) {
+  for (const anchor of within(root, 'a.content-card--moment,a.content-card--phrase')) {
+    if (!anchor.isConnected) continue
+    if (['ready','error'].includes(anchor.dataset.internalCardState || '') || internalRequests.has(anchor)) continue
+    const href = anchor.getAttribute('href') || ''
+    const match = /^\/(moments|phrases)\/([1-9][0-9]{0,18})$/.exec(href)
+    if (!match || BigInt(match[2]) > 9223372036854775807n) continue
+    const kind = match[1] === 'moments' ? 'moment' : 'phrase'
+    if (!anchor.classList.contains('content-card--' + kind)) continue
+    internalRequests.add(anchor)
+    anchor.setAttribute('aria-busy', 'true')
+    void fetch('/api/v1/content-cards/' + kind + '/' + match[2], {credentials:'omit', cache:'no-store', redirect:'error', signal})
+      .then(async response => {
+        if (signal?.aborted || !anchor.isConnected) return
+        if (response.status === 404) { internalCardUnavailable(anchor, kind, false); return }
+        if (!response.ok) throw new Error('unavailable')
+        const value = await response.json()
+        if (signal?.aborted || !anchor.isConnected) return
+        const reference = value?.reference
+        if (!reference || reference.id !== match[2] || reference.type !== kind || reference.url !== href || typeof reference.text !== 'string') throw new Error('invalid reference')
+        const body = document.createElement('span'); body.className = 'content-card__body'
+        const add = (name:string, text:string) => { const node = document.createElement('span'); node.className = name; node.textContent = text; body.append(node); return node }
+        if (kind === 'phrase') {
+          add('content-card__kind', reference.kind === 'word' ? '词语' : '句子')
+          add('content-card__quote', reference.text)
+          if (typeof reference.source === 'string' && reference.source) add('content-card__attribution', reference.source)
+        } else {
+          const identity = document.createElement('span'); identity.className = 'content-card__identity'
+          const author = reference.author || {}
+          if (typeof author.avatar_url === 'string' && /^\/media\/[a-fA-F0-9-]{16,128}$/.test(author.avatar_url)) {
+            const avatar = document.createElement('img'); avatar.className = 'content-card__avatar'; avatar.src = author.avatar_url; avatar.alt = ''; avatar.loading = 'lazy'; identity.append(avatar)
+          }
+          const name = document.createElement('span'); name.className = 'content-card__author'; name.textContent = typeof author.display_name === 'string' ? author.display_name : ''; identity.append(name)
+          if (typeof reference.published_at === 'string' && !Number.isNaN(Date.parse(reference.published_at))) {
+            const date = document.createElement('time'); date.className = 'content-card__date'; date.dateTime = reference.published_at; date.textContent = reference.published_at.slice(0,10); identity.append(date)
+          }
+          body.append(identity)
+          if (reference.text) add('content-card__text', reference.text)
+          const images = Array.isArray(reference.images) ? reference.images.filter((item:unknown):item is {url:string;alt?:string} => !!item && typeof item === 'object' && 'url' in item && typeof item.url === 'string' && /^\/media\/[a-fA-F0-9-]{16,128}$/.test(item.url)).slice(0,9) : []
+          if (images.length) {
+            const photos = document.createElement('span'); photos.className = 'content-card__photos'
+            for (const item of images.slice(0,3)) { const image = document.createElement('img'); image.className = 'content-card__photo'; image.src = item.url; image.alt = typeof item.alt === 'string' ? item.alt : ''; image.loading = 'lazy'; photos.append(image) }
+            body.append(photos)
+            if (images.length > 3) add('content-card__photo-count', `共${images.length}张图片`)
+          }
+        }
+        add('content-card__destination', kind === 'moment' ? '查看动态' : '查看片语')
+        anchor.replaceChildren(body)
+        anchor.dataset.internalCardState = 'ready'
+        anchor.removeAttribute('aria-busy')
+      }).catch(error => {
+        if (signal?.aborted || (error as Error).name === 'AbortError' || !anchor.isConnected) return
+        internalCardUnavailable(anchor, kind, true)
+      }).finally(() => { if (signal?.aborted || !anchor.isConnected) internalRequests.delete(anchor) })
+  }
+}
+
+function internalCardUnavailable(anchor:HTMLElement, kind:string, retryable:boolean) {
+  const replacement = document.createElement(retryable ? 'a' : 'span')
+  if (anchor.id) replacement.id = anchor.id
+  replacement.className = anchor.className + ' content-card--unavailable'
+  replacement.dataset.internalCardState = 'error'
+  if (replacement instanceof HTMLAnchorElement) replacement.href = anchor.getAttribute('href') || ''
+  else replacement.setAttribute('role','note')
+  const body = document.createElement('span'); body.className = 'content-card__body'
+  const title = document.createElement('span'); title.className = 'content-card__title'; title.textContent = (kind === 'moment' ? '此动态' : '此片语') + (retryable ? '暂时无法读取' : '暂不可用')
+  const description = document.createElement('span'); description.className = 'content-card__description'; description.textContent = retryable ? '可打开原内容重试，或稍后重新预览' : '内容可能已撤回或删除'
+  body.append(title,description); replacement.append(body); anchor.replaceWith(replacement)
+}
+
 /** Safe to rescan after editor/preview updates; global listeners are shared. */
 export function initArticleCards(root: ParentNode = document) {
   if (active && !active.wrapper.isConnected) dismiss(active)
   for (const wrapper of within(root, '.content-link')) enhanceInlinePreview(wrapper)
+  initInternalArticleCards(root)
   enhanceArticleImages(root)
 }

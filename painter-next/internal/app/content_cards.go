@@ -35,7 +35,8 @@ type contentCard struct {
 	V              int               `json:"v"`
 	Type           string            `json:"type"`
 	URL            string            `json:"url"`
-	Title          string            `json:"title"`
+	Title          string            `json:"title,omitempty"`
+	RefID          string            `json:"ref_id,omitempty"`
 	Description    string            `json:"description,omitempty"`
 	Subtitle       string            `json:"subtitle,omitempty"`
 	ImageURL       string            `json:"image_url,omitempty"`
@@ -50,6 +51,7 @@ type contentCardDefinition struct{ Label string }
 // source, so future card pools can be added without a database dependency.
 var contentCardRegistry = map[string]contentCardDefinition{
 	"github": {"GitHub"}, "steam": {"Steam"}, "apple_music": {"Apple Music"}, "link": {"网页参考"},
+	"moment": {"动态"}, "phrase": {"片语"},
 }
 
 func contentCardInvalid(message string) error {
@@ -110,6 +112,20 @@ func contentCardImage(c contentCard) (string, error) {
 }
 
 func validateContentCard(c contentCard) (string, error) {
+	if contentCardIsInternal(c.Type) {
+		if !contentCardReferenceID(c.RefID) || c.URL != contentCardInternalURL(c.Type, c.RefID) {
+			return "", contentCardInvalid("站内引用需要有效的内容编号和对应站内链接")
+		}
+		// Internal cards deliberately persist identity only. Storing text or image
+		// snapshots here would let a withdrawn source remain public in articles.
+		if c.Title != "" || c.Description != "" || c.Subtitle != "" || c.ImageURL != "" || c.Stats != nil || c.MetadataSource != "" || c.ResolvedAt != "" {
+			return "", contentCardInvalid("站内卡片只能保存引用，不能附带正文、图片或元数据快照")
+		}
+		return "", nil
+	}
+	if c.RefID != "" {
+		return "", contentCardInvalid("外部卡片不能包含站内引用编号")
+	}
 	if !contentCardText(c.Title, 200, true) || !contentCardText(c.Description, 1000, false) || !contentCardText(c.Subtitle, 200, false) {
 		return "", contentCardInvalid("标题、简介或副标题超长或含控制字符")
 	}
@@ -175,6 +191,15 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 	d.DisallowUnknownFields()
 	if e := d.Decode(&c); e != nil || d.Decode(new(any)) != io.EOF {
 		return c, true, contentCardInvalid("JSON 字段或格式不正确")
+	}
+	if contentCardIsInternal(c.Type) {
+		var fields map[string]json.RawMessage
+		_ = json.Unmarshal(raw, &fields)
+		for key := range fields {
+			if key != "v" && key != "type" && key != "url" && key != "ref_id" {
+				return c, true, contentCardInvalid("站内卡片只能包含版本、类型、链接和引用编号")
+			}
+		}
 	}
 	_, e := validateContentCard(c)
 	return c, true, e
@@ -304,6 +329,10 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 		return ast.WalkContinue, nil
 	}
 	c := node.(*contentCardBlockNode).Card
+	if contentCardIsInternal(c.Type) {
+		_, e := w.WriteString(contentCardInternalPlaceholder(c))
+		return ast.WalkSkipChildren, e
+	}
 	markup := `<a class="content-card content-card--` + c.Type + `" href="` + stdhtml.EscapeString(c.URL) + `" target="_blank" rel="noopener noreferrer">`
 	if c.ImageURL != "" {
 		markup += `<img class="content-card__image" src="` + stdhtml.EscapeString(c.ImageURL) + `" alt="" loading="lazy" referrerpolicy="no-referrer" />`

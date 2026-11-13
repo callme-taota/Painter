@@ -1,0 +1,101 @@
+/* V31: retain the current publication, change only navigation and link color. */
+:root{--link:#0066cc;--link-hover:#004d99;--link-soft:#e5f0ff}
+html[data-theme=dark]{--link:#2997ff;--link-hover:#72bbff;--link-soft:#15324c}
+
+/* Blue signals an explicit reading action; navigation and linked content keep
+   the neutral page hierarchy instead of turning every destination blue. */
+:is(.prose,.comment-body) a[href]:not(.content-card),
+:is(.text-link,.read-link,.story-jump),
+.home-close-links>a,.search-dialog-foot>a{color:var(--link)}
+:is(.prose,.comment-body) a[href]:not(.content-card):hover,
+:is(.text-link,.read-link,.story-jump):hover{color:var(--link-hover)}
+.site-footer a:not(:has(img)),.author-more,.related-heading>a,
+.home-section-heading>a,.home-chapter-heading>a,.home-project-link,
+.home-writing-heading>a,.home-phrase-link,.login-panel a:not(.auth-brand){color:var(--muted)}
+.site-footer a:not(:has(img)):hover,.author-more:hover,.related-heading>a:hover,
+.home-section-heading>a:hover,.home-chapter-heading>a:hover,.home-project-link:hover,
+.home-writing-heading>a:hover,.home-phrase-link:hover,.login-panel a:not(.auth-brand):hover,
+.article-aside nav a:hover,.topic-links>a:hover{color:var(--ink);text-decoration:underline}
+
+.site-header,body[data-page-kind=article] .site-header,body[data-page-kind=phrases] .site-header{
+ position:sticky;top:12px;margin:12px auto 0;padding-block:0;
+ border-radius:999px;min-height:60px;
+}
+.site-header .nav-row{min-height:60px;justify-content:space-between;gap:16px}
+.site-header .wrap{padding-inline:24px}
+.site-header .brand{position:relative;z-index:1;min-height:44px;padding-block:8px;color:var(--ink)}
+.site-header .brand:hover{color:var(--ink)}
+.site-header .search-trigger{position:relative;z-index:1;width:44px;min-width:44px;min-height:44px;padding:11px;border-radius:50%;color:var(--ink)}
+.site-header .search-trigger:hover{background:rgb(128 128 128 / .1);color:var(--link)}
+.site-header .search-shortcut-hint{right:0;top:calc(100% + 14px)}
+
+/* The container is deliberately clear: each functional item owns its lens. */
+.floating-controls.site-dock{
+ position:fixed;right:16px;top:50%;bottom:auto;transform:translateY(-50%);
+ width:48px;max-width:48px;padding:0;gap:18px;
+ display:flex;flex-direction:column;align-items:center;
+ background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;
+}
+.site-dock::before{display:none}
+.dock-navigation,.dock-tools{display:flex;flex-direction:column;align-items:center;gap:10px;width:48px}
+.site-dock .dock-browse{display:none;position:relative}
+.dock-tools:empty{display:none}
+.site-dock :is(.floating-theme,.floating-create){position:relative;margin:0}
+.site-dock :is(a,button,summary).dock-glass{
+ position:relative;display:flex;align-items:center;justify-content:center;flex:none;
+ width:48px;min-width:48px;height:48px;min-height:48px;margin:0;padding:13px;
+ border:0;border-radius:50%;color:var(--ink);background:var(--paper);
+ text-decoration:none;list-style:none;cursor:pointer;
+ transition:color .16s ease-out,transform .22s cubic-bezier(.16,1,.3,1);
+}
+.site-dock summary.dock-glass::-webkit-details-marker{display:none}
+.site-dock .dock-glass .icon{width:21px;height:21px;flex:none}
+.site-dock :is(a,button,summary).dock-glass:hover{color:var(--link-hover);transform:translateX(-3px)}
+.site-dock :is(a,button,summary).dock-glass:active{transform:scale(.94)}
+.site-dock :is([aria-current=page],[aria-pressed=true],details[open]>summary).dock-glass{color:var(--link-hover)}
+html[data-theme=dark] .site-dock :is([aria-current=page],[aria-pressed=true],details[open]>summary).dock-glass,
+html[data-theme=dark] .site-dock .dock-glass:hover{color:#8cc6ff}
+.site-dock :is(a,button,summary).dock-glass:focus-visible{outline:2px solid var(--link);outline-offset:4px}
+.site-dock :is(.floating-theme,.floating-create)[open]{z-index:5}
+.site-dock .floating-like{flex-direction:column;gap:0;padding:4px 8px}
+.site-dock .floating-like .icon{width:19px;height:19px}
+.site-dock [data-like-count]{font:500 12px/14px var(--font-ui);font-variant-numeric:tabular-nums}
+.site-dock :is(.theme-popover,.create-popover,.dock-popover){right:62px;top:50%;transform:translateY(calc(-50% + var(--dock-popover-offset,0px)));z-index:5;border-radius:14px;max-height:calc(100dvh - 24px);overflow:auto}
+.site-dock .dock-popover{position:absolute;width:180px;padding:5px;border:1px solid var(--line);background:var(--paper);box-shadow:var(--shadow)}
+.site-dock .dock-popover a{display:flex;align-items:center;min-height:44px;padding:9px 12px;border-radius:9px;font-size:13px}
+.site-dock .dock-popover a:hover{background:var(--subtle);color:var(--link)}
+.site-dock .theme-choices [aria-checked=true]{color:var(--link);background:var(--link-soft)}
+.site-dock .create-popover a:hover{color:var(--link)}
+
+/* Labels are available on keyboard focus as well as hover, never native tooltips. */
+.site-dock [data-dock-label]::after{
+ content:attr(data-dock-label);position:absolute;right:calc(100% + 12px);top:50%;
+ transform:translate(3px,-50%);padding:7px 11px;border-radius:9px;
+ background:var(--paper);box-shadow:var(--shadow);color:var(--ink);
+ font:500 12px/20px var(--font-ui);white-space:nowrap;
+ opacity:0;visibility:hidden;pointer-events:none;transition:opacity .14s ease-out,transform .14s ease-out;
+}
+.site-dock [data-dock-label]:is(:hover,:focus-visible)::after{opacity:1;visibility:visible;transform:translate(0,-50%)}
+.site-dock details[open]>[data-dock-label]::after{opacity:0;visibility:hidden}
+
+@media(max-width:720px){
+ .site-header,body[data-page-kind=article] .site-header,body[data-page-kind=phrases] .site-header{top:8px;margin-top:8px;width:calc(100% - 24px);min-height:56px;border-radius:999px}
+ .site-header .nav-row{min-height:56px}
+ .site-header .wrap{padding-inline:16px}
+ .site-header .brand-name{display:inline}
+ .floating-controls.site-dock{right:8px;width:44px;max-width:44px;gap:16px}
+ .dock-navigation,.dock-tools{width:44px;gap:8px}
+ .site-dock :is(a,button,summary).dock-glass{width:44px;min-width:44px;height:44px;min-height:44px;padding:11px}
+ .site-dock :is(.theme-popover,.create-popover,.dock-popover){right:56px;max-width:calc(100vw - 80px)}
+ .site-dock :is(a,button,summary).dock-glass:hover{transform:none}
+}
+@media(max-height:600px){
+ .floating-controls.site-dock{top:auto;bottom:12px;transform:none;gap:9px}
+ .site-dock .dock-navigation{display:none}
+ .site-dock .dock-browse{display:block}
+ .dock-navigation,.dock-tools{gap:5px}
+ .site-dock :is(a,button,summary).dock-glass{width:44px;min-width:44px;height:44px;min-height:44px;padding:11px}
+}
+@media(pointer:coarse){.site-dock .theme-choices button,.site-dock .solid-option,.site-dock .create-popover a{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.site-dock .dock-glass,.site-dock [data-dock-label]::after{transition:none!important}.site-dock :is(a,button,summary).dock-glass:is(:hover,:active){transform:none}}
+@media print{.floating-controls.site-dock{display:none}}
