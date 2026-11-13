@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/hmac"
 	"errors"
-	"net"
 	"net/http"
 	"strings"
 	"unicode/utf8"
@@ -40,8 +39,8 @@ func (a *App) localAuthOptions(w http.ResponseWriter, r *http.Request) error {
 		// A broken optional provider must not lock local users out of recovery.
 		github.Enabled = false
 	}
-	var registration bool
-	if err := a.Pool.QueryRow(r.Context(), "SELECT registration_enabled FROM site_settings WHERE id=1").Scan(&registration); err != nil {
+	var registration, external bool
+	if err := a.Pool.QueryRow(r.Context(), "SELECT registration_enabled,external_login_enabled FROM site_settings WHERE id=1").Scan(&registration, &external); err != nil {
 		return err
 	}
 	nonce := RandID()
@@ -49,7 +48,7 @@ func (a *App) localAuthOptions(w http.ResponseWriter, r *http.Request) error {
 		nonce = c.Value
 	}
 	a.cookie(w, localNonceCookie, nonce, 600)
-	JSON(w, 200, map[string]any{"csrf_token": macString(a.Config.EncryptionKey, "local-auth:v1:"+nonce), "registration_open": registration, "local_login_enabled": true, "github_login_enabled": github.Enabled, "password_min_length": passwordMinLength, "password_max_length": passwordMaxLength, "username_min_length": 2, "username_max_length": 64})
+	JSON(w, 200, map[string]any{"csrf_token": macString(a.Config.EncryptionKey, "local-auth:v1:"+nonce), "registration_open": registration && external, "external_login_enabled": external, "mfa_available": true, "local_login_enabled": true, "github_login_enabled": github.Enabled, "password_min_length": passwordMinLength, "password_max_length": passwordMaxLength, "username_min_length": 2, "username_max_length": 64})
 	return nil
 }
 func (a *App) checkLocalAuthCSRF(r *http.Request) error {
@@ -71,13 +70,10 @@ func decodeLocalAuth(w http.ResponseWriter, r *http.Request, v any) error {
 }
 
 // Limits count every attempt, including successes, and expire automatically.
-// Direct peer IPs are used, never attacker-controlled forwarding headers. A
-// production reverse proxy must also enforce its own edge and connection limits.
+// Client IPs come from the direct peer unless an explicitly trusted Cloudflare
+// connector is configured. Account buckets apply independently of the IP source.
 func (a *App) allowLocalAuth(r *http.Request, username string, registration bool) bool {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
+	host := a.ClientIP(r)
 	scope := "login"
 	ipLimit := 60
 	accountLimit := 12
@@ -152,6 +148,7 @@ func (a *App) localLogin(w http.ResponseWriter, r *http.Request) error {
 		return invalidCredentials()
 	}
 	token := RandID()
+	var pending *pendingMFA
 	err = a.identityMutation(r.Context(), func(tx pgx.Tx) error {
 		var latest string
 		var disabled *int64
@@ -165,6 +162,16 @@ func (a *App) localLogin(w http.ResponseWriter, r *http.Request) error {
 		if latest != storedHash || disabled != nil {
 			return invalidCredentials()
 		}
+		if err = identityAccessAllowed(r.Context(), tx, id); err != nil {
+			return err
+		}
+		pending, err = a.beginMFA(r.Context(), tx, id, "password")
+		if err != nil {
+			return err
+		}
+		if pending != nil {
+			return nil
+		}
 		now := NowMillis()
 		if _, err = tx.Exec(r.Context(), "UPDATE users SET last_login_at_ms=$2 WHERE id=$1", id, now); err != nil {
 			return err
@@ -174,17 +181,13 @@ func (a *App) localLogin(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if pending != nil {
+		return a.mfaChallengeResponse(w, r, pending)
+	}
 	return a.localLoginResponse(w, r, token, 200)
 }
 func (a *App) insertLocalSession(ctx context.Context, tx pgx.Tx, r *http.Request, id, token string, now int64) error {
-	// Re-authentication always rotates the token and retires the presented session.
-	if old, err := r.Cookie(sessionCookie); err == nil {
-		if _, err = tx.Exec(ctx, "UPDATE sessions SET revoked_at_ms=$2 WHERE token_hash=$1 AND revoked_at_ms IS NULL", hashString(old.Value), now); err != nil {
-			return err
-		}
-	}
-	_, err := tx.Exec(ctx, "INSERT INTO sessions(token_hash,management_id,user_id,csrf_secret_hash,created_at_ms,expires_at_ms,last_seen_at_ms) VALUES($1,$2,$3,$4,$5,$6,$5)", hashString(token), RandID(), id, hashString(a.csrf(token)), now, now+sessionLifetime.Milliseconds())
-	return err
+	return a.insertAuthenticatedSession(ctx, tx, r, id, token, "password", nil, now)
 }
 func (a *App) localLoginResponse(w http.ResponseWriter, r *http.Request, token string, status int) error {
 	a.cookie(w, sessionCookie, token, int(sessionLifetime.Seconds()))
@@ -221,7 +224,7 @@ func (a *App) localRegister(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	var open bool
-	if err = a.Pool.QueryRow(r.Context(), "SELECT registration_enabled FROM site_settings WHERE id=1").Scan(&open); err != nil {
+	if err = a.Pool.QueryRow(r.Context(), "SELECT registration_enabled AND external_login_enabled FROM site_settings WHERE id=1").Scan(&open); err != nil {
 		return err
 	}
 	if !open {
@@ -233,7 +236,7 @@ func (a *App) localRegister(w http.ResponseWriter, r *http.Request) error {
 	}
 	token := RandID()
 	err = a.identityMutation(r.Context(), func(tx pgx.Tx) error {
-		if err := tx.QueryRow(r.Context(), "SELECT registration_enabled FROM site_settings WHERE id=1").Scan(&open); err != nil {
+		if err := tx.QueryRow(r.Context(), "SELECT registration_enabled AND external_login_enabled FROM site_settings WHERE id=1").Scan(&open); err != nil {
 			return err
 		}
 		if !open {

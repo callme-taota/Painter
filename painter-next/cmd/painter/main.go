@@ -65,9 +65,9 @@ func run() error {
 		return nil
 	}
 	switch command {
-	case "serve", "migrate", "setup", "setup-token", "seed-demo", "backup", "restore-check", "backup-run", "backup-status", "backup-check", "restore-stage", "import-legacy", "create-local-user", "reset-local-password", "psn-connect":
+	case "serve", "migrate", "setup", "setup-token", "seed-demo", "backup", "restore-check", "backup-run", "backup-status", "backup-check", "restore-stage", "import-legacy", "create-local-user", "reset-local-password", "disable-local-mfa", "psn-connect":
 	default:
-		return fmt.Errorf("usage: painter [serve|migrate|seed-demo|backup <directory>|restore-check <directory>|backup-run|backup-status|backup-check|restore-stage|import-legacy <file> [--dry-run]|create-local-user|reset-local-password|psn-connect]")
+		return fmt.Errorf("usage: painter [serve|migrate|seed-demo|backup <directory>|restore-check <directory>|backup-run|backup-status|backup-check|restore-stage|import-legacy <file> [--dry-run]|create-local-user|reset-local-password|disable-local-mfa|psn-connect]")
 	}
 	if command == "backup-status" {
 		return runBackupCommand(context.Background(), nil, command, os.Args[2:])
@@ -88,6 +88,9 @@ func run() error {
 	}
 	if command == "restore-stage" {
 		return runRecoveryStageCommand(ctx, a, os.Args[2:])
+	}
+	if command == "disable-local-mfa" {
+		return runDisableMFACommand(ctx, a, os.Args[2:])
 	}
 	if command == "setup-token" {
 		token, e := a.InstallationToken(ctx)

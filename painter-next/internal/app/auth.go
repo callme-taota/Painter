@@ -25,6 +25,7 @@ const githubIssuer = "https://github.com"
 const sessionLifetime = 30 * 24 * time.Hour
 
 func (a *App) RegisterIdentity() {
+	a.RegisterMFA()
 	a.Handle("GET /api/v1/auth/options", a.localAuthOptions)
 	a.Handle("POST /api/v1/auth/login", a.localLogin)
 	a.Handle("POST /api/v1/auth/register", a.localRegister)
@@ -50,7 +51,7 @@ func (a *App) Principal(r *http.Request) (Principal, error) {
 		return Principal{}, E(401, "UNAUTHENTICATED", "请先登录")
 	}
 	var p Principal
-	e = a.Pool.QueryRow(r.Context(), "SELECT u.id::text,u.role,u.username,u.display_name,s.management_id FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at_ms IS NULL AND s.expires_at_ms>$2 AND u.disabled_at_ms IS NULL", hashString(c.Value), NowMillis()).Scan(&p.ID, &p.Role, &p.Username, &p.DisplayName, &p.SessionID)
+	e = a.Pool.QueryRow(r.Context(), "SELECT u.id::text,u.role,u.username,u.display_name,s.management_id FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at_ms IS NULL AND s.expires_at_ms>$2 AND u.disabled_at_ms IS NULL AND (u.role='owner' OR (SELECT external_login_enabled FROM site_settings WHERE id=1)) AND NOT EXISTS(SELECT 1 FROM user_mfa m WHERE m.user_id=u.id AND m.enabled_at_ms IS NOT NULL AND (s.mfa_authenticated_at_ms IS NULL OR s.mfa_authenticated_at_ms<m.enabled_at_ms))", hashString(c.Value), NowMillis()).Scan(&p.ID, &p.Role, &p.Username, &p.DisplayName, &p.SessionID)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return p, E(401, "UNAUTHENTICATED", "登录已过期")
 	}
@@ -63,7 +64,7 @@ func (a *App) txPrincipal(ctx context.Context, tx pgx.Tx, r *http.Request, lock 
 	}
 	var p Principal
 	var csrfHash string
-	e = tx.QueryRow(ctx, "SELECT u.id::text,u.role,u.username,u.display_name,s.management_id,s.csrf_secret_hash FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at_ms IS NULL AND s.expires_at_ms>$2 AND u.disabled_at_ms IS NULL FOR "+lock+" OF u", hashString(c.Value), NowMillis()).Scan(&p.ID, &p.Role, &p.Username, &p.DisplayName, &p.SessionID, &csrfHash)
+	e = tx.QueryRow(ctx, "SELECT u.id::text,u.role,u.username,u.display_name,s.management_id,s.csrf_secret_hash FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at_ms IS NULL AND s.expires_at_ms>$2 AND u.disabled_at_ms IS NULL AND (u.role='owner' OR (SELECT external_login_enabled FROM site_settings WHERE id=1)) AND NOT EXISTS(SELECT 1 FROM user_mfa m WHERE m.user_id=u.id AND m.enabled_at_ms IS NOT NULL AND (s.mfa_authenticated_at_ms IS NULL OR s.mfa_authenticated_at_ms<m.enabled_at_ms)) FOR "+lock+" OF u", hashString(c.Value), NowMillis()).Scan(&p.ID, &p.Role, &p.Username, &p.DisplayName, &p.SessionID, &csrfHash)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return p, E(401, "UNAUTHENTICATED", "登录已过期")
 	}
@@ -74,7 +75,7 @@ func (a *App) txPrincipal(ctx context.Context, tx pgx.Tx, r *http.Request, lock 
 	// the joined sessions row from the statement's old snapshot. Re-read session
 	// validity in a new READ COMMITTED statement after the user lock is acquired.
 	// Role/disable and ordinary user updates remain protected by that user lock.
-	e = tx.QueryRow(ctx, "SELECT management_id,csrf_secret_hash FROM sessions WHERE token_hash=$1 AND user_id=$2 AND revoked_at_ms IS NULL AND expires_at_ms>$3", hashString(c.Value), p.ID, NowMillis()).Scan(&p.SessionID, &csrfHash)
+	e = tx.QueryRow(ctx, "SELECT management_id,csrf_secret_hash FROM sessions WHERE token_hash=$1 AND user_id=$2 AND revoked_at_ms IS NULL AND expires_at_ms>$3 AND NOT EXISTS(SELECT 1 FROM user_mfa m WHERE m.user_id=sessions.user_id AND m.enabled_at_ms IS NOT NULL AND (sessions.mfa_authenticated_at_ms IS NULL OR sessions.mfa_authenticated_at_ms<m.enabled_at_ms))", hashString(c.Value), p.ID, NowMillis()).Scan(&p.SessionID, &csrfHash)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return Principal{}, E(401, "UNAUTHENTICATED", "登录已过期")
 	}
@@ -220,9 +221,15 @@ func (a *App) oauthCallback(w http.ResponseWriter, r *http.Request) error {
 	if e != nil {
 		return e
 	}
-	token, e := a.completeGitHubLogin(r.Context(), profile, r, credentials.fingerprint())
+	token, pending, e := a.completeGitHubAuthentication(r.Context(), profile, r, credentials.fingerprint())
 	if e != nil {
 		return e
+	}
+	if pending != nil {
+		a.cookie(w, mfaChallengeCookie, pending.Token, int(mfaChallengeLifetime.Seconds()))
+		a.cookie(w, localNonceCookie, RandID(), int(mfaChallengeLifetime.Seconds()))
+		http.Redirect(w, r, "/login?mfa=1&return_to="+url.QueryEscape(internalReturn(path)), 303)
+		return nil
 	}
 	a.cookie(w, sessionCookie, token, int(sessionLifetime.Seconds()))
 	http.Redirect(w, r, internalReturn(path), 303)
@@ -280,28 +287,35 @@ func (a *App) completeLogin(ctx context.Context, g githubProfile) (string, error
 }
 
 func (a *App) completeGitHubLogin(ctx context.Context, g githubProfile, r *http.Request, expectedConfig string) (string, error) {
+	token, pending, err := a.completeGitHubAuthentication(ctx, g, r, expectedConfig)
+	if err == nil && pending != nil {
+		return "", E(401, "MFA_REQUIRED", "请完成两步验证")
+	}
+	return token, err
+}
+func (a *App) completeGitHubAuthentication(ctx context.Context, g githubProfile, r *http.Request, expectedConfig string) (string, *pendingMFA, error) {
 	tx, e := a.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if e != nil {
-		return "", e
+		return "", nil, e
 	}
 	defer tx.Rollback(context.Background())
 	subject := string(g.ID)
 	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", "identity/github/"+subject); e != nil {
-		return "", e
+		return "", nil, e
 	}
 	// Exclusive policy barrier serializes membership creation and first-owner bootstrap.
 	if _, e = tx.Exec(ctx, "SELECT id FROM policy_barrier WHERE id=1 FOR UPDATE"); e != nil {
-		return "", e
+		return "", nil, e
 	}
 	// Configuration changes may race the network exchange. Recheck after the
 	// policy lock so a disabled/replaced provider cannot establish a session.
 	if expectedConfig != "" {
 		credentials, err := a.effectiveGitHub(ctx, tx)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		if !credentials.Enabled || credentials.fingerprint() != expectedConfig {
-			return "", E(400, "OAUTH_CONFIG_CHANGED", "GitHub 登录配置已变化，请重新开始登录")
+			return "", nil, E(400, "OAUTH_CONFIG_CHANGED", "GitHub 登录配置已变化，请重新开始登录")
 		}
 	}
 	var id string
@@ -311,15 +325,15 @@ func (a *App) completeGitHubLogin(ctx context.Context, g githubProfile, r *http.
 	if e == pgx.ErrNoRows {
 		var enabled bool
 		var owners int
-		e = tx.QueryRow(ctx, "SELECT registration_enabled,(SELECT count(*) FROM users WHERE role='owner' AND disabled_at_ms IS NULL) FROM site_settings WHERE id=1").Scan(&enabled, &owners)
+		e = tx.QueryRow(ctx, "SELECT registration_enabled AND external_login_enabled,(SELECT count(*) FROM users WHERE role='owner' AND disabled_at_ms IS NULL) FROM site_settings WHERE id=1").Scan(&enabled, &owners)
 		if e != nil {
-			return "", e
+			return "", nil, e
 		}
 		role := "reader"
 		if owners == 0 && a.Config.BootstrapGitHubID == subject {
 			role = "owner"
 		} else if !enabled {
-			return "", E(403, "REGISTRATION_CLOSED", "站点暂未开放读者注册")
+			return "", nil, E(403, "REGISTRATION_CLOSED", "站点暂未开放读者注册")
 		}
 		login := strings.ToLower(g.Login)
 		if len(login) > 60 {
@@ -349,74 +363,76 @@ func (a *App) completeGitHubLogin(ctx context.Context, g githubProfile, r *http.
 				break
 			}
 			if e != pgx.ErrNoRows {
-				return "", e
+				return "", nil, e
 			}
 		}
 		if e != nil {
-			return "", e
+			return "", nil, e
 		}
 		if _, e = tx.Exec(ctx, "INSERT INTO oauth_accounts(provider,issuer,subject,user_id,provider_login,created_at_ms,updated_at_ms) VALUES('github',$1,$2,$3,$4,$5,$5)", githubIssuer, subject, id, g.Login, now); e != nil {
-			return "", e
+			return "", nil, e
 		}
 		eventID := RandID()
 		envelope, _ := json.Marshal(map[string]any{"event_id": eventID, "schema_version": 1, "event_type": "user.registered.v1", "aggregate_type": "user", "aggregate_id": id, "aggregate_version": 1, "actor_id": id, "occurred_at_ms": now, "payload": map[string]any{"provider": "github"}})
 		if _, e = tx.Exec(ctx, "INSERT INTO outbox(id,topic,aggregate_id,dedupe_key,payload_json,available_at_ms,created_at_ms) VALUES($1,'user.registered.v1',$2,$3,$4,$5,$5)", eventID, id, "user.registered/"+id, envelope, now); e != nil {
-			return "", e
+			return "", nil, e
 		}
 		if role == "owner" {
 			if e = audit(ctx, tx, Principal{ID: id}, "system.bootstrap", "system", "owner", "configured GitHub subject"); e != nil {
-				return "", e
+				return "", nil, e
 			}
 		}
 	} else if e != nil {
-		return "", e
+		return "", nil, e
 	} else {
 		if disabled != nil {
-			return "", E(403, "ACCOUNT_DISABLED", "账号已停用")
+			return "", nil, E(403, "ACCOUNT_DISABLED", "账号已停用")
 		}
 		if a.Config.BootstrapGitHubID == subject {
 			var owners int
 			if e = tx.QueryRow(ctx, "SELECT count(*) FROM users WHERE role='owner' AND disabled_at_ms IS NULL").Scan(&owners); e != nil {
-				return "", e
+				return "", nil, e
 			}
 			if owners == 0 {
 				if _, e = tx.Exec(ctx, "UPDATE users SET role='owner',updated_at_ms=$2 WHERE id=$1", id, now); e != nil {
-					return "", e
+					return "", nil, e
 				}
 				if e = audit(ctx, tx, Principal{ID: id}, "system.bootstrap", "system", "owner", "configured existing GitHub subject"); e != nil {
-					return "", e
+					return "", nil, e
 				}
 			}
 		}
-		if _, e = tx.Exec(ctx, "UPDATE users SET last_login_at_ms=$2 WHERE id=$1", id, now); e != nil {
-			return "", e
-		}
 		if _, e = tx.Exec(ctx, "UPDATE oauth_accounts SET provider_login=$3,updated_at_ms=$4 WHERE provider='github' AND issuer=$1 AND subject=$2", githubIssuer, subject, g.Login, now); e != nil {
-			return "", e
+			return "", nil, e
 		}
+	}
+	if e = identityAccessAllowed(ctx, tx, id); e != nil {
+		return "", nil, e
+	}
+	pending, e := a.beginMFA(ctx, tx, id, "github")
+	if e != nil {
+		return "", nil, e
+	}
+	if pending != nil {
+		return "", pending, tx.Commit(ctx)
+	}
+	if _, e = tx.Exec(ctx, "UPDATE users SET last_login_at_ms=$2 WHERE id=$1", id, now); e != nil {
+		return "", nil, e
 	}
 	token := RandID()
-	if r != nil {
-		if old, err := r.Cookie(sessionCookie); err == nil {
-			if _, e = tx.Exec(ctx, "UPDATE sessions SET revoked_at_ms=$2 WHERE token_hash=$1 AND revoked_at_ms IS NULL", hashString(old.Value), now); e != nil {
-				return "", e
-			}
-		}
-	}
-	_, e = tx.Exec(ctx, "INSERT INTO sessions(token_hash,management_id,user_id,csrf_secret_hash,created_at_ms,expires_at_ms,last_seen_at_ms) VALUES($1,$2,$3,$4,$5,$6,$5)", hashString(token), RandID(), id, hashString(a.csrf(token)), now, now+sessionLifetime.Milliseconds())
-	if e != nil {
-		return "", e
+	if e = a.insertAuthenticatedSession(ctx, tx, r, id, token, "github", nil, now); e != nil {
+		return "", nil, e
 	}
 	var role string
 	if e = tx.QueryRow(ctx, "SELECT role FROM users WHERE id=$1", id).Scan(&role); e != nil {
-		return "", e
+		return "", nil, e
 	}
 	if role == "owner" {
 		if e = markInstallation(ctx, tx, id, now); e != nil {
-			return "", e
+			return "", nil, e
 		}
 	}
-	return token, tx.Commit(ctx)
+	return token, nil, tx.Commit(ctx)
 }
 func (a *App) sessionGet(w http.ResponseWriter, r *http.Request) error {
 	return a.writeSession(w, r, 200)
@@ -540,7 +556,7 @@ func (a *App) PruneIdentity(ctx context.Context) error {
 		for _, statement := range []struct {
 			SQL    string
 			Cutoff int64
-		}{{"DELETE FROM oauth_states WHERE state_hash IN(SELECT state_hash FROM oauth_states WHERE expires_at_ms<$1 LIMIT 5000)", now - 60*60*1000}, {"DELETE FROM sessions WHERE token_hash IN(SELECT token_hash FROM sessions WHERE COALESCE(revoked_at_ms,expires_at_ms)<$1 LIMIT 5000)", now - 30*24*60*60*1000}, {"DELETE FROM idempotency_keys WHERE (actor_user_id,operation,idempotency_key) IN(SELECT actor_user_id,operation,idempotency_key FROM idempotency_keys WHERE expires_at_ms<$1 LIMIT 5000)", now}} {
+		}{{"DELETE FROM oauth_states WHERE state_hash IN(SELECT state_hash FROM oauth_states WHERE expires_at_ms<$1 LIMIT 5000)", now - 60*60*1000}, {"DELETE FROM mfa_login_challenges WHERE id IN(SELECT id FROM mfa_login_challenges WHERE expires_at_ms<$1 LIMIT 5000)", now - 60*60*1000}, {"DELETE FROM sessions WHERE token_hash IN(SELECT token_hash FROM sessions WHERE COALESCE(revoked_at_ms,expires_at_ms)<$1 LIMIT 5000)", now - 30*24*60*60*1000}, {"DELETE FROM idempotency_keys WHERE (actor_user_id,operation,idempotency_key) IN(SELECT actor_user_id,operation,idempotency_key FROM idempotency_keys WHERE expires_at_ms<$1 LIMIT 5000)", now}} {
 			if _, e := tx.Exec(ctx, statement.SQL, statement.Cutoff); e != nil {
 				return e
 			}

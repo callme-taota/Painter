@@ -36,6 +36,7 @@ type adminProfile struct {
 type adminSettings struct {
 	Version        int64           `json:"version"`
 	Registration   bool            `json:"registration_enabled"`
+	ExternalLogin  *bool           `json:"external_login_enabled,omitempty"`
 	Comments       bool            `json:"comments_enabled"`
 	Collections    bool            `json:"collections_enabled"`
 	Follows        bool            `json:"follows_enabled"`
@@ -96,8 +97,8 @@ func (a *App) adminPublicSite(w http.ResponseWriter, r *http.Request) error {
 	if e != nil {
 		return e
 	}
-	var registration, comments, collections, follows, analytics bool
-	e = a.Pool.QueryRow(r.Context(), `SELECT registration_enabled,comments_enabled,collections_enabled,follows_enabled,analytics_enabled FROM site_settings WHERE id=1`).Scan(&registration, &comments, &collections, &follows, &analytics)
+	var registration, external, comments, collections, follows, analytics bool
+	e = a.Pool.QueryRow(r.Context(), `SELECT registration_enabled,external_login_enabled,comments_enabled,collections_enabled,follows_enabled,analytics_enabled FROM site_settings WHERE id=1`).Scan(&registration, &external, &comments, &collections, &follows, &analytics)
 	if e != nil {
 		return e
 	}
@@ -109,7 +110,7 @@ func (a *App) adminPublicSite(w http.ResponseWriter, r *http.Request) error {
 	if e != nil {
 		return e
 	}
-	JSON(w, 200, map[string]any{"display_name": d.DisplayName, "tagline": d.Tagline, "intro_name": d.IntroName, "intro_roles": d.IntroRoles, "about_markdown": d.About, "avatar_url": avatar, "social_links": d.Social, "footer_text": d.Footer, "icp_number": d.ICP, "seo_description": d.SEO, "registration_enabled": registration, "comments_enabled": comments, "collections_enabled": collections, "follows_enabled": follows, "analytics_enabled": analytics, "rss_enabled": rss, "floating_controls": controls})
+	JSON(w, 200, map[string]any{"display_name": d.DisplayName, "tagline": d.Tagline, "intro_name": d.IntroName, "intro_roles": d.IntroRoles, "about_markdown": d.About, "avatar_url": avatar, "social_links": d.Social, "footer_text": d.Footer, "icp_number": d.ICP, "seo_description": d.SEO, "registration_enabled": registration, "external_login_enabled": external, "comments_enabled": comments, "collections_enabled": collections, "follows_enabled": follows, "analytics_enabled": analytics, "rss_enabled": rss, "floating_controls": controls})
 	return nil
 }
 func (a *App) adminGetProfile(w http.ResponseWriter, r *http.Request) error {
@@ -211,7 +212,7 @@ func (a *App) adminGetSettings(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	var d adminSettings
-	e := a.Pool.QueryRow(r.Context(), `SELECT version,registration_enabled,comments_enabled,collections_enabled,follows_enabled,analytics_enabled,mail_enabled,smtp_host,smtp_port,smtp_username,smtp_password_ciphertext IS NOT NULL,mail_from,timezone,rss_enabled,floating_controls FROM site_settings WHERE id=1`).Scan(&d.Version, &d.Registration, &d.Comments, &d.Collections, &d.Follows, &d.Analytics, &d.Mail, &d.SMTPHost, &d.SMTPPort, &d.SMTPUsername, &d.SMTPConfigured, &d.MailFrom, &d.Timezone, &d.RSS, &d.Floating)
+	e := a.Pool.QueryRow(r.Context(), `SELECT version,external_login_enabled,registration_enabled,comments_enabled,collections_enabled,follows_enabled,analytics_enabled,mail_enabled,smtp_host,smtp_port,smtp_username,smtp_password_ciphertext IS NOT NULL,mail_from,timezone,rss_enabled,floating_controls FROM site_settings WHERE id=1`).Scan(&d.Version, &d.ExternalLogin, &d.Registration, &d.Comments, &d.Collections, &d.Follows, &d.Analytics, &d.Mail, &d.SMTPHost, &d.SMTPPort, &d.SMTPUsername, &d.SMTPConfigured, &d.MailFrom, &d.Timezone, &d.RSS, &d.Floating)
 	if e != nil {
 		return e
 	}
@@ -266,12 +267,21 @@ func (a *App) adminPutSettings(w http.ResponseWriter, r *http.Request) error {
 	data, e := a.Write(r, []string{"owner"}, true, false, func(tx pgx.Tx, p Principal) (any, error) {
 		var v int64
 		var configured bool
-		e := tx.QueryRow(r.Context(), `UPDATE site_settings SET version=version+1,registration_enabled=$2,comments_enabled=$3,collections_enabled=$4,follows_enabled=$5,analytics_enabled=$6,mail_enabled=$7,smtp_host=$8,smtp_port=$9,smtp_username=$10,smtp_password_ciphertext=CASE WHEN $11 THEN $12::bytea ELSE smtp_password_ciphertext END,mail_from=$13,updated_at_ms=$14,rss_enabled=COALESCE($15::boolean,rss_enabled),floating_controls=COALESCE($16::jsonb,floating_controls) WHERE id=1 AND version=$1 RETURNING version,smtp_password_ciphertext IS NOT NULL,rss_enabled,floating_controls`, version, d.Registration, d.Comments, d.Collections, d.Follows, d.Analytics, d.Mail, d.SMTPHost, d.SMTPPort, d.SMTPUsername, d.SMTPPassword != nil, secret, d.MailFrom, NowMillis(), d.RSS, d.Floating).Scan(&v, &configured, &d.RSS, &d.Floating)
+		e := tx.QueryRow(r.Context(), `UPDATE site_settings SET version=version+1,registration_enabled=$2,comments_enabled=$3,collections_enabled=$4,follows_enabled=$5,analytics_enabled=$6,mail_enabled=$7,smtp_host=$8,smtp_port=$9,smtp_username=$10,smtp_password_ciphertext=CASE WHEN $11 THEN $12::bytea ELSE smtp_password_ciphertext END,mail_from=$13,updated_at_ms=$14,rss_enabled=COALESCE($15::boolean,rss_enabled),floating_controls=COALESCE($16::jsonb,floating_controls),external_login_enabled=COALESCE($17::boolean,external_login_enabled) WHERE id=1 AND version=$1 RETURNING version,smtp_password_ciphertext IS NOT NULL,rss_enabled,floating_controls,external_login_enabled`, version, d.Registration, d.Comments, d.Collections, d.Follows, d.Analytics, d.Mail, d.SMTPHost, d.SMTPPort, d.SMTPUsername, d.SMTPPassword != nil, secret, d.MailFrom, NowMillis(), d.RSS, d.Floating, d.ExternalLogin).Scan(&v, &configured, &d.RSS, &d.Floating, &d.ExternalLogin)
 		if e == pgx.ErrNoRows {
 			return nil, E(409, "VERSION_CONFLICT", "站点设置已改变")
 		}
 		if e != nil {
 			return nil, e
+		}
+		if d.ExternalLogin != nil && !*d.ExternalLogin {
+			now := NowMillis()
+			if _, e = tx.Exec(r.Context(), `UPDATE sessions SET revoked_at_ms=$1 WHERE revoked_at_ms IS NULL AND user_id IN(SELECT id FROM users WHERE role<>'owner')`, now); e != nil {
+				return nil, e
+			}
+			if _, e = tx.Exec(r.Context(), `UPDATE mfa_login_challenges SET consumed_at_ms=$1 WHERE consumed_at_ms IS NULL AND user_id IN(SELECT id FROM users WHERE role<>'owner')`, now); e != nil {
+				return nil, e
+			}
 		}
 		if e = interactionAudit(tx, r, p, "site.settings_update", "site", "1", ""); e != nil {
 			return nil, e

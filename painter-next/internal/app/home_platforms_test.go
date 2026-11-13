@@ -262,10 +262,17 @@ func homePlatformSchema20(t *testing.T, a *App) {
 func TestHomePlatformMigration21PreservesReleasedRowsAndConnection(t *testing.T) {
 	a := homeTestApp(t)
 	homePlatformSchema20(t, a)
-	a.RegisterMedia()
-	_, owner, csrf := testIdentity(t, a, "owner")
-	media := momentImageUpload(t, a, owner, csrf, 31)
 	ctx := context.Background()
+	// Build released-schema metadata directly: current HTTP authentication and
+	// upload handlers require the latest schema and are not a schema-20 fixture.
+	var ownerID string
+	if err := a.Pool.QueryRow(ctx, `INSERT INTO users(username,display_name,role,created_at_ms,updated_at_ms) VALUES('migration20-owner','Migration owner','owner',1,1) RETURNING id::text`).Scan(&ownerID); err != nil {
+		t.Fatal(err)
+	}
+	media := RandID()
+	if _, err := a.Pool.Exec(ctx, `INSERT INTO media_assets(id,owner_user_id,storage_key,original_name,mime_type,byte_size,sha256,state,created_at_ms,updated_at_ms,ready_at_ms) VALUES($1,$2,$3,'saved-photo.png','image/png',31,$4,'ready',1,1,1)`, media, ownerID, "migration20/"+media+".png", strings.Repeat("a", 64)); err != nil {
+		t.Fatal(err)
+	}
 	cipher, err := a.encrypt([]byte("isolated-old-steam-secret"))
 	if err != nil {
 		t.Fatal(err)
@@ -288,7 +295,7 @@ func TestHomePlatformMigration21PreservesReleasedRowsAndConnection(t *testing.T)
 		t.Fatal(err)
 	}
 	if err = Migrate(ctx, a.Pool); err != nil {
-		t.Fatal("actual schema20-to21 migration", err)
+		t.Fatal("actual released-schema20-to-current migration", err)
 	}
 	var afterItems, afterSettings string
 	if err = a.Pool.QueryRow(ctx, `SELECT jsonb_agg(to_jsonb(h)-'platform'-'platforms' ORDER BY id)::text FROM homepage_items h`).Scan(&afterItems); err != nil || beforeItems != afterItems {
@@ -301,8 +308,25 @@ func TestHomePlatformMigration21PreservesReleasedRowsAndConnection(t *testing.T)
 	if err = a.Pool.QueryRow(ctx, `SELECT count(*) FILTER(WHERE kind='steam' AND platform='steam'),count(*) FILTER(WHERE kind<>'steam' AND platform=''),count(*) FILTER(WHERE platforms='{}') FROM homepage_items`).Scan(&labelled, &other, &emptyDevices); err != nil || labelled != 2 || other != 2 || emptyDevices != 4 {
 		t.Fatal("incorrect legacy platform backfill", labelled, other, emptyDevices, err)
 	}
-	if err = a.Pool.QueryRow(ctx, `SELECT max(version) FROM schema_migrations`).Scan(&schema); err != nil || schema != 21 {
-		t.Fatal("migration ledger did not reach schema21", schema, err)
+	latestSchema := 0
+	migrationFiles, err := migrations.Files.ReadDir(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range migrationFiles {
+		if !strings.HasSuffix(file.Name(), ".sql") {
+			continue
+		}
+		version, err := strconv.Atoi(strings.SplitN(file.Name(), "_", 2)[0])
+		if err != nil {
+			t.Fatal("invalid embedded migration filename", file.Name(), err)
+		}
+		if version > latestSchema {
+			latestSchema = version
+		}
+	}
+	if err = a.Pool.QueryRow(ctx, `SELECT max(version) FROM schema_migrations`).Scan(&schema); err != nil || schema != latestSchema {
+		t.Fatal("migration ledger did not reach latest embedded schema", schema, latestSchema, err)
 	}
 	var connectionVersion, credentialVersion int64
 	var auto, requested bool

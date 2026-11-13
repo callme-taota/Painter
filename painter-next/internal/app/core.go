@@ -12,7 +12,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -210,6 +209,10 @@ func New(ctx context.Context, c Config) (*App, error) {
 		return nil, err
 	}
 	a.RegisterIdentity()
+	if err = a.RegisterOIDC(ctx); err != nil {
+		pool.Close()
+		return nil, err
+	}
 	a.RegisterSetup()
 	a.RegisterPhrases()
 	a.RegisterMoments()
@@ -476,8 +479,8 @@ type rateBucket struct {
 	Reset int64
 }
 
-// Bounded local limiter intentionally uses the direct peer address. A reverse
-// proxy must enforce its own edge limits; untrusted forwarding headers are ignored.
+// Bounded local limiter shares the same verified client address as local auth;
+// untrusted forwarding headers never affect its buckets.
 func (a *App) allowRequest(r *http.Request) bool {
 	limit := 0
 	window := int64(60000)
@@ -502,10 +505,7 @@ func (a *App) allowRequest(r *http.Request) bool {
 	if limit == 0 {
 		return true
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
+	host := a.ClientIP(r)
 	key := scope + ":" + host
 	now := NowMillis()
 	a.rateMu.Lock()

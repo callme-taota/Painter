@@ -29,7 +29,7 @@ onMounted(load)
      <label>Client ID<input v-model="settings.client_id" maxlength="256" autocomplete="off" spellcheck="false" :required="settings.enabled"></label>
      <div class="github-secret-field"><label for="github-client-secret">Client Secret<input id="github-client-secret" v-model="secret" type="password" maxlength="4096" autocomplete="new-password" :placeholder="settings.client_secret_configured?'已配置，留空保持':'粘贴 GitHub 生成的密钥'" aria-describedby="github-secret-help"></label><small id="github-secret-help" class="muted">{{settings.client_secret_configured?'已保存的密钥不会显示。留空保留，填写新密钥则替换。':'密钥仅在保存时提交给本站服务器。'}}</small></div>
     </div>
-    <p class="muted github-help">新 GitHub 身份仅在开放注册时创建读者账号；已有 GitHub 账号仍可登录。</p>
+    <p class="muted github-help">GitHub 登录遵循上方账号访问策略；已绑定两步验证的账号仍需输入动态码。新身份仅在开放注册时创建读者账号。</p>
     <div class="form-actions"><button class="primary" :disabled="busy||conflict">{{busy?'正在保存…':'保存 GitHub 登录'}}</button><a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer">登记 GitHub OAuth App</a></div>
    </fieldset>
   </form>

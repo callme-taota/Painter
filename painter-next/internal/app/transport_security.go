@@ -23,12 +23,18 @@ func (c *Config) configureTransportSecurity(origin *url.URL) error {
 		c.publicHTTPSOrigin = &copy
 	}
 	if strings.TrimSpace(c.TrustedProxyCIDRs) == "" {
+		if c.TrustCloudflareConnectingIP {
+			return errors.New("TRUST_CLOUDFLARE_CONNECTING_IP requires explicit TRUSTED_PROXY_CIDRS")
+		}
 		return nil
 	}
 	for _, raw := range strings.Split(c.TrustedProxyCIDRs, ",") {
 		prefix, err := netip.ParsePrefix(strings.TrimSpace(raw))
 		if err != nil {
 			return errors.New("TRUSTED_PROXY_CIDRS must contain comma-separated IP CIDRs")
+		}
+		if c.TrustCloudflareConnectingIP && prefix.Bits() == 0 {
+			return errors.New("TRUST_CLOUDFLARE_CONNECTING_IP requires a restricted TRUSTED_PROXY_CIDRS allowlist")
 		}
 		c.trustedProxyPrefixes = append(c.trustedProxyPrefixes, prefix.Masked())
 	}
@@ -43,12 +49,18 @@ func (c Config) secureRequest(r *http.Request) bool {
 	if len(proto) != 1 || !strings.EqualFold(strings.TrimSpace(proto[0]), "https") {
 		return false
 	}
+	return c.trustedProxyPeer(r)
+}
+
+// Proxy trust is checked against the direct TCP peer, never X-Forwarded-For,
+// CF-Connecting-IP or a forwarded host. Keep tunnel connector CIDRs narrow.
+func (c Config) trustedProxyPeer(r *http.Request) bool {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		return false
 	}
 	peer, err := netip.ParseAddr(host)
-	if err != nil {
+	if err != nil || peer.Zone() != "" {
 		return false
 	}
 	peer = peer.Unmap()
@@ -85,4 +97,31 @@ func (a *App) redirectPublicHTTP(w http.ResponseWriter, r *http.Request) bool {
 	w.Header().Set("Cache-Control", "private, no-store")
 	http.Redirect(w, r, target.String(), http.StatusPermanentRedirect)
 	return true
+}
+
+// ClientIP accepts Cloudflare's single client address only with explicit opt-in
+// and a trusted direct connector. It deliberately ignores all forwarding chains.
+// Official header semantics: https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-connecting-ip
+func (a *App) ClientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	peer, err := netip.ParseAddr(host)
+	fallback := host
+	if err == nil && peer.Zone() == "" {
+		fallback = peer.Unmap().String()
+	}
+	if !a.Config.TrustCloudflareConnectingIP || !a.Config.trustedProxyPeer(r) {
+		return fallback
+	}
+	values := r.Header.Values("CF-Connecting-IP")
+	if len(values) != 1 || values[0] == "" || strings.TrimSpace(values[0]) != values[0] {
+		return fallback
+	}
+	client, err := netip.ParseAddr(values[0])
+	if err != nil || client.Zone() != "" {
+		return fallback
+	}
+	return client.Unmap().String()
 }

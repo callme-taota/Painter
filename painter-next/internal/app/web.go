@@ -424,7 +424,7 @@ func (a *App) RegisterWeb() {
 	})
 	authPage := func(w http.ResponseWriter, r *http.Request) {
 		var registration bool
-		_ = a.Pool.QueryRow(r.Context(), "SELECT registration_enabled FROM site_settings WHERE id=1").Scan(&registration)
+		_ = a.Pool.QueryRow(r.Context(), "SELECT registration_enabled AND external_login_enabled FROM site_settings WHERE id=1").Scan(&registration)
 		returnTo := "/me"
 		if r.URL.Query().Get("return_to") != "" {
 			returnTo = internalReturn(r.URL.Query().Get("return_to"))

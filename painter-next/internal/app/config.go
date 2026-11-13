@@ -14,35 +14,43 @@ import (
 
 // Config is trusted process configuration, never populated from HTTP parameters.
 type Config struct {
-	DatabaseURL          string
-	ListenAddr           string
-	PublicBaseURL        string
-	EnforcePublicHTTPS   bool
-	TrustedProxyCIDRs    string
-	trustedProxyPrefixes []netip.Prefix
-	publicHTTPSOrigin    *url.URL
-	MediaDir             string
-	Environment          string
-	RunBackgroundWorkers *bool
-	Demo                 bool
-	EncryptionKey        []byte
-	AnalyticsHMACKey     []byte
-	MaxConnections       int32
-	UploadLimit          int64
-	GitHubClientID       string
-	GitHubClientSecret   string
-	GitHubCallbackURL    string
-	BootstrapGitHubID    string
-	SetupToken           string
-	OAuthURL             string
-	TokenURL             string
-	ProfileURL           string
-	HTTPClient           *http.Client
+	DatabaseURL                 string
+	ListenAddr                  string
+	PublicBaseURL               string
+	EnforcePublicHTTPS          bool
+	TrustedProxyCIDRs           string
+	TrustCloudflareConnectingIP bool
+	trustedProxyPrefixes        []netip.Prefix
+	publicHTTPSOrigin           *url.URL
+	MediaDir                    string
+	Environment                 string
+	RunBackgroundWorkers        *bool
+	Demo                        bool
+	EncryptionKey               []byte
+	AnalyticsHMACKey            []byte
+	MaxConnections              int32
+	UploadLimit                 int64
+	GitHubClientID              string
+	GitHubClientSecret          string
+	GitHubCallbackURL           string
+	BootstrapGitHubID           string
+	SetupToken                  string
+	OAuthURL                    string
+	TokenURL                    string
+	ProfileURL                  string
+	HTTPClient                  *http.Client
 }
 
 func ConfigFromEnv() (Config, error) {
 	c := Config{DatabaseURL: os.Getenv("DATABASE_URL"), ListenAddr: os.Getenv("LISTEN_ADDR"), PublicBaseURL: os.Getenv("PUBLIC_BASE_URL"), MediaDir: os.Getenv("MEDIA_DIR"), Environment: os.Getenv("ENVIRONMENT"), GitHubClientID: os.Getenv("GITHUB_CLIENT_ID"), GitHubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"), GitHubCallbackURL: os.Getenv("GITHUB_CALLBACK_URL"), BootstrapGitHubID: os.Getenv("BOOTSTRAP_GITHUB_ID")}
 	c.TrustedProxyCIDRs = os.Getenv("TRUSTED_PROXY_CIDRS")
+	if raw, present := os.LookupEnv("TRUST_CLOUDFLARE_CONNECTING_IP"); present {
+		enabled, err := strconv.ParseBool(raw)
+		if err != nil {
+			return c, errors.New("TRUST_CLOUDFLARE_CONNECTING_IP must be a valid boolean (true or false)")
+		}
+		c.TrustCloudflareConnectingIP = enabled
+	}
 	if raw, present := os.LookupEnv("ENFORCE_PUBLIC_HTTPS"); present {
 		enabled, err := strconv.ParseBool(raw)
 		if err != nil {
