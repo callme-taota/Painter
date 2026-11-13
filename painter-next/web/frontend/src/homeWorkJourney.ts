@@ -20,6 +20,7 @@ export function initHomeWorkJourney(){
   const next=journey.nextElementSibling instanceof HTMLElement?journey.nextElementSibling:undefined
   const record=next?.matches('[data-collection-direction="music-games"]')?next.querySelector<HTMLElement>('[data-record-wall]')||undefined:undefined
   const reduced=matchMedia('(prefers-reduced-motion:reduce)')
+  const phone=matchMedia('(max-width:720px)')
   const stage=document.createElement('div');stage.className='home-work-stage';stage.dataset.homeWorkStage='true'
   const nativeCalendarScroll=calendar.querySelector<HTMLElement>('.activity-scroll'),nativeScrollLeft=nativeCalendarScroll?.scrollLeft||0
   journey.insertBefore(stage,intro);stage.append(intro,project,calendar)
@@ -30,7 +31,7 @@ export function initHomeWorkJourney(){
   const introFace=document.createElement('div');introFace.className='work-card-intro-face';introFace.setAttribute('aria-hidden','true')
   for(const child of Array.from(face.children))introFace.append(child.cloneNode(true))
   carrier.append(introFace)
-  project.querySelectorAll<HTMLImageElement>('.project-owner-avatar').forEach(img=>{img.loading='eager'})
+  if(!phone.matches)project.querySelectorAll<HTMLImageElement>('.project-owner-avatar').forEach(img=>{img.loading='eager'})
   const caption=record?.querySelector<HTMLElement>('.home-record-caption')?.cloneNode(true) as HTMLElement|undefined
   if(caption){caption.classList.add('work-record-caption');caption.setAttribute('aria-hidden','true');caption.inert=true;stage.append(caption)}
   const jumps=document.createElement('nav');jumps.className='work-content-jumps sr-only';jumps.setAttribute('aria-label','直接查看首页内容')
@@ -46,10 +47,12 @@ export function initHomeWorkJourney(){
    if(deck)new MutationObserver(selection).observe(deck,{attributes:true,subtree:true,attributeFilter:['class']})
    selection()
   }
-  const points=createPointMorph(stage,calendar,record)
+  // Do not create eager projection-image copies for the phone's ordinary
+  // document. Desktop can initialise its morph when this boundary is crossed.
+  let points:ReturnType<typeof createPointMorph>|undefined
   let frames:CardFrame[]=[],source:PointMorphRect={left:0,top:0,width:1,height:1},queued=0,near=true,needsMeasure=true,enhanced=false,measuring=false,focusPin:number|undefined
   const end=record?6:4.45
-  const enabled=()=>document.body.dataset.homeMotion!=='false'&&!reduced.matches&&CSS.supports('position','sticky')&&CSS.supports('background','color-mix(in srgb,white,black)')
+  const enabled=()=>document.body.dataset.homeMotion!=='false'&&!reduced.matches&&!phone.matches&&CSS.supports('position','sticky')&&CSS.supports('background','color-mix(in srgb,white,black)')
   registerHomeSnapSource(journey,()=>{
    if(!enhanced||!enabled())return[]
    const h=stage.clientHeight,start=scrollY+journey.getBoundingClientRect().top
@@ -58,7 +61,7 @@ export function initHomeWorkJourney(){
 
   function clearCard(card:HTMLElement){card.style.removeProperty('transform');card.style.removeProperty('opacity');card.style.removeProperty('--work-repo-alpha');card.style.removeProperty('--work-native-strength');card.style.removeProperty('--work-card-z');const link=card.querySelector<HTMLElement>('.project-card-link');if(link)for(const p of['background','border-radius','box-shadow'])link.style.removeProperty(p)}
   function reset(){
-   enhanced=false;journey.classList.remove('work-journey-ready','work-measuring');next?.classList.remove('has-work-record-bridge');journey.style.removeProperty('--work-height');stage.removeAttribute('style');points.reset();cards.forEach(clearCard)
+   enhanced=false;journey.classList.remove('work-journey-ready','work-measuring');next?.classList.remove('has-work-record-bridge');journey.style.removeProperty('--work-height');stage.removeAttribute('style');if(phone.matches){points?.destroy();points=undefined}else points?.reset();cards.forEach(clearCard)
    for(const element of[intro,project,calendar]){element.inert=false;element.removeAttribute('aria-hidden');element.style.removeProperty('opacity');element.style.removeProperty('pointer-events')}
    for(const scene of intro.querySelectorAll<HTMLElement>('[data-story-scene]')){scene.inert=false;scene.removeAttribute('aria-hidden');scene.style.removeProperty('--scene-opacity')}
    if(caption)caption.style.opacity='0';journey.dataset.workPhase='static';delete journey.dataset.workMeasured;focusPin=undefined
@@ -71,8 +74,8 @@ export function initHomeWorkJourney(){
    const pw=w<=720?Math.min(w*(h<650?.53:.62),250):Math.min(w*.32,400),ph=pw*1.25
    source={left:w<=720?(w-pw)/2-20:w*.75-pw/2,top:w<=720?h-ph-(h<650?34:74):(h-ph)/2,width:pw,height:ph}
    frames=cards.map(element=>({element,link:element.querySelector<HTMLAnchorElement>('.project-card-link')!,box:rect(element,box),color:''}))
-   points.measure();const targets=points.cardTargets(cards.length)
-   frames.forEach((frame,index)=>{frame.day=targets[index%targets.length];frame.target=frame.day?points.dayRect(frame.day):undefined;frame.color=frame.day?getComputedStyle(frame.day).backgroundColor:'var(--subtle)';if(frame.day)frame.link.dataset.workTargetDate=frame.day.dataset.date||''})
+   const morph=points||(points=createPointMorph(stage,calendar,record));morph.measure();const targets=morph.cardTargets(cards.length)
+   frames.forEach((frame,index)=>{frame.day=targets[index%targets.length];frame.target=frame.day?morph.dayRect(frame.day):undefined;frame.color=frame.day?getComputedStyle(frame.day).backgroundColor:'var(--subtle)';if(frame.day)frame.link.dataset.workTargetDate=frame.day.dataset.date||''})
    journey.classList.remove('work-measuring');journey.dataset.workMeasured='true';needsMeasure=false;measuring=false
   }
   function phase(u:number){return u<1?'intro':u<2?'paper-project':u<2.65?'projects':u<3.75?'project-calendar':u<4.4?'calendar':u<5.6&&record?'calendar-record':u<end?'records':'handoff'}
@@ -95,7 +98,7 @@ export function initHomeWorkJourney(){
    if(projectChooser){const picking=u>=2&&u<2.65;projectChooser.inert=!picking;projectChooser.setAttribute('aria-hidden',String(!picking));projectChooser.style.visibility=picking?'visible':'hidden'}
    project.style.setProperty('--work-project-chrome',String(smooth(1.45,1.95,u)*(1-smooth(2.65,2.95,u))))
    carrier.style.setProperty('--work-intro-alpha',(1-smooth(.12,.76,paper)).toFixed(5))
-   points.render(toCalendar,toRecords)
+   points?.render(toCalendar,toRecords)
    setScene(calendar,smooth(0,.15,toCalendar),u>=3.5&&u<4.55)
    calendar.style.setProperty('--work-calendar-chrome',String(smooth(.35,.95,toCalendar)*(1-smooth(0,.4,toRecords))))
    for(const [index,frame]of frames.entries()){
@@ -119,7 +122,7 @@ export function initHomeWorkJourney(){
    if(caption)caption.style.opacity=smooth(.78,1,toRecords).toFixed(5)
    dispatchEvent(new Event('painter:home-media-layout'))
   }
-  function schedule(force=false){if(!queued&&!document.hidden&&(near||force))queued=requestAnimationFrame(render)}
+  function schedule(force=false){if(phone.matches&&!force)return;if(!queued&&!document.hidden&&(near||force))queued=requestAnimationFrame(render)}
   function invalidate(){if(measuring)return;needsMeasure=true;schedule(true)}
   function jump(id:string){const match=destinations.find(x=>x[0]===id);if(!match||!enabled())return false;focusPin=undefined;scrollTo({top:scrollY+journey.getBoundingClientRect().top+match[2]*innerHeight,behavior:'instant'});schedule(true);return true}
   jumps.addEventListener('click',event=>{const target=(event.target as HTMLElement).closest<HTMLAnchorElement>('a');if(target&&event instanceof MouseEvent&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&jump(target.hash.slice(1)))event.preventDefault()})
@@ -131,6 +134,7 @@ export function initHomeWorkJourney(){
   addEventListener('scroll',()=>schedule(),{passive:true});addEventListener('resize',invalidate,{passive:true});addEventListener('painter:home-work-measure',invalidate)
   calendar.querySelector('.activity-scroll')?.addEventListener('scroll',()=>{if(!measuring&&journey.dataset.workPhase==='calendar')invalidate()},{passive:true})
   reduced.addEventListener('change',()=>{needsMeasure=true;schedule(true)})
+  phone.addEventListener('change',()=>{needsMeasure=true;schedule(true)})
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(queued);queued=0}else invalidate()})
   new MutationObserver(invalidate).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})
   if('IntersectionObserver'in window)new IntersectionObserver(entries=>{near=entries[0]?.isIntersecting??true;if(near)schedule(true)},{rootMargin:'100px 0px'}).observe(journey)

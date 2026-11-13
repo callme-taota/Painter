@@ -1,0 +1,152 @@
+/* V44: phone work is a task flow; tablet keeps its drawer, desktop its rail.
+   The shell is glass navigation. Forms, writing and data remain solid paper. */
+body.studio-navigation-open{overflow:hidden}
+.studio-phone-header,.studio-phone-navigation,.studio-sheet-heading,.phone-task-tabs{display:none}
+
+@media(max-width:720px){
+ body[data-page-kind=studio]{--studio-pad:16px;--phone-navigation-height:76px;scroll-padding-top:88px}
+ body[data-page-kind=studio] .workbench{min-width:0;background:var(--paper)}
+ body[data-page-kind=studio] .studio-phone-header{position:sticky;top:0;z-index:45;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;min-height:calc(64px + env(safe-area-inset-top));padding:calc(6px + env(safe-area-inset-top)) 12px 6px;border-radius:0 0 18px 18px;background:var(--paper);color:var(--ink);--liquid-glass-tint:color-mix(in srgb,var(--paper) 82%,transparent)}
+ .studio-phone-header>div{position:relative;z-index:1;min-width:0;text-align:center}
+ .studio-phone-header>div>span{display:block;color:var(--muted);font:400 11px/15px var(--font-ui)}
+ .studio-phone-header strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 16px/23px var(--font-ui)}
+ body[data-page-kind=studio] .studio-phone-header :is(button,a){position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:10px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--ink)}
+ .studio-phone-header .phone-back>.ui-icon{transform:rotate(180deg)}
+ body[data-page-kind=studio] .work-main,body[data-page-kind=studio] .work-main:has(.editor-page){margin:0;min-height:calc(100dvh - 64px);padding:24px var(--studio-pad) calc(var(--phone-navigation-height) + env(safe-area-inset-bottom) + 32px);border:0;border-radius:0;background:var(--paper)}
+ body[data-page-kind=studio] .work-main>.work-breadcrumb,body[data-page-kind=studio] .work-main:has(.editor-page)>.work-breadcrumb{display:none}
+ body[data-page-kind=studio] .work-heading{height:0;min-height:0;margin:0;padding:0}
+ body[data-page-kind=studio] .work-heading h1{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ body[data-page-kind=studio] .work-heading p{display:none}
+ body[data-page-kind=studio] .work-heading>.button{display:none}
+ body[data-page-kind=studio] .work-main :is(input:not([type=checkbox]):not([type=radio]),textarea:not(.editor-title)){font-size:16px}
+ body[data-page-kind=studio] .work-main :is(button,.button,.select-trigger,summary){min-height:44px}
+ body[data-page-kind=studio] .work-main .check{min-height:44px;padding-block:8px}
+ body[data-page-kind=studio] .work-main :is(button,.button,.select-trigger,summary),.studio-phone-header :is(button,a),.studio-phone-navigation :is(button,a){touch-action:manipulation}
+ body[data-page-kind=studio] .work-main :is(input,textarea,button,[contenteditable]){scroll-margin-top:96px;scroll-margin-bottom:100px}
+ body[data-page-kind=studio] .panel{padding:18px;margin-bottom:20px;min-width:0}
+ body[data-page-kind=studio] .form-grid{gap:20px}
+ body[data-page-kind=studio] .form-actions{gap:10px;flex-wrap:wrap}
+ body[data-page-kind=studio] .form-actions>button.primary{flex:1;min-width:140px}
+ .phone-task-tabs{position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:30;display:flex;gap:4px;padding:4px;margin:0 0 20px;border-radius:var(--radius-control);background:var(--subtle)}
+ body[data-page-kind=studio] .phone-task-tabs>button{flex:1;min-width:0;min-height:44px;padding:10px 8px;border:1px solid transparent;border-radius:var(--radius-item);background:transparent;color:var(--muted);font:500 14px/20px var(--font-ui)}
+ body[data-page-kind=studio] .phone-task-tabs>button[aria-selected=true]{background:var(--paper);border-color:var(--line);color:var(--ink)}
+ body[data-page-kind=studio] .settings-tabs{position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:31;background:var(--paper);display:flex;flex-wrap:nowrap;gap:0;overflow-x:auto;margin:0 0 20px;scrollbar-width:none}
+ body[data-page-kind=studio] .settings-tabs>button{flex:1;min-width:max-content;min-height:44px;padding:10px 8px;font:500 13px/20px var(--font-ui)}
+ body[data-page-kind=studio] .phone-security-tabs{top:calc(109px + env(safe-area-inset-top))}
+ body[data-page-kind=studio] .phone-security-tabs>button{font-size:13px}
+ body[data-page-kind=studio] .studio-phone-navigation{position:fixed;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:50;display:flex;align-items:center;justify-content:space-around;min-height:66px;padding:5px;border:1px solid var(--line);border-radius:24px;background:var(--paper);--liquid-glass-tint:color-mix(in srgb,var(--paper) 78%,transparent)}
+ body[data-page-kind=studio] .studio-phone-navigation :is(a,button){position:relative;z-index:1;display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:54px;min-width:44px;padding:5px;border:0;border-radius:18px;background:transparent;color:var(--muted);font:500 11px/15px var(--font-ui)}
+ body[data-page-kind=studio] .studio-phone-navigation [aria-current=page]{color:var(--ink);background:color-mix(in srgb,var(--subtle) 85%,transparent)}
+ body[data-page-kind=studio] .studio-phone-navigation :is(a,button):active{background:var(--subtle)}
+ body[data-page-kind=studio] .is-keyboard-open .studio-phone-navigation{display:none}
+ body[data-page-kind=studio] .is-keyboard-open .studio-phone-header{position:relative}
+ body[data-page-kind=studio] .studio-navigation-sheet{position:fixed;inset:auto 0 0;width:100%;max-width:none;height:auto;max-height:calc(100dvh - max(24px,env(safe-area-inset-top)));margin:0;padding:0 16px max(12px,env(safe-area-inset-bottom));border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;background:var(--paper);overflow:hidden;box-sizing:border-box}
+ body[data-page-kind=studio] .studio-navigation-sheet[open]{display:flex;flex-direction:column}
+ .studio-navigation-sheet .studio-sheet-heading{display:flex;align-items:center;justify-content:space-between;flex:none;padding:20px 0 14px;border-bottom:1px solid var(--line)}
+ .studio-sheet-heading span{display:block;color:var(--muted);font:400 12px/18px var(--font-ui)}
+ .studio-sheet-heading h2{margin:0;font:600 20px/28px var(--font-ui);letter-spacing:-.02em}
+ body[data-page-kind=studio] .studio-sheet-heading button{width:44px;height:44px;min-height:44px;padding:10px;border:0;background:var(--subtle)}
+ body[data-page-kind=studio] .studio-sheet-links{flex:1 1 auto;min-height:0;padding:12px 0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+ body[data-page-kind=studio] .studio-sheet-links .studio-nav-section{margin:0 0 18px}
+ .studio-sheet-group{display:flex;align-items:center;gap:8px;margin:0 0 6px;padding:6px 8px;color:var(--muted);font:500 12px/18px var(--font-ui)}
+ body[data-page-kind=studio] .studio-sheet-links .studio-section-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0;padding:0;border:0}
+ body[data-page-kind=studio] .studio-sheet-links .studio-section-links>a{display:flex;align-items:center;min-height:46px;min-width:0;margin:0;padding:10px 12px;border-radius:var(--radius-control);font:500 14px/22px var(--font-ui);overflow-wrap:anywhere}
+ body[data-page-kind=studio] .studio-navigation-sheet .studio-sidebar-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:4px 12px;flex:none;margin:0;padding:10px 0 0;background:var(--paper)}
+ body[data-page-kind=studio] .studio-navigation-sheet .studio-sidebar-bottom .select-label{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+ body[data-page-kind=studio] .studio-navigation-sheet .studio-sidebar-bottom .select-trigger{min-height:44px}
+ body[data-page-kind=studio] .studio-navigation-sheet .studio-visit{min-height:44px}
+ body[data-page-kind=studio] .studio-navigation-sheet .studio-account{grid-column:1/-1;margin:0;padding:8px 4px 0}
+ body[data-page-kind=studio] .studio-navigation-sheet .studio-account button{min-width:44px;min-height:44px}
+
+ /* Phone records keep the real table/field order, with the whole title tappable.
+    Comparisons (analytics, access clients) retain a contained horizontal table. */
+ body[data-page-kind=studio] .content-manager .manager-toolbar{gap:12px;margin-bottom:12px}
+ body[data-page-kind=studio] .content-manager .manager-search{flex-basis:100%;min-height:48px}
+ body[data-page-kind=studio] .content-manager .manager-search input{height:44px}
+ body[data-page-kind=studio] .content-manager .manager-search button{min-width:52px;min-height:44px;margin:1px}
+ body[data-page-kind=studio] .content-manager .manager-status-tabs{flex-wrap:nowrap;gap:24px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+ body[data-page-kind=studio] .content-manager .manager-status-tabs>button{flex:none;min-width:44px;min-height:44px}
+ body[data-page-kind=studio] .content-manager:has(.posts-table,.tags-table) .manager-table-hint{display:none}
+ body[data-page-kind=studio] .manager-table-wrap:has(.posts-table,.tags-table){overflow:visible;border:0;border-radius:0}
+ body[data-page-kind=studio] :is(.posts-table,.tags-table){display:block;width:100%;min-width:0}
+ body[data-page-kind=studio] :is(.posts-table,.tags-table)>thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ body[data-page-kind=studio] :is(.posts-table,.tags-table)>tbody{display:block}
+ body[data-page-kind=studio] :is(.posts-table,.tags-table)>tbody>tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:16px 0;border-bottom:1px solid var(--line)}
+ body[data-page-kind=studio] :is(.posts-table,.tags-table) td{width:auto;min-width:0;max-width:none;padding:0;border:0;overflow-wrap:anywhere}
+ body[data-page-kind=studio] .posts-table .manager-title{grid-column:1/-1}
+ body[data-page-kind=studio] .posts-table .manager-title>a{display:flex;min-height:44px;font:600 16px/24px var(--font-ui)}
+ body[data-page-kind=studio] .posts-table .manager-title small{font:400 13px/20px var(--font-ui);max-width:none;-webkit-line-clamp:2}
+ body[data-page-kind=studio] .posts-table .manager-author{grid-column:1;color:var(--muted);font-size:12px}
+ body[data-page-kind=studio] .posts-table .manager-author:before{content:'作者 ' }
+ body[data-page-kind=studio] .posts-table .manager-date:before{content:'更新于 ' }
+ body[data-page-kind=studio] .posts-table td:has(.table-status){grid-column:1;align-self:center}
+ body[data-page-kind=studio] .posts-table .manager-date{grid-column:1;font-size:12px;white-space:normal}
+ body[data-page-kind=studio] .posts-table td:has(.manager-row-actions){grid-column:2;grid-row:2/5;align-self:end}
+ body[data-page-kind=studio] .posts-table .manager-row-actions{gap:4px}
+ body[data-page-kind=studio] .posts-table td[colspan],body[data-page-kind=studio] .tags-table td[colspan]{grid-column:1/-1}
+ body[data-page-kind=studio] .tags-table .manager-tag-name{grid-column:1;font:600 16px/24px var(--font-ui)}
+ body[data-page-kind=studio] .tags-table .manager-tag-description{grid-column:1/-1;grid-row:2;font-size:14px}
+ body[data-page-kind=studio] .tags-table .manager-number{grid-column:1;grid-row:3;font-size:12px;color:var(--muted)}
+ body[data-page-kind=studio] .tags-table .manager-number:after{content:' 篇公开文章'}
+ body[data-page-kind=studio] .tags-table td:has(.table-status){grid-column:1;grid-row:4}
+ body[data-page-kind=studio] .tags-table td:last-child:not([colspan]){grid-column:2;grid-row:3/5;align-self:center}
+ body[data-page-kind=studio] .tags-table .tag-edit-row{padding:0;border:0}
+ body[data-page-kind=studio] .tags-table .tag-inline-editor{width:100%;padding:18px 14px;border-radius:var(--radius-control)}
+ body[data-page-kind=studio] .manager-pagination{gap:12px;align-items:center}
+ body[data-page-kind=studio] .manager-pagination button{min-height:44px}
+ body[data-page-kind=studio] .table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+ body[data-page-kind=studio] .user-row{flex-wrap:wrap;gap:12px}
+ body[data-page-kind=studio] .user-row>.user-info{flex-basis:calc(100% - 64px);min-width:0}
+ body[data-page-kind=studio] .operations-list dd{min-width:0;overflow-wrap:anywhere}
+
+ /* One draft, two tasks. Switching tasks never remounts either editor. */
+ body[data-page-kind=studio] .is-editing .work-main{padding-top:10px;padding-bottom:calc(106px + env(safe-area-inset-bottom))}
+ body[data-page-kind=studio] .editor-page.editor-unified{--editor-gutter:0}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar{position:static;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:0 0 12px;flex-wrap:nowrap;border:0}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-heading{flex:1;min-width:0}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-heading h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar .save-state{font:400 11px/17px var(--font-ui);white-space:normal}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar .toolbar{position:fixed;inset:auto 12px max(10px,env(safe-area-inset-bottom));z-index:42;display:flex;align-items:center;justify-content:space-between;gap:8px;width:auto;min-height:60px;padding:8px;border:1px solid var(--line);border-radius:var(--radius-surface);background:var(--paper);flex-wrap:nowrap}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar .toolbar>.editor-return{display:none}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar :is(button,.button){min-height:44px;padding:10px 8px;font:500 13px/20px var(--font-ui)}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-more>summary{min-height:44px;padding:10px 8px;font:500 13px/20px var(--font-ui)}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-more-menu{right:0;top:auto;bottom:calc(100% + 8px)}
+ body[data-page-kind=studio] .editor-phone-steps{margin-bottom:16px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-workspace{display:flex;flex-direction:column;gap:0}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-workspace>*{width:100%;min-width:0}
+ body[data-page-kind=studio] .editor-page.editor-unified :is(.editor-title-area,.editor-writing,.editor-properties){border:0;border-radius:0;padding:0;background:var(--paper)}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-title{min-height:72px;padding:10px 0 22px;font:600 26px/36px var(--font-ui);letter-spacing:-.025em}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-properties>summary{display:none}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-metadata{gap:24px;padding:4px 0 20px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-metadata :is(label,.select-label,legend){font-size:14px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-metadata .date-display-choices{display:grid;gap:4px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-metadata .check{font-size:14px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-writing .document-toolbar{padding:6px 0 10px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+ body[data-page-kind=studio] .editor-page.editor-unified .document-toolbar .document-tool-group{flex:none}
+ body[data-page-kind=studio] .editor-page.editor-unified .document-toolbar .document-block-type{flex:none;width:108px}
+ body[data-page-kind=studio] .editor-page.editor-unified .document-toolbar :is(button,.select-trigger){min-width:44px;min-height:44px}
+ body[data-page-kind=studio] .editor-page.editor-unified .document-toolbar .document-history{margin-left:0}
+ body[data-page-kind=studio] .editor-page.editor-unified .document-editor .document-prose{min-height:50dvh;padding:20px 0 40px;font-size:18px}
+ body[data-page-kind=studio] .editor-page.editor-unified .document-footnote{padding:12px 0;font-size:12px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-source-context{padding:0;gap:8px;font-size:12px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-tools{padding:8px 0 12px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-tools .tool-group{flex-wrap:nowrap;overflow-x:auto;max-width:100%}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-tools .view-switch button{min-height:44px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-panes{min-height:50dvh}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-panes[data-view=split]{grid-template-columns:1fr}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-panes[data-view=split] .editor-preview{border-left:0;border-top:1px solid var(--line)}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-source .cm-gutters{min-width:26px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-source .cm-content{font-size:16px;padding:16px 0 40px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-preview{padding:20px 0 40px}
+ body[data-page-kind=studio] .editor-page.editor-unified .conflict-panes{grid-template-columns:1fr}
+ body[data-page-kind=studio] .editor-page.editor-unified .conflict-panel pre{max-height:40dvh;overflow:auto}
+ body[data-page-kind=studio] .is-keyboard-open :is(.phone-task-tabs,.settings-tabs){position:static}
+ body[data-page-kind=studio] .is-keyboard-open .editor-bar .toolbar{display:none}
+}
+@media(max-width:360px){
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar{flex-wrap:wrap;gap:2px}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-heading{flex-basis:100%}
+ body[data-page-kind=studio] .editor-page.editor-unified .editor-bar .toolbar{width:auto;justify-content:space-between}
+}
+@media(forced-colors:active){.studio-phone-navigation,.studio-phone-header{border:1px solid CanvasText}}
+@media print{.studio-phone-header,.studio-phone-navigation,.phone-task-tabs{display:none!important}}

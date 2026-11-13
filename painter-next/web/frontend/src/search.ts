@@ -31,7 +31,7 @@ export function initSearch(){
   let items:SearchItem[]=[],options:HTMLElement[]=[],active=-1,timer:ReturnType<typeof setTimeout>|undefined,abort:AbortController|undefined,seq=0,composing=false,opener:HTMLElement|null=null
   function select(index:number){active=index;options.forEach((el,i)=>el.setAttribute('aria-selected',String(i===index)));if(index<0)input.removeAttribute('aria-activedescendant');else{input.setAttribute('aria-activedescendant','search-option-'+index);options[index]?.scrollIntoView({block:'nearest'})}}
   function clear(){items=[];options=[];active=-1;list.replaceChildren();input.removeAttribute('aria-activedescendant')}
-  function showStatus(text:string,quiet=false){status.textContent=text;status.classList.toggle('raycast-search-status-quiet',quiet)}
+  function showStatus(text:string,quiet=false){if(matchMedia('(max-width:720px)').matches)text=text.replaceAll('按 Enter','点击箭头');status.textContent=text;status.classList.toggle('raycast-search-status-quiet',quiet)}
   function busy(value:boolean){dialog.toggleAttribute('data-search-loading',value);list.setAttribute('aria-busy',String(value))}
   function cancelPending(){clearTimeout(timer);abort?.abort();seq++}
   function render(suggestions:Suggestion[],q:string){
@@ -55,7 +55,7 @@ export function initSearch(){
     catch(error){if((error as Error).name!=='AbortError'&&at===seq&&dialog.open&&!composing){render([],q);showStatus(q?'建议暂不可用，仍可按 Enter 搜索。':'建议暂不可用，可先打开站内页面。')}}finally{if(at===seq)busy(false)}
   }
   function schedule(){cancelPending();clear();if(fullSearch)fullSearch.href=input.value.trim()?'/search?q='+encodeURIComponent(input.value.trim()):'/search';if(composing){busy(false);showStatus('输入完成后查找。');return}busy(true);showStatus('正在查找…');timer=setTimeout(()=>void suggest(),180)}
-  function open(event?:Event){event?.preventDefault();if(dialog.open)return;opener=document.activeElement instanceof HTMLElement?document.activeElement:null;dialog.showModal();input.focus();input.setAttribute('aria-expanded','true');void suggest()}
+  function open(event?:Event){event?.preventDefault();if(dialog.open)return;const close=dialog.querySelector<HTMLElement>('[data-search-close]');if(close)close.textContent=matchMedia('(max-width:720px)').matches?'取消':'Esc';opener=document.activeElement instanceof HTMLElement?document.activeElement:null;dialog.showModal();input.focus();input.setAttribute('aria-expanded','true');void suggest()}
   document.querySelectorAll('[data-search-open]').forEach(el=>el.addEventListener('click',open))
   dialog.addEventListener('close',()=>{cancelPending();busy(false);input.setAttribute('aria-expanded','false');if(opener?.isConnected)opener.focus({preventScroll:true})})
   dialog.addEventListener('cancel',event=>{if(composing)event.preventDefault()})

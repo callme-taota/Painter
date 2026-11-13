@@ -76,3 +76,12 @@ initDock()
 
 import './gamePlatforms.css'
 import './searchGlass.css'
+
+import './mobileContent.css'
+import './mobileChrome.css'
+import {initMobileViewport,registerMobileOverlay} from './mobileOverlays'
+import {initMobileNavigation} from './mobileNavigation'
+initMobileViewport()
+initMobileNavigation()
+const searchDialog=document.querySelector<HTMLDialogElement>('#site-search')
+if(searchDialog)registerMobileOverlay(searchDialog,()=>document.querySelector<HTMLElement>('[data-search-open]')?.click())

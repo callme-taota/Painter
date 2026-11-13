@@ -1,0 +1,370 @@
+/* Phone web is a touch-first reading and collection surface, not a reduced
+   desktop canvas. Desktop/tablet composition and brand tokens stay unchanged. */
+.activity-mobile-navigation{display:none}
+
+@media screen and (max-width:720px){
+  body:not([data-page-kind=studio]){
+    --phone-gutter:20px;
+    --phone-section:48px;
+  }
+  body:not([data-page-kind=studio]) main.wrap.site-main,
+  body:not([data-page-kind=studio]):has(.floating-controls :is(button,a,details)) main.wrap.site-main{
+    width:calc(100% - var(--phone-gutter) * 2);
+    max-width:680px;
+    margin-inline:auto;
+    padding-top:24px;
+    min-width:0;
+  }
+  body[data-page-kind=home] main.wrap.site-main,
+  body[data-page-kind=home]:has(.floating-controls :is(button,a,details)) main.wrap.site-main{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+  }
+  body[data-page-kind=home]:not([data-home-first=intro]) main.wrap.site-main{padding-top:100px}
+  body:not([data-page-kind=studio]) :is(.page-heading,.games-library-heading){padding-block:4px 24px}
+  body:not([data-page-kind=studio]) .page-heading h1{font-size:30px;line-height:1.3;letter-spacing:-.025em;margin-bottom:12px}
+  body:not([data-page-kind=studio]) .page-heading p{font-size:15px;line-height:1.75;margin-bottom:0}
+  body:not([data-page-kind=studio]) :is(.empty,.games-empty){padding:36px 0;min-width:0}
+  body:not([data-page-kind=studio]) :is(.empty,.games-empty) p{font-size:15px;line-height:1.8}
+  body:not([data-page-kind=studio]) .pagination{gap:12px;flex-wrap:wrap;margin-top:28px}
+  body:not([data-page-kind=studio]) .pagination :is(a,button){display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px}
+  body:not([data-page-kind=studio]) :is(input,textarea){scroll-margin-block:100px 160px}
+
+  /* Natural-flow introduction: identity, its signature card, then the short
+     introduction. No sticky viewport, dormant plane or hidden focus targets. */
+  body[data-page-kind=home] :is(.home-work-journey,.home-story){height:auto;min-height:0}
+  .home-work-journey>.home-work-stage{display:contents}
+  .home-story .story-stage{display:grid;position:relative;height:auto;min-height:0;overflow:visible;grid-template-columns:minmax(0,1fr)}
+  .home-story .story-scene{position:relative;inset:auto;display:block;min-height:0;opacity:1;transform:none;padding:0 var(--phone-gutter);pointer-events:auto}
+  .home-story .story-scene-hello{grid-row:1;padding-top:120px;padding-bottom:24px}
+  .home-story .story-scene-intro{grid-row:3;padding-top:32px;padding-bottom:12px}
+  .home-story .story-scene-writing{padding-block:32px}
+  .home-story :is(.story-hero-copy,.story-intro-copy,.story-writing-copy){width:100%;max-width:36rem}
+  .home-story .story-title{font-size:clamp(48px,15vw,64px);line-height:1.06;letter-spacing:-.04em}
+  .home-story .story-title .greeting{font-size:16px;line-height:24px;margin-bottom:16px}
+  .home-story .story-jump{font-size:15px;min-height:44px;margin-top:20px;gap:12px}
+  .home-story .story-art{grid-row:2;position:relative;inset:auto;height:280px;perspective:none;z-index:auto;display:grid;place-items:center;overflow:hidden}
+  .home-story .story-pages{width:196px;margin:0;transform:rotate(-5deg)}
+  .home-story .story-leaf-back{transform:translate(-14px,6px) rotate(-5deg)}
+  .home-story .story-leaf-middle{transform:translate(-6px,2px) rotate(-2deg)}
+  .home-story .story-leaf-front{padding:22px;box-shadow:0 14px 32px rgb(0 0 0 / .13)}
+  .home-story .story-sheet-title{font-size:28px;letter-spacing:-.03em;line-height:1.18}
+  .home-story .story-sheet-signature{left:22px;bottom:22px;font-size:12px}
+  .home-story .story-sheet-signature img{width:24px;height:24px}
+  .home-story .story-intro-copy h2{font-size:27px;line-height:1.5;letter-spacing:-.025em}
+  .home-story .story-roles{font-size:14px;line-height:1.8;gap:6px 18px;margin-top:16px}
+  .home-story .story-cue{display:none}
+  body[data-page-kind=home] :is(.home-personal-section,.home-writing,.home-wall:not(.home-game-story):not(.home-record-wall)){
+    width:calc(100% - var(--phone-gutter) * 2);
+    margin:var(--phone-section) auto;
+    padding:0;
+    min-width:0;
+  }
+  body[data-page-kind=home] .home-section-heading{align-items:center;gap:16px;margin-bottom:20px}
+  body[data-page-kind=home] .home-section-heading h2{font-size:24px;line-height:1.35;letter-spacing:-.025em}
+  body[data-page-kind=home] .home-section-heading>a{font-size:13px;min-height:44px;gap:6px;flex:none;max-width:44%}
+  body[data-page-kind=home] .home-section-description{font-size:14px;line-height:1.8;margin-top:10px}
+
+  /* Native shelves keep a visible next item. Horizontal panning stays inside
+     the shelf; vertical swipes always belong to the document. */
+  .home-projects .project-deck{
+    width:auto;
+    margin-inline:calc(-1 * var(--phone-gutter));
+    padding:12px var(--phone-gutter) 24px;
+    gap:14px;
+    align-items:stretch;
+    scroll-snap-type:x proximity;
+    scroll-padding-inline:var(--phone-gutter);
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .home-projects .project-playing-card{
+    flex:0 0 min(80vw,320px);
+    margin:0;
+    transform:none;
+    transition:none;
+    scroll-snap-align:start;
+  }
+  .home-projects .project-playing-card:is(:hover,:focus-within,.is-active){transform:none;--card-lift:0px;--card-tilt:0deg}
+  .home-projects .project-card-link{height:100%;min-height:320px;padding:22px;box-shadow:0 5px 16px rgb(0 0 0 / .09)}
+  .home-projects .project-card-body{padding-block:24px 20px}
+  .home-projects .project-owner-avatar{margin-bottom:14px}
+  .home-projects .project-card-body h3{font-size:23px;line-height:1.25}
+  .home-projects .project-description{font-size:14px;line-height:1.75}
+  .home-projects :is(.project-full-name,.project-card-source,.project-card-meta){font-size:12px}
+  .home-projects .project-deck-hint{display:none}
+  .home-projects .work-project-chooser{display:none}
+  .home-activity{--activity-cell:13px;--activity-gap:5px;--activity-width:950px}
+  .home-activity .home-section-heading{margin-bottom:16px}
+  .home-activity .activity-summary{margin-bottom:20px}
+  .home-activity .activity-summary p{font-size:15px}
+  .home-activity .activity-summary>span{font-size:12px;line-height:1.8;margin-top:6px}
+  .home-activity .activity-scroll{padding-block:4px 14px;overscroll-behavior-x:contain;scroll-padding-inline:8px}
+  .home-activity .activity-foot{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-top:16px}
+  .home-activity .activity-foot p{font-size:12px;gap:4px}
+  .home-activity .activity-legend{margin-top:4px}
+  .activity-mobile-navigation{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:4px;border-bottom:1px solid var(--line)}
+  .activity-mobile-navigation button{flex:none;display:grid;place-items:center;width:44px;min-height:44px;padding:10px;color:var(--ink)}
+  .activity-mobile-navigation span{font-size:13px;line-height:1.6;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
+  .home-activity .activity-day.is-selected-day{outline:2px solid var(--link);outline-offset:2px}
+
+  /* Records become a two-row touch collection with persistent identities.
+     The following game remains a real item in the same collection. */
+  .home-collection-journey{margin:0;min-width:0}
+  .home-record-wall.home-wall{width:100%;margin:48px 0;padding:0;background:var(--home-surface,var(--bg));color:var(--ink)}
+  .home-record-wall .home-record-stage{display:flex;flex-direction:column;position:relative;min-height:0;height:auto;overflow:visible}
+  .home-record-wall .home-record-caption{order:0;display:block;position:relative;inset:auto;min-height:0;margin:0;padding:0 var(--phone-gutter) 20px;background:transparent;color:var(--ink);pointer-events:auto;opacity:1}
+  .home-record-caption>div{max-width:none}
+  .home-record-caption h2{font-size:24px;line-height:1.35;margin-bottom:10px}
+  .home-record-caption p,.home-record-caption .record-playlist-source{font-size:13px;line-height:1.8;color:var(--muted)}
+  .home-record-caption .record-destinations{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px 20px;margin-top:8px}
+  .home-record-caption .record-source-link{font-size:13px;min-height:44px;color:var(--link)}
+  .home-record-wall .home-music-badge{margin:0;padding:0;min-height:44px}
+  .home-record-wall .home-record-grid{
+    --record-cell:154px;
+    order:1;
+    display:grid;
+    position:relative;
+    inset:auto;
+    grid-template-columns:none;
+    grid-template-rows:repeat(2,200px);
+    grid-auto-columns:154px;
+    grid-auto-rows:auto;
+    grid-auto-flow:column;
+    gap:18px 12px;
+    height:auto;
+    min-height:0;
+    transform:none;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:0 var(--phone-gutter) 14px;
+    scroll-snap-type:x proximity;
+    scroll-padding-inline:var(--phone-gutter);
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+    overscroll-behavior-x:contain;
+    container-type:normal;
+  }
+  .home-record-wall .home-record-tile{display:flex;flex-direction:column;align-self:start;aspect-ratio:auto;background:transparent;color:var(--ink);overflow:visible;scroll-snap-align:start}
+  .home-record-wall .home-record-tile>img{position:relative;inset:auto;width:154px;height:154px;aspect-ratio:1;object-fit:cover;border-radius:var(--radius-menu);background:var(--subtle)}
+  .home-record-wall .home-record-tile>span{display:block;position:relative;inset:auto;opacity:1;transform:none;background:transparent;color:var(--ink);padding:8px 0 0;min-width:0;overflow:hidden}
+  .home-record-wall .home-record-tile strong{display:block;font-size:13px;line-height:1.4;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-weight:500}
+  .home-record-wall .home-record-tile small{display:block;font-size:12px;line-height:1.5;color:var(--muted);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:3px}
+  .home-record-wall .home-record-game{width:154px;height:auto}
+  .home-record-wall .home-record-game:after{display:none}
+
+  /* Games keep cinematic real cover art, but tap/side-swipe replaces the long
+     vertical pin. Each scene has its own readable, reachable store action. */
+  .home-game-story.home-wall{width:100%;margin:48px 0!important;padding:0;color:var(--ink);background:transparent;isolation:auto}
+  .home-game-story .home-game-stage{display:contents}
+  .home-game-story .home-game-window{display:flex;align-items:stretch;gap:14px;position:relative;height:auto;min-height:0;padding:76px var(--phone-gutter) 16px;background:transparent;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding-inline:var(--phone-gutter);scrollbar-width:thin;scrollbar-color:var(--line) transparent;overscroll-behavior-x:contain;clip-path:none;opacity:1}
+  .home-game-story .home-game-frame{flex:0 0 min(86vw,430px);min-width:0;min-height:420px;height:62svh;max-height:560px;position:relative;inset:auto;border-radius:var(--radius-surface);opacity:1;scroll-snap-align:start;overflow:hidden;pointer-events:auto}
+  .home-game-story .home-game-frame:after{background:linear-gradient(transparent 25%,rgb(0 0 0 / .75))}
+  .home-game-story .game-backdrop{inset:0;width:100%;height:100%;transform:none;object-position:var(--game-art-position,center)}
+  .home-game-story .game-scene-content{min-height:100%;height:100%;padding:28px 22px;transform:none;align-items:flex-end}
+  .home-game-story .game-identity{width:100%;max-width:none}
+  .home-game-story .game-wordmark{max-height:96px;max-width:90%}
+  .home-game-story .game-name-fallback{font-size:32px;line-height:1.15}
+  .home-game-story .game-identity .game-playtime{margin:16px 0 8px;font-size:15px}
+  .home-game-story .game-identity .game-description{font-size:14px}
+  .home-game-story .game-store-link{min-height:44px;font-size:14px}
+  .home-game-story .home-game-chrome{position:absolute;inset:0 auto auto var(--phone-gutter);width:calc(100vw - var(--phone-gutter) * 2);height:64px;gap:20px;align-items:center;color:var(--ink)}
+  .home-game-story .game-chapter-heading{max-width:52%;min-width:0}
+  .home-game-story .game-chapter-title{display:block;font-size:24px;font-weight:600;line-height:1.35;max-width:none;padding:0}
+  .home-game-story .game-chapter-description{display:none}
+  .home-game-story .game-library-link{font-size:13px;min-height:44px;max-width:44%;text-align:right;color:var(--muted)}
+  .home-game-story .game-static-more{display:none}
+
+  .home-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px}
+  .home-photo>a{aspect-ratio:3/4;border-radius:var(--radius-menu)}
+  .home-photo figcaption{display:block;font-size:13px;line-height:1.6;margin-top:10px}
+  .home-photo figcaption span{display:block;margin-top:4px}
+  body[data-page-kind=home] .home-writing{margin-block:48px 24px}
+  .home-writing .home-writing-stage{padding-block:0}
+  .home-writing .home-writing-viewport{margin-inline:calc(-1 * var(--phone-gutter));padding-inline:var(--phone-gutter);padding-bottom:16px;scroll-padding-inline:var(--phone-gutter);scroll-snap-type:x proximity}
+  .home-writing .home-writing-track{gap:14px}
+  .home-writing .home-writing-track .home-writing-entry{width:min(82vw,430px)}
+  .home-writing .home-writing-entry>img,.home-writing .home-writing-fallback{aspect-ratio:4/3;border-radius:var(--radius-surface)}
+  .home-writing .home-writing-track .home-writing-entry>div:last-child{padding-top:16px}
+  .home-writing .home-writing-track .home-writing-entry h3{font-size:20px;line-height:1.5;letter-spacing:-.02em}
+  .home-writing .home-writing-track .home-writing-entry time{font-size:12px;margin-top:8px}
+  .home-close{min-height:0;padding:48px var(--phone-gutter) 24px}
+  .home-close h2{font-size:32px;line-height:1.4}
+  .home-close p{font-size:15px;line-height:1.8;margin-top:18px}
+
+  /* Article lists prioritise one clear title and cover per item. The secondary
+     text is readable at a glance instead of being compressed beside a stamp. */
+  body:not([data-page-kind=studio]) .post-list{min-width:0}
+  body:not([data-page-kind=studio]) .post-row,
+  body:not([data-page-kind=studio]) .post-row:has(.post-cover-link){grid-template-columns:minmax(0,1fr);gap:12px;padding-block:28px}
+  body:not([data-page-kind=studio]) .post-row:has(.post-cover-link)>.post-cover-link{grid-column:1;grid-row:1;width:100%;max-width:none;border-radius:var(--radius-surface)}
+  body:not([data-page-kind=studio]) .post-row:has(.post-cover-link)>.post-date{grid-column:1;grid-row:2;margin:0}
+  body:not([data-page-kind=studio]) .post-row:has(.post-cover-link)>div:last-child{grid-column:1;grid-row:3}
+  body:not([data-page-kind=studio]) .post-date{font-size:12px;line-height:1.6;color:var(--muted)}
+  body:not([data-page-kind=studio]) .post-row h2,
+  body:not([data-page-kind=studio]) .post-row:has(.post-cover-link) h2{font-size:21px;line-height:1.45;letter-spacing:-.02em;margin:0 0 10px;text-wrap:pretty}
+  body:not([data-page-kind=studio]) .post-row .summary,
+  body:not([data-page-kind=studio]) .post-row:has(.post-cover-link) .summary{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:15px;line-height:1.8;margin:0 0 8px}
+  body:not([data-page-kind=studio]) .post-row .meta{font-size:12px;line-height:1.6;gap:0 14px}
+  body:not([data-page-kind=studio]) .post-row .meta a{display:inline-flex;align-items:center;min-height:44px}
+
+  /* Reading has its own measure; article metadata remains a disclosure and
+     the author sits with the article, rather than an absent desktop rail. */
+  body[data-page-kind=article] .article-reading{display:grid;grid-template-columns:minmax(0,1fr);column-gap:0;row-gap:20px}
+  body[data-page-kind=article] .article-heading h1{font-size:30px;line-height:1.35;letter-spacing:-.025em;margin-bottom:18px}
+  body[data-page-kind=article] .article-summary{font-size:16px;line-height:1.8}
+  body[data-page-kind=article] .article-intro{gap:10px}
+  body[data-page-kind=article] .article-intro .topic-links{flex-basis:auto;gap:0 14px}
+  .article-intro .topic-links a{font-size:13px;min-height:44px}
+  .article-reading-meta{font-size:12px;gap:6px;min-height:44px}
+  .article-info>summary{min-height:44px;min-width:44px}
+  .article-info-panel{width:min(320px,calc(100vw - 40px));max-height:55dvh;overflow:auto;overscroll-behavior:contain}
+  .article-info-panel .article-dates{font-size:13px}
+  body[data-page-kind=article] .article-rail{grid-row:2;grid-column:1;justify-self:start;position:static;inset:auto;contain:none;min-width:0;max-height:none;padding:0 0 4px}
+  .article-rail .article-author{display:flex;align-items:center;padding:0;gap:10px}
+  .article-rail .article-author h2{display:none}
+  .article-rail .article-author .author-line{gap:10px}
+  .article-rail .author-line .avatar{width:36px;height:36px}
+  .article-rail .article-author-name{display:inline-flex;align-items:center;min-height:44px;font-size:14px}
+  .article-rail .article-author-name strong{font-size:14px}
+  body[data-page-kind=article] .reading-paper{grid-row:3;min-width:0}
+  body[data-page-kind=article] .article-cover-frame{margin:0 0 28px}
+  body[data-page-kind=article] .article-cover-frame .article-cover{border-radius:var(--radius-menu);object-fit:cover}
+  body:not([data-page-kind=studio]) .prose{font-size:17px;line-height:1.9;max-width:68ch}
+  body:not([data-page-kind=studio]) .prose :is(h1,h2,h3){line-height:1.5;scroll-margin-top:100px}
+  body:not([data-page-kind=studio]) .prose h1{font-size:28px}
+  body:not([data-page-kind=studio]) .prose h2{font-size:24px}
+  body:not([data-page-kind=studio]) .prose h3{font-size:20px}
+  body:not([data-page-kind=studio]) .prose p{margin-bottom:1.45em}
+  body:not([data-page-kind=studio]) .prose pre{font-size:14px;line-height:1.75;padding:18px 16px;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--muted) transparent}
+  body:not([data-page-kind=studio]) .prose table{font-size:14px;line-height:1.7;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--muted) transparent}
+  body:not([data-page-kind=studio]) .prose th,body:not([data-page-kind=studio]) .prose td{padding:10px 12px;min-width:96px}
+  body:not([data-page-kind=studio]) .prose blockquote{padding-left:16px;margin-block:1.8em}
+  body:not([data-page-kind=studio]) .prose img{border-radius:var(--radius-menu)}
+  .prose :is(.content-card,.content-card--steam){margin-block:26px}
+  .prose .content-card__title{font-size:16px;line-height:1.5}
+  .prose :is(.content-card__description,.content-card__subtitle){font-size:14px;line-height:1.7}
+  .prose :is(.content-card--moment,.content-card--phrase) .content-card__body{padding:20px 18px}
+  .prose .content-card__text{font-size:16px;line-height:1.8}
+  .prose .content-card__quote{font-size:20px;line-height:1.7}
+  .prose .content-card__identity{font-size:13px;line-height:1.6}
+  .prose :is(.content-card__date,.content-card__destination){font-size:12px;line-height:1.6}
+  .prose .content-card__date{flex-basis:100%;margin-left:37px}
+  body[data-page-kind=article] .article-discussion{grid-row:4;margin-top:20px}
+  body[data-page-kind=article] .article-discussion .comment-area.discussion-surface{padding:22px 18px;border-radius:var(--radius-surface)}
+  .article-discussion .discussion-heading h2{font-size:23px;line-height:1.4}
+  .article-discussion .discussion-count{font-size:12px}
+  .article-discussion .discussion-composer textarea{font-size:16px;min-height:112px;line-height:1.8;padding:14px}
+  .article-discussion .discussion-composer>div small{font-size:12px;max-width:100%;line-height:1.7}
+  .article-discussion .discussion-composer>div button{min-height:44px;font-size:14px}
+  .article-discussion .discussion-signin{padding:16px;gap:8px}
+  .article-discussion .discussion-signin p{font-size:15px;line-height:1.7}
+  .article-discussion .discussion-signin a{display:inline-flex;align-items:center;min-height:44px;font-size:14px}
+  .article-discussion .discussion-comment{grid-template-columns:36px minmax(0,1fr);column-gap:12px;padding-block:24px}
+  .article-discussion .discussion-avatar>.avatar{width:36px;height:36px;font-size:13px}
+  .article-discussion .discussion-author{min-height:36px;gap:4px 12px}
+  .article-discussion .discussion-author strong{font-size:14px}
+  .article-discussion .discussion-author time{font-size:12px}
+  .article-discussion .discussion-body{font-size:16px;line-height:1.85;grid-column:1 / -1}
+  .article-discussion .discussion-actions{grid-column:1 / -1;margin-left:-10px;gap:8px}
+  .article-discussion .discussion-actions button{min-height:44px;min-width:44px;font-size:13px}
+  body[data-page-kind=article] .article-related{grid-row:5;margin:24px calc(-1 * var(--phone-gutter)) 0;padding:28px var(--phone-gutter);border-radius:0}
+  .article-related .related-heading{margin-bottom:12px;gap:12px}
+  .article-related .related-heading h2{font-size:23px;line-height:1.4}
+  .article-related .related-heading>a{font-size:13px;min-height:44px}
+  .article-related .related-list{grid-template-columns:minmax(0,1fr);gap:0}
+  .article-related .related-row{display:grid;grid-template-columns:100px minmax(0,1fr);gap:16px;padding-block:20px;align-items:start}
+  .article-related .related-row+.related-row{border-top:1px solid var(--line)}
+  .article-related .related-cover{margin:0;border-radius:var(--radius-menu)}
+  .article-related .related-cover img{aspect-ratio:4/3;object-fit:cover}
+  .article-related .related-copy h3{font-size:17px;line-height:1.5;margin-bottom:8px}
+  .article-related .related-copy p{font-size:14px;line-height:1.75;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-bottom:8px}
+  .article-related .related-copy .meta{font-size:12px;line-height:1.7;gap:4px 10px}
+
+  /* The author is one clear identity row, with their own writing directly
+     below. The follow action stays beside their name on small screens. */
+  body[data-page-kind=author] main.wrap.site-main{padding-top:12px}
+  body[data-page-kind=author] .author-sheet{margin:0 0 36px}
+  .author-sheet .author-backdrop{height:144px;border-radius:var(--radius-surface)}
+  .author-identity{padding-top:20px}
+  .author-identity-row{gap:12px;align-items:center}
+  .author-identity-row .author-portrait{width:52px;height:52px;font-size:20px}
+  .author-identity-row h1{font-size:24px;line-height:1.3;flex:1;letter-spacing:-.025em;min-width:0}
+  .author-follow{margin-left:auto;max-width:104px}
+  .author-follow button,.author-follow .button{min-height:44px;padding-inline:12px;font-size:13px}
+  .author-follow p{font-size:12px;line-height:1.6}
+  .author-bio{font-size:16px;line-height:1.85;margin:20px 0 0}
+  .author-writing-head{display:block;margin-bottom:20px}
+  .author-writing-head h2{font-size:22px;line-height:1.4;margin-bottom:16px}
+  .author-search{width:100%;max-width:none;gap:8px}
+  .author-search-field{min-height:44px;min-width:0}
+  .author-search-field input{font-size:16px;min-height:42px}
+  .author-search button{min-height:44px;padding-inline:14px}
+  .author-search-context{font-size:14px;line-height:1.7;align-items:center;flex-wrap:wrap;gap:4px 14px}
+  .author-search-context a{display:inline-flex;align-items:center;min-height:44px}
+
+  /* Short updates are a phone feed; the layout choice never creates cramped
+     desktop columns. Galleries inside each update keep their natural grid. */
+  .moments-toolbar{margin-bottom:20px;gap:12px}
+  .moment-feed-note{font-size:14px;line-height:1.7}
+  .moments-toolbar .moments-layout{display:none}
+  .moments-items,.moments-feed[data-layout=grid] .moments-items,.moments-feed[data-layout=two] .moments-items{grid-template-columns:minmax(0,1fr);gap:20px}
+  .moments-items .moment-card{padding:22px 18px;border:0;box-shadow:0 3px 16px rgb(0 0 0 / .055);border-radius:var(--radius-surface)}
+  .moment-card-header{align-items:center;gap:8px 12px;margin-bottom:16px}
+  .moment-author{min-height:44px;font-size:14px;gap:10px}
+  .moment-avatar{width:36px;height:36px;font-size:13px}
+  .moment-permalink{display:inline-flex;align-items:center;min-height:44px}
+  .moment-time{font-size:12px;line-height:1.7}
+  .moment-text{font-size:17px;line-height:1.85}
+  .moment-gallery{gap:6px;margin-top:18px}
+  .moment-detail{margin-top:0}
+  .moment-back{font-size:14px;min-height:44px}
+
+  /* Dedicated libraries remain useful compact collections on a phone. */
+  .games-library .games-library-heading{gap:20px;margin-bottom:16px;align-items:flex-start}
+  .games-library .games-library-heading h1{font-size:30px;line-height:1.3;margin-block:8px 12px}
+  .games-library .games-library-heading p{font-size:14px;line-height:1.7}
+  .games-library .games-home-link{font-size:13px;min-height:44px}
+  .games-library .games-sort{gap:4px;flex-wrap:wrap}
+  .games-library :is(.games-sort,.games-platform-filter)>a{min-height:44px;font-size:13px;padding-inline:12px}
+  .games-library .games-library-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 14px}
+  .games-library .game-library-art{aspect-ratio:2/3;border-radius:var(--radius-menu)}
+  .games-library .game-library-details{padding:12px 0 0;gap:6px}
+  .games-library .game-library-details h2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:15px;line-height:1.5;min-height:3em}
+  .games-library .game-library-details p{font-size:13px;line-height:1.6}
+  .games-library .game-platforms{margin:0;gap:4px}
+  .games-library :is(.game-platform-badge,.game-platform-device){font-size:11px;padding-inline:4px;min-height:20px}
+  .games-library .game-library-visit{display:none}
+  .phrase-page-heading{display:block;padding-block:4px 24px}
+  .phrase-page-heading h1{font-size:30px;line-height:1.3;margin-bottom:12px}
+  .phrase-page-heading p{font-size:15px;line-height:1.75}
+  .phrase-page-heading>span{display:block;margin-top:12px;font-size:12px}
+  .phrase-piece{min-height:58svh;padding:32px 0 36px;scroll-margin-top:88px}
+  .phrase-piece blockquote{margin-block:28px;animation:none;transform:none;clip-path:none}
+  .phrase-piece blockquote>p{font-size:clamp(26px,7vw,34px);line-height:1.65;letter-spacing:-.02em}
+  .phrase-word blockquote>p{font-size:clamp(36px,12vw,52px);line-height:1.4}
+  .phrase-piece blockquote>footer{font-size:14px;line-height:1.8;margin-top:24px}
+  .phrase-piece-meta{font-size:12px;line-height:1.6}
+  .phrase-piece-actions :is(a,button){min-height:44px;font-size:13px}
+  .phrase-dock:not([hidden]){bottom:calc(var(--mobile-nav-height,72px) + env(safe-area-inset-bottom,0px) + 12px);gap:12px}
+}
+
+@media screen and (max-width:359px){
+  body:not([data-page-kind=studio]){--phone-gutter:16px}
+  .home-story .story-scene-hello{padding-top:112px}
+  .home-story .story-art{height:246px}
+  .home-story .story-pages{width:176px}
+  .home-story .story-sheet-title{font-size:25px}
+  .home-story .story-intro-copy h2{font-size:24px}
+  .home-game-story .home-game-frame{min-height:380px;height:62svh}
+  .home-activity .activity-foot{display:block}
+  .home-activity .activity-legend{margin-top:12px}
+  .author-identity-row{gap:10px}
+  .author-identity-row .author-portrait{width:44px;height:44px}
+  .author-identity-row h1{font-size:21px}
+  .author-follow button,.author-follow .button{padding-inline:10px}
+  .article-related .related-row{grid-template-columns:84px minmax(0,1fr);gap:12px}
+  .games-library .games-library-grid{gap:24px 12px}
+}

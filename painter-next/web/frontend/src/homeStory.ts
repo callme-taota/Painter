@@ -10,6 +10,7 @@ export function initHomeStory() {
   const pages = story?.querySelector<HTMLElement>('[data-story-pages]')
   const scenes = Array.from(story?.querySelectorAll<HTMLElement>('[data-story-scene]') || [])
   const reduced = matchMedia('(prefers-reduced-motion:reduce)')
+  const phone = matchMedia('(max-width:720px)')
   const configuredMotion = document.body.dataset.homeMotion !== 'false'
   const configuredWarmth = document.body.dataset.homeWarmth !== 'false'
   const canAnimate = !!story && !!stage && !!pages && scenes.length > 1 && configuredMotion
@@ -36,7 +37,9 @@ export function initHomeStory() {
   function render() {
     queued = 0
     if (document.hidden) return
-    const animated = canAnimate && !reduced.matches
+    // A phone is a touch-led document: each chapter remains in normal flow.
+    // Desktop's pinned planes must not hide or make mobile content inert.
+    const animated = canAnimate && !reduced.matches && !phone.matches
     document.documentElement.classList.toggle('story-ready', animated)
     if (!animated || !story || !stage || !pages) {
       staticScenes()
@@ -74,6 +77,7 @@ export function initHomeStory() {
     story.style.setProperty('--page-spread', (1 + smooth(.2, .8, progress) * 1.25).toFixed(3))
   }
   function schedule(force = false) {
+    if (phone.matches && !force) return
     // Motion-off homes can still have the configured whole-page surface warmth.
     const globalWarmth = !canAnimate && configuredWarmth && !reduced.matches
     if (!queued && !document.hidden && (inView || force || globalWarmth)) queued = requestAnimationFrame(render)
@@ -81,6 +85,7 @@ export function initHomeStory() {
   addEventListener('scroll', () => schedule(), {passive: true})
   addEventListener('resize', () => { last = -1; schedule(true) }, {passive: true})
   reduced.addEventListener('change', () => schedule(true))
+  phone.addEventListener('change', () => { last = -1; schedule(true) })
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { cancelAnimationFrame(queued); queued = 0 } else schedule(true)
   })

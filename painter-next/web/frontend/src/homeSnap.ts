@@ -17,12 +17,13 @@ export function initHomeSnap() {
   if (initialized || document.body.dataset.pageKind !== 'home') return
   initialized = true
   const reduced = matchMedia('(prefers-reduced-motion:reduce)')
+  const phone = matchMedia('(max-width:720px)')
   const interactive = 'a,button,input,textarea,select,summary,[contenteditable],[tabindex],[role="slider"],[role="listbox"],[role="menuitem"],[role="dialog"]'
   let timer = 0, frame = 0, intent: Intent | undefined, pageY = scrollY, animatedY: number | undefined
   let touch: {x: number; y: number; blocked: boolean} | undefined
 
   function allowed() {
-    if (document.hidden || reduced.matches || document.body.dataset.homeMotion === 'false') return false
+    if (document.hidden || reduced.matches || phone.matches || document.body.dataset.homeMotion === 'false') return false
     const active = document.activeElement
     if (active instanceof Element && active !== document.body && active !== document.documentElement
       && (active.matches(interactive) || active.closest('[contenteditable="true"]'))) return false
@@ -145,4 +146,5 @@ export function initHomeSnap() {
   document.addEventListener('focusin', cancel)
   document.addEventListener('visibilitychange', cancel)
   reduced.addEventListener('change', cancel)
+  phone.addEventListener('change', cancel)
 }

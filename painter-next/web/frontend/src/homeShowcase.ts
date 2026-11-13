@@ -17,14 +17,16 @@ export function initHomeShowcase() {
   const gameTile = reverse ? record?.querySelector<HTMLElement>('[data-record-game-tile]') : undefined
   const gameTileArt = gameTile?.querySelector<HTMLImageElement>('[data-game-tile-hero]')
   const firstGameArt = frames[0]?.querySelector<HTMLImageElement>('[data-game-hero]')
+  const collectionHeading = story?.querySelector<HTMLElement>('.home-game-chrome')
   let tile = {left:0, top:0, width:0, height:0}, recordTravel = 0
   let origin = {top:37.5,right:33.33,bottom:37.5,left:50}
   const reduced = matchMedia('(prefers-reduced-motion:reduce)')
+  const phone = matchMedia('(max-width:720px)')
   const configured = document.body.dataset.homeMotion !== 'false'
   let queued = 0, near = true, viewport = 1, viewportWidth = 1, active = -1
   const notifyMediaLayout = () => { if (story || record) dispatchEvent(new Event('painter:home-media-layout')) }
 
-  if (firstGameArt) firstGameArt.loading = 'eager'
+  if (firstGameArt && !phone.matches) firstGameArt.loading = 'eager'
   if (gameTile && !gameTileArt) gameTile.classList.add('has-missing-art')
   document.querySelectorAll<HTMLImageElement>('[data-game-hero],[data-game-tile-hero],[data-game-logo],[data-library-cover]').forEach(img => {
     const fail = () => {
@@ -45,7 +47,9 @@ export function initHomeShowcase() {
     if (img.complete && !img.naturalWidth) fail()
   })
 
-  const enabled = () => !!story && !!stage && !!aperture && frames.length > 0 && configured && !reduced.matches && CSS.supports('clip-path', 'inset(1% round 1px)')
+  // Phones browse real covers in native horizontal shelves. Never consume many
+  // vertical viewports to advance a collection, or intercept a vertical swipe.
+  const enabled = () => !!story && !!stage && !!aperture && frames.length > 0 && configured && !reduced.matches && !phone.matches && CSS.supports('clip-path', 'inset(1% round 1px)')
   function reset() {
     story?.classList.remove('is-enhanced')
     journey?.classList.remove('is-game-journey')
@@ -130,8 +134,14 @@ export function initHomeShowcase() {
     if (record && !reverse) record.style.setProperty('--record-drift', (clamp((innerHeight - record.getBoundingClientRect().top) / (innerHeight * 2)) * -40).toFixed(2) + 'px')
     notifyMediaLayout()
   }
-  function schedule(force = false) { if (!queued && !document.hidden && (near || force)) queued = requestAnimationFrame(render) }
+  function schedule(force = false) { if (phone.matches && !force) return; if (!queued && !document.hidden && (near || force)) queued = requestAnimationFrame(render) }
   function measure() {
+    // Keep the phone collection heading outside its horizontal scroll area.
+    // The same real node returns to the desktop scene when its layout changes.
+    if (collectionHeading && story && aperture) {
+      if (phone.matches && collectionHeading.parentElement !== story) story.insertBefore(collectionHeading, story.firstChild)
+      else if (!phone.matches && collectionHeading.parentElement !== aperture) aperture.append(collectionHeading)
+    }
     if (!enabled() || !story || !stage) { reset(); return }
     story.classList.add('is-enhanced')
     journey?.classList.add(reverse ? 'is-record-game-journey' : 'is-game-journey')
@@ -190,6 +200,7 @@ export function initHomeShowcase() {
   addEventListener('scroll', () => schedule(), {passive: true})
   addEventListener('resize', measure, {passive: true})
   reduced.addEventListener('change', measure)
+  phone.addEventListener('change', measure)
   document.fonts.ready.then(measure)
   document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelAnimationFrame(queued); queued = 0 } else schedule() })
   measure()

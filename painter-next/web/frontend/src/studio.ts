@@ -8,3 +8,5 @@ createApp(App).mount('#workbench')
 
 import './management.css'
 import './studio-shadcn.css'
+
+import './mobileWorkbench.css'
