@@ -60,11 +60,11 @@
 
 本记录是局部适配，未新增或替换shipping位图、字体、logo或内容媒体，没有新增图像生成资产；这些资产沿用原来源和既有追踪。源码中的手机规则复用`--paper`、`--ink`、`--muted`、`--line`、`--link`及语义半径；没有改全局frontmatter或sidecar，旧设计叙述漂移不在此轮顺带修复。
 
-本轮待执行/核对的浏览器证据入口：
+最终候选的浏览器证据入口：
 
 - [`v44-mobile-chrome.cjs`](../../../tests/browser/v44-mobile-chrome.cjs)：公共壳、搜索/筛选、主题和视口
 - [`v44-mobile-history.cjs`](../../../tests/browser/v44-mobile-history.cjs)：临时任务Back/Forward、同源导航与提交
 - [`v44-mobile-content.cjs`](../../../tests/browser/v44-mobile-content.cjs)：首页、阅读、作者和收藏内容
 - [`v44-mobile-workbench.cjs`](../../../tests/browser/v44-mobile-workbench.cjs)：任务tab、列表、编辑与角色
 
-文档编写时仅核对源码，不提前宣布上述检查通过、无设计问题或已经部署。测试结论、截图、修复评分和发布信息以root最终发布记录为准。真实iPhone Safari、Android软键盘、系统边缘返回/缩放、VoiceOver/TalkBack、设备资源与弱网性能尚需单独设备证据；Chromium设备模拟或合成触摸不替代这些验证。
+最终候选已通过195项浏览器检查（公开壳32、历史19、内容102、工作台42），以及公开SSR相关Go race测试、前端类型检查与4项混淆构建测试。独立审阅33张代表截图，已复核修复，结论为ship。原始报告与截图位于`tests/artifacts/v44`，正式部署结果由发布记录单独给出。真实iPhone Safari、Android软键盘、系统边缘返回/缩放、VoiceOver/TalkBack、设备资源与弱网性能尚需单独设备证据；Chromium设备模拟或合成触摸不替代这些验证。
