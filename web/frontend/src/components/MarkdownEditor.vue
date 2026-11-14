@@ -16,6 +16,7 @@ import SelectField from './SelectField.vue'
 import {confirmAction} from '../confirm'
 import DocumentEditor from './DocumentEditor.vue'
 import ArticleCardComposer from './ArticleCardComposer.vue'
+import ArticleImportPanel from './ArticleImportPanel.vue'
 import {articleCardMarkdown,articleReferenceMarkdown,type ArticleCard} from '../articleCards'
 import {initArticleCards} from '../contentCards'
 import {markdownCardAt} from '../editorMarkdown'
@@ -71,6 +72,33 @@ onMounted(()=>document.addEventListener('pointerdown',dismissMore))
 onBeforeUnmount(()=>document.removeEventListener('pointerdown',dismissMore))
 function switchMode(mode:'document'|'source'){if(editorLocked.value)return;if(composing()){notice.value='请先完成当前输入，再切换编辑方式。';return}if(mode==='document'&&documentIssue.value){notice.value='这篇文章包含文档编辑暂不支持的语法，请继续在 Markdown 源码中编辑。';return}documentEditor.value?.flush();viewMode.value=mode;closeMore();requestAnimationFrame(()=>{if(mode==='source'){editor?.requestMeasure();if(sourceView.value!=='preview')editor?.focus()}else documentEditor.value?.focus()})}
 function exportMarkdown(){closeMore();download((draft.title||'未命名文章')+'.md',draft.markdown)}
+const importOpen=ref(false),importApplying=ref(false),importError=ref('')
+let importGeneration=0
+const importBlocked=computed(()=>editorLocked.value||working.value||saving.value||!!conflict.value||mergePending.value||uploadCount.value>0)
+function openImport(){if(importBlocked.value||importApplying.value)return;if(composing()){notice.value='请先完成当前输入，再导入正文。';return}documentEditor.value?.flush();closeMore();importError.value='';importGeneration++;importOpen.value=true}
+function closeImport(){importGeneration++;importOpen.value=false;void nextTick(()=>moreActions.value?.querySelector('summary')?.focus())}
+async function applyImport(value:{title:string;summary:string;markdown:string;mode:'append'|'replace';includeMetadata:boolean}){
+ if(importBlocked.value||importApplying.value)return
+ const generation=importGeneration
+ importApplying.value=true;importError.value=''
+ try{
+  documentEditor.value?.flush()
+  const before=draft.markdown,title=draft.title,summary=draft.summary
+  if(value.mode==='replace'&&before.trim()&&!await confirmAction('替换当前正文？','当前正文将被替换。导入后仍是草稿；如需保留旧稿，请先取消并保存历史版本。','替换正文'))return
+  if(generation!==importGeneration||!importOpen.value)return
+  if(importBlocked.value||composing())throw new Error('编辑状态已变化，请先处理保存或冲突后再导入。')
+  // Revalidate the whole append to catch cross-block fences, total card limits
+  // and media permissions. No draft is changed until this request succeeds.
+  const blocks=[...(value.mode==='append'&&before.trim()?[{type:'markdown',markdown:before}]:[]),{type:'markdown',markdown:value.markdown}]
+  const result=await api<{markdown:string}>('/editor/import-preview',{method:'POST',body:body({format:'painter.article',version:1,title:value.includeMetadata?value.title:title||'未命名文章',summary:value.includeMetadata?value.summary:summary,blocks})})
+  if(generation!==importGeneration||!importOpen.value||stopped)return
+  if(importBlocked.value||endingSession.value||draft.markdown!==before||draft.title!==title||draft.summary!==summary)throw new Error('草稿已变化，导入尚未应用，请重新确认。')
+  if(value.includeMetadata){draft.title=value.title;draft.summary=value.summary}
+  documentChanged(result.markdown)
+  importOpen.value=false;notice.value='正文已导入当前草稿，将沿用自动保存。确认内容后再发布。'
+  void nextTick(()=>viewMode.value==='document'?documentEditor.value?.focus():editor?.focus())
+ }catch(e){if(generation===importGeneration&&importOpen.value)importError.value='导入尚未应用：'+(e as Error).message}finally{importApplying.value=false}
+}
 function sourcePaste(value:string){if(editorLocked.value)return;viewMode.value='source';notice.value='粘贴内容含有文档模式暂不支持的语法，已完整放入 Markdown 源码。';documentChanged(value);requestAnimationFrame(()=>{editor?.requestMeasure();editor?.focus()})}
 const localNewDrafts=ref<Row[]>([])
 let resolveNewMapping=false
@@ -202,7 +230,8 @@ onBeforeUnmount(()=>{removeSessionEnd();stopped=true;clearInterval(interval);cle
 </script>
 <template>
  <section class="editor-page editor-unified" :class="{'is-source':viewMode==='source','is-phone-editor':editorPhone}" :data-phone-step="phoneEditorStep">
- <header class="editor-bar"><div class="editor-heading"><h1>{{draft.id?'编辑文章':'写一篇新文章'}}</h1><span class="save-state" :class="{saved:state==='已保存'}" aria-live="polite">{{state==='已保存'?(savedBy==='auto'?'已自动保存':'草稿已保存'):state}}{{uploadCount?' · 图片上传中':''}}</span></div><div class="toolbar"><a class="button quiet editor-return" href="/studio/posts">返回文章</a><button :disabled="saving||working||editorLocked" @click="save">保存草稿</button><button v-if="!editorPhone" :disabled="working||editorLocked||!!conflict" title="保留一份可恢复的草稿版本，不会发布文章" @click="command('checkpoints')">保存历史版本</button><button v-if="draft.publication&&!editorPhone" :disabled="working||editorLocked" @click="command('publication')">撤回</button><details ref="moreActions" class="editor-more" @keydown.esc.prevent.stop="closeMore(true)" @focusout="moreFocusOut"><summary aria-label="更多编辑操作">更多<Icon name="chevron" :size="15"/></summary><div class="editor-more-menu"><button v-if="viewMode==='document'" :disabled="editorLocked" @click="switchMode('source')">编辑 Markdown 源码</button><button v-else :disabled="editorLocked||!!documentIssue" @click="switchMode('document')">返回文档编辑</button><button :disabled="!initialized" @click="exportMarkdown"><Icon name="export" :size="16"/>导出 Markdown</button><button v-if="editorPhone" :disabled="working||editorLocked||!!conflict" @click="closeMore();command('checkpoints')">保存历史版本</button><button v-if="editorPhone&&draft.publication" :disabled="working||editorLocked" @click="closeMore();command('publication')">撤回公开文章</button></div></details><button class="primary" :disabled="working||editorLocked||!!conflict||uploadCount>0" @click="publishOrReview">{{working?'处理中…':editorPhone&&phoneEditorStep==='writing'?'下一步':'发布文章'}}</button></div></header>
+ <header class="editor-bar"><div class="editor-heading"><h1>{{draft.id?'编辑文章':'写一篇新文章'}}</h1><span class="save-state" :class="{saved:state==='已保存'}" aria-live="polite">{{state==='已保存'?(savedBy==='auto'?'已自动保存':'草稿已保存'):state}}{{uploadCount?' · 图片上传中':''}}</span></div><div class="toolbar"><a class="button quiet editor-return" href="/studio/posts">返回文章</a><button :disabled="saving||working||editorLocked" @click="save">保存草稿</button><button v-if="!editorPhone" :disabled="working||editorLocked||!!conflict" title="保留一份可恢复的草稿版本，不会发布文章" @click="command('checkpoints')">保存历史版本</button><button v-if="draft.publication&&!editorPhone" :disabled="working||editorLocked" @click="command('publication')">撤回</button><details ref="moreActions" class="editor-more" @keydown.esc.prevent.stop="closeMore(true)" @focusout="moreFocusOut"><summary aria-label="更多编辑操作">更多<Icon name="chevron" :size="15"/></summary><div class="editor-more-menu"><button v-if="viewMode==='document'" :disabled="editorLocked" @click="switchMode('source')">编辑 Markdown 源码</button><button v-else :disabled="editorLocked||!!documentIssue" @click="switchMode('document')">返回文档编辑</button><button :disabled="importBlocked" data-open-article-import @click="openImport">导入文章 JSON</button><button :disabled="!initialized" @click="exportMarkdown"><Icon name="export" :size="16"/>导出 Markdown</button><button v-if="editorPhone" :disabled="working||editorLocked||!!conflict" @click="closeMore();command('checkpoints')">保存历史版本</button><button v-if="editorPhone&&draft.publication" :disabled="working||editorLocked" @click="closeMore();command('publication')">撤回公开文章</button></div></details><button class="primary" :disabled="working||editorLocked||!!conflict||uploadCount>0" @click="publishOrReview">{{working?'处理中…':editorPhone&&phoneEditorStep==='writing'?'下一步':'发布文章'}}</button></div></header>
+ <ArticleImportPanel v-if="importOpen" :disabled="importBlocked||importApplying" :has-content="!!draft.markdown.trim()" :apply-error="importError" @close="closeImport" @apply="applyImport"/>
  <div v-if="initializationError" class="notice error editor-init-error" role="alert"><strong>编辑器未能安全加载</strong><p>{{initializationError}}。正文和文章信息尚未解锁，请重新加载后继续。</p><button :disabled="loading" @click="initializeEditor">{{loading?'正在重新加载…':'重新加载编辑器'}}</button></div><div v-if="restoreNeedsReload&&!restoring" class="notice error" role="alert"><strong>需要确认恢复后的服务器草稿</strong><p>编辑已暂停，当前本地内容仍保留。请重新载入后继续。</p><button @click="reloadAfterRestore">重新载入当前草稿</button><button class="quiet" @click="download('恢复前本地副本.md',draft.markdown)">导出本地副本</button></div><div v-if="restoring" class="notice" role="status">正在恢复历史版本，编辑暂时锁定…</div><div v-if="error" class="notice error" role="alert">{{error}}</div><div v-if="notice" class="notice" role="status">{{notice}}</div>
  <section v-if="!draft.id&&localNewDrafts.length" class="panel" aria-labelledby="new-recovery-title"><h2 id="new-recovery-title">找回尚未同步的新稿</h2><p class="muted">这些内容只保存在当前浏览器、当前账号下。选择前会先保留正在编辑的本地内容，恢复不会直接发布。</p><div v-for="local in localNewDrafts" :key="local.key" class="user-row"><div class="user-info"><strong>{{local.title||'未命名文章'}}</strong><p class="muted">{{local.summary||String(local.markdown||'').slice(0,100)}}</p><small>{{date(local.saved_at)}}</small></div><div class="actions"><button :disabled="saving||working||editorLocked" @click="restoreLocalNew(local)">恢复这篇新稿</button><button class="quiet" @click="download((local.title||'本地新稿')+'.md',local.markdown)">导出新稿</button></div></div></section>
  <div v-if="recovered" class="notice"><strong>发现尚未同步的本地内容</strong><p>恢复点来自 {{date(recovered.saved_at)}}。服务器内容保持不变。</p><button :disabled="editorLocked||saving||working" @click="useRecovery">加载恢复点</button> <button class="quiet" @click="download('本地恢复.md',recovered.markdown)">导出恢复点</button> <button class="quiet" @click="recovered=null">稍后处理</button></div>

@@ -182,3 +182,7 @@ Markdown 导出包含完整卡片元数据，不依赖一个临时解析缓存 I
 ## 验证与维护
 
 后端解析、公开权限、媒体引用与 HTML 安全由 `internal/app/*cards*_test.go` 等测试覆盖。独立编解码与运行时测试位于 `tests/browser`。所有真实写入验收仅使用显式可丢弃候选，截图和报告输出到忽略目录 `tests/artifacts/`。
+
+## v2 内容面板与 AI 导入
+
+现已增加提示 `callout`、指标组 `metrics` 与摘要组 `summary` 三种 v2 面板；不改变已有 v1 引用卡片。文档与源码共用同一份数据，支持插入、编辑、预览和发布。字段、示例、AI 提示词及整篇 JSON 导入见[结构化文章导入](ARTICLE_IMPORT.md)。真实表格继续使用 Markdown，不把邮件布局表格当作数据表。

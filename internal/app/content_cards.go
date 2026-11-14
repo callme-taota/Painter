@@ -32,17 +32,21 @@ type contentCardStats struct {
 }
 
 type contentCard struct {
-	V              int               `json:"v"`
-	Type           string            `json:"type"`
-	URL            string            `json:"url"`
-	Title          string            `json:"title,omitempty"`
-	RefID          string            `json:"ref_id,omitempty"`
-	Description    string            `json:"description,omitempty"`
-	Subtitle       string            `json:"subtitle,omitempty"`
-	ImageURL       string            `json:"image_url,omitempty"`
-	Stats          *contentCardStats `json:"stats,omitempty"`
-	MetadataSource string            `json:"metadata_source,omitempty"`
-	ResolvedAt     string            `json:"resolved_at,omitempty"`
+	V              int                 `json:"v"`
+	Type           string              `json:"type"`
+	URL            string              `json:"url,omitempty"`
+	Title          string              `json:"title,omitempty"`
+	RefID          string              `json:"ref_id,omitempty"`
+	Description    string              `json:"description,omitempty"`
+	Subtitle       string              `json:"subtitle,omitempty"`
+	ImageURL       string              `json:"image_url,omitempty"`
+	Stats          *contentCardStats   `json:"stats,omitempty"`
+	MetadataSource string              `json:"metadata_source,omitempty"`
+	ResolvedAt     string              `json:"resolved_at,omitempty"`
+	Tone           string              `json:"tone,omitempty"`
+	Body           string              `json:"body,omitempty"`
+	Metrics        []ContentCardMetric `json:"metrics,omitempty"`
+	Entries        []ContentCardEntry  `json:"entries,omitempty"`
 }
 
 type contentCardDefinition struct{ Label string }
@@ -112,6 +116,12 @@ func contentCardImage(c contentCard) (string, error) {
 }
 
 func validateContentCard(c contentCard) (string, error) {
+	if c.V == 2 && contentPanelType(c.Type) {
+		return "", validateContentPanel(c)
+	}
+	if c.Tone != "" || c.Body != "" || c.Metrics != nil || c.Entries != nil {
+		return "", contentCardInvalid("此版本不支持内容面板字段")
+	}
 	if contentCardIsInternal(c.Type) {
 		if !contentCardReferenceID(c.RefID) || c.URL != contentCardInternalURL(c.Type, c.RefID) {
 			return "", contentCardInvalid("站内引用需要有效的内容编号和对应站内链接")
@@ -184,13 +194,30 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 	if e := json.Unmarshal(raw, &identity); e != nil {
 		return c, false, contentCardInvalid("需要一个 JSON 对象")
 	}
-	if _, known := contentCardRegistry[identity.Type]; identity.V != 1 || !known {
+	_, legacyType := contentCardRegistry[identity.Type]
+	if !(identity.V == 1 && legacyType || identity.V == 2 && contentPanelType(identity.Type)) {
 		return c, false, nil
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
 	if e := d.Decode(&c); e != nil || d.Decode(new(any)) != io.EOF {
 		return c, true, contentCardInvalid("JSON 字段或格式不正确")
+	}
+	if c.V == 2 {
+		if e := contentPanelFields(raw, c.Type); e != nil {
+			return c, true, e
+		}
+	} else {
+		// Adding a new version must not make its fields valid on v1 cards,
+		// including explicitly empty or null values.
+		var fields map[string]json.RawMessage
+		_ = json.Unmarshal(raw, &fields)
+		for key := range fields {
+			switch strings.ToLower(key) {
+			case "tone", "body", "metrics", "entries":
+				return c, true, contentCardInvalid("此版本不支持内容面板字段")
+			}
+		}
 	}
 	if contentCardIsInternal(c.Type) {
 		var fields map[string]json.RawMessage
@@ -329,6 +356,10 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 		return ast.WalkContinue, nil
 	}
 	c := node.(*contentCardBlockNode).Card
+	if c.V == 2 {
+		_, e := w.WriteString(contentPanelHTML(c))
+		return ast.WalkSkipChildren, e
+	}
 	if contentCardIsInternal(c.Type) {
 		_, e := w.WriteString(contentCardInternalPlaceholder(c))
 		return ast.WalkSkipChildren, e

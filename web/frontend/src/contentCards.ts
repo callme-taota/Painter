@@ -1,4 +1,5 @@
 import './articleCards.css'
+import './researchCards.css'
 import {initImageGalleries} from './momentGallery'
 
 type LinkPreview = {

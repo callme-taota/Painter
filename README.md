@@ -90,7 +90,7 @@ go test -race ./... -count=1
 - [实现架构](docs/ARCHITECTURE.md)、[界面规范](web/DESIGN.md)、[全端体验规范](docs/CROSS_PLATFORM_EXPERIENCE.md)
 - [安装与部署](docs/DEPLOYMENT.md)、[首次网页安装](docs/INSTALLATION_V7.md)、[部署维护](docs/deployment-tool.md)
 - [本地账号与离线恢复](docs/local-accounts.md)、[账号安全与两步验证](docs/ACCOUNT_SECURITY.md)、[GitHub 登录](docs/GITHUB_LOGIN_V7.md)、[OIDC 接入](docs/IDENTITY_PROVIDER.md)
-- [专栏与分享](docs/SERIALS_AND_SHARING.md)、[文章内容卡片](docs/CONTENT_CARDS_V24.md)、[Steam / PlayStation 游戏墙](docs/PSN_GAME_WALL.md)
+- [专栏与分享](docs/SERIALS_AND_SHARING.md)、[文章内容卡片](docs/CONTENT_CARDS_V24.md)、[AI 文章格式与导入](docs/ARTICLE_IMPORT.md)、[Steam / PlayStation 游戏墙](docs/PSN_GAME_WALL.md)
 - [自动备份与恢复](docs/AUTOMATIC_BACKUP_RECOVERY.md)、[管理员 CLI / MCP](docs/admin-cli.md)、[旧站离线数据包导入](docs/LEGACY_PACKAGE.md)
 
 ## 分支与源码边界

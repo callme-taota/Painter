@@ -1,0 +1,97 @@
+{
+  "format": "painter.article",
+  "version": 1,
+  "title": "Web3 每周交易机会雷达 | 2026-11-13（历史片段）",
+  "summary": "用户提供的历史 HTML 报告片段转换示例，保留当时数据、统计窗口、研究判断与来源；未更新行情或重新核验，截断内容未补写。",
+  "blocks": [
+    {
+      "type": "card",
+      "card": {
+        "v": 2,
+        "type": "callout",
+        "tone": "warning",
+        "title": "历史报告与片段说明",
+        "body": "历史邮件正文 · HTML 重新排版版。保留原报告内容与引用；本次未更新行情，也未重新核验原报告的事实与预测。\n本文件仅转换用户提供的 HTML 片段；原文在“双榜机会矩阵｜资金优先观察，技术优先验证”后的表格标签处截断，缺失部分未补写。"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "INDEPENDENT RESEARCH / ISSUE 003 / WEEKLY\n\n## WEB3 WEEKLY RADAR\n\n每周新概念 · 资金与技术机会 · 未来30天\n\n截稿：北京时间 2026-11-13 18:03；过去7天：11-06 18:03—11-13 18:03\n\n本月已观察：11-01 00:00—11-13 18:03（未满13天）；未来30天：11-13—12-13"
+    },
+    {
+      "type": "card",
+      "card": {
+        "v": 2,
+        "type": "callout",
+        "tone": "insight",
+        "title": "本周一句话｜研究判断",
+        "body": "流动性与杠杆仍承压；最值得验证的增量不是‘买一个新币’，而是企业稳定币对账、链上可编程隐私，以及安全审计工具。"
+      }
+    },
+    {
+      "type": "card",
+      "card": {
+        "v": 2,
+        "type": "metrics",
+        "metrics": [
+          {
+            "label": "BTC美国现货ETF｜11/06–12",
+            "value": "−$1.055B",
+            "detail": "5个已结束交易日；Farside净申赎",
+            "source": {
+              "label": "[01] Farside BTC ETF",
+              "url": "https://farside.co.uk/btc/"
+            }
+          },
+          {
+            "label": "稳定币规模｜11/13",
+            "value": "$285.58B",
+            "detail": "DefiLlama；7日−1.66%",
+            "source": {
+              "label": "[03] DefiLlama全市场",
+              "url": "https://defillama.com/"
+            }
+          },
+          {
+            "label": "DeFi TVL｜11/13",
+            "value": "$74.76B",
+            "detail": "DefiLlama；7日约−7.4%",
+            "source": {
+              "label": "[03] DefiLlama全市场",
+              "url": "https://defillama.com/"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "card",
+      "card": {
+        "v": 2,
+        "type": "summary",
+        "entries": [
+          {
+            "title": "01 先防守",
+            "body": "BTC短时跌破$69k、衍生品清算放大；不把反弹视为资金拐点。"
+          },
+          {
+            "title": "02 钱在离场",
+            "body": "ETF持续净赎回、稳定币总量收缩；资金型只做验证。"
+          },
+          {
+            "title": "03 产品在落地",
+            "body": "银行USDC收款、主网隐私、机构资产互操作有新节点。"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "### 市场 / 流动性 / 风险温度表（定性研究判断）\n\n| 维度 | 状态 | 判据 |\n| --- | --- | --- |\n| 资产价格 | 弱势/高波动 | 11/13亚洲时段BTC一度约$68,408；非截稿实时价。 [04](https://www.theblock.co/news/markets/2026-11-13-bitcoin-tumbles-below-69000-439643) |\n| 资金供给 | 收缩 | 11/06–12 BTC ETF五个交易日净赎回$1.055B；稳定币7日−1.66%。 [01](https://farside.co.uk/btc/)[03](https://defillama.com/) |\n| DeFi活跃 | 成交放缓 | DEX7日$43.271B、周变−21.17%；链上永续7日$150.911B、−9.14%。 [03](https://defillama.com/) |\n| 结构性采用 | 产品落地 | PNC USDC银行试点与Privacy Rings主网上线；商业收入未明。 [08](https://www.coinbase.com/en-gb/blog/coinbase-and-pnc-expand-to-stablecoin-payment-acceptance)[11](https://solana.com/news/solana-privacy-rings-bring-programmable-privacy-onchain) |\n| 对手方风险 | 仍需审查 | DOJ查控失窃资产不等于交易所全部风险解除。 [06](https://www.justice.gov/opa/pr/justice-department-announces-actions-disrupt-north-koreas-massive-theft-cryptocurrency) |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "### 原片段中已出现的来源\n\n- [01] [Farside BTC ETF](https://farside.co.uk/btc/)\n- [03] [DefiLlama全市场](https://defillama.com/)\n- [04] [The Block：BTC跌破69k与清算](https://www.theblock.co/news/markets/2026-11-13-bitcoin-tumbles-below-69000-439643)\n- [06] [美国司法部：FaceStealer与资产查控](https://www.justice.gov/opa/pr/justice-department-announces-actions-disrupt-north-koreas-massive-theft-cryptocurrency)\n- [08] [Coinbase：PNC USDC支付试点](https://www.coinbase.com/en-gb/blog/coinbase-and-pnc-expand-to-stablecoin-payment-acceptance)\n- [11] [Solana基金会：Privacy Rings说明](https://solana.com/news/solana-privacy-rings-bring-programmable-privacy-onchain)"
+    }
+  ]
+}

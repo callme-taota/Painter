@@ -84,6 +84,8 @@ func (a *App) RegisterContent() {
 	a.Handle("GET /api/v1/studio/posts/{id}/revisions/{rid}", a.getRevision)
 	a.Handle("POST /api/v1/studio/posts/{id}/restore", a.restoreRevision)
 	a.Handle("POST /api/v1/editor/preview", a.previewMarkdown)
+	a.Handle("POST /api/v1/editor/import-preview", a.articleImportPreview)
+	a.Handle("GET /api/v1/editor/import-format", a.articleImportFormat)
 	a.Handle("POST /api/v1/editor/cards/resolve", a.resolveContentCard)
 	a.Handle("GET /api/v1/content-cards/{kind}/{id}", a.publicContentCard)
 	a.registerCovers()

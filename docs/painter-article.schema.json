@@ -1,0 +1,617 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:painter:article-import:v1",
+  "title": "Painter structured article import v1",
+  "description": "A portable, strictly typed article body compiled to normal Painter Markdown. This is a draft import, not a publishing command.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "title",
+    "blocks"
+  ],
+  "properties": {
+    "format": {
+      "const": "painter.article"
+    },
+    "version": {
+      "const": 1
+    },
+    "title": {
+      "$ref": "#/$defs/title"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500,
+      "pattern": "^[^\\u0000-\\u0009\\u000b\\u000c\\u000e-\\u001f\\u007f-\\u009f]*$"
+    },
+    "blocks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/markdownBlock"
+          },
+          {
+            "$ref": "#/$defs/cardBlock"
+          }
+        ]
+      },
+      "contains": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "card"
+          }
+        }
+      },
+      "minContains": 0,
+      "maxContains": 128
+    }
+  },
+  "$defs": {
+    "title": {
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "optionalTitle": {
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+    },
+    "body": {
+      "type": "string",
+      "maxLength": 2000,
+      "pattern": "^[^\\u0000-\\u0009\\u000b\\u000c\\u000e-\\u001f\\u007f-\\u009f]*$",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 120,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "value": {
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 500,
+      "pattern": "^[^\\u0000-\\u0009\\u000b\\u000c\\u000e-\\u001f\\u007f-\\u009f]*$"
+    },
+    "httpsURL": {
+      "type": "string",
+      "maxLength": 2048,
+      "format": "uri",
+      "pattern": "^https://[^/?#\\s:@\\\\\\u0000-\\u001f\\u007f-\\u009f]+(?:[/?#][^\\s\\\\\\u0000-\\u001f\\u007f-\\u009f]*)?$",
+      "$comment": "Server additionally validates canonical public HTTPS hosts, decoded control characters, and the UTF-8 byte limit; credentials and explicit ports are forbidden."
+    },
+    "mediaURL": {
+      "type": "string",
+      "pattern": "^/media/[a-fA-F0-9-]{16,128}$",
+      "$comment": "The media must already exist and pass normal ready-state and authorization checks. Do not invent an ID."
+    },
+    "internalID": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "$comment": "Server also requires a positive signed int64 and equality with the ID in url."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "url"
+      ],
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "url": {
+          "$ref": "#/$defs/httpsURL"
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "value"
+      ],
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "value": {
+          "$ref": "#/$defs/value"
+        },
+        "detail": {
+          "$ref": "#/$defs/detail"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      }
+    },
+    "summaryEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "body"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "body": {
+          "$ref": "#/$defs/body"
+        }
+      }
+    },
+    "calloutCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "tone",
+        "body"
+      ],
+      "properties": {
+        "v": {
+          "const": 2
+        },
+        "type": {
+          "const": "callout"
+        },
+        "title": {
+          "$ref": "#/$defs/optionalTitle"
+        },
+        "tone": {
+          "enum": [
+            "note",
+            "insight",
+            "warning"
+          ]
+        },
+        "body": {
+          "$ref": "#/$defs/body"
+        }
+      }
+    },
+    "metricsCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "metrics"
+      ],
+      "properties": {
+        "v": {
+          "const": 2
+        },
+        "type": {
+          "const": "metrics"
+        },
+        "title": {
+          "$ref": "#/$defs/optionalTitle"
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/metric"
+          }
+        }
+      }
+    },
+    "summaryCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "entries"
+      ],
+      "properties": {
+        "v": {
+          "const": 2
+        },
+        "type": {
+          "const": "summary"
+        },
+        "title": {
+          "$ref": "#/$defs/optionalTitle"
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/summaryEntry"
+          }
+        }
+      }
+    },
+    "githubCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "title"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "github"
+        },
+        "url": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/httpsURL"
+            },
+            {
+              "pattern": "^https://github\\.com/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/?$"
+            }
+          ]
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "image_url": {
+          "$ref": "#/$defs/mediaURL"
+        },
+        "metadata_source": {
+          "enum": [
+            "provider",
+            "author"
+          ]
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "stats": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "stars": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "forks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      }
+    },
+    "steamCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "title"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "steam"
+        },
+        "url": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/httpsURL"
+            },
+            {
+              "pattern": "^https://store\\.steampowered\\.com/app/[1-9][0-9]{0,9}(?:/[^/?#]*)?/?(?:\\?[^#\\s\\\\]*)?$"
+            }
+          ]
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "image_url": {
+          "$ref": "#/$defs/mediaURL"
+        },
+        "metadata_source": {
+          "enum": [
+            "provider",
+            "author"
+          ]
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "apple_musicCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "title"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "apple_music"
+        },
+        "url": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/httpsURL"
+            },
+            {
+              "pattern": "^https://music\\.apple\\.com/[A-Za-z]{2}/(?:album/(?:[^/?#]+/)?[1-9][0-9]{0,19}|playlist/(?:[^/?#]+/)?pl\\.[A-Za-z0-9_.-]+)/?(?:\\?[^#\\s\\\\]*)?$"
+            }
+          ]
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "image_url": {
+          "$ref": "#/$defs/mediaURL"
+        },
+        "metadata_source": {
+          "enum": [
+            "provider",
+            "author"
+          ]
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "linkCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "title"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "link"
+        },
+        "url": {
+          "$ref": "#/$defs/httpsURL"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "image_url": {
+          "$ref": "#/$defs/mediaURL"
+        },
+        "metadata_source": {
+          "enum": [
+            "provider",
+            "author"
+          ]
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "momentCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "ref_id"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "moment"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^/moments/[1-9][0-9]{0,18}$"
+        },
+        "ref_id": {
+          "$ref": "#/$defs/internalID"
+        }
+      }
+    },
+    "phraseCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "ref_id"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "phrase"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^/phrases/[1-9][0-9]{0,18}$"
+        },
+        "ref_id": {
+          "$ref": "#/$defs/internalID"
+        }
+      }
+    },
+    "card": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/calloutCard"
+        },
+        {
+          "$ref": "#/$defs/metricsCard"
+        },
+        {
+          "$ref": "#/$defs/summaryCard"
+        },
+        {
+          "$ref": "#/$defs/githubCard"
+        },
+        {
+          "$ref": "#/$defs/steamCard"
+        },
+        {
+          "$ref": "#/$defs/apple_musicCard"
+        },
+        {
+          "$ref": "#/$defs/linkCard"
+        },
+        {
+          "$ref": "#/$defs/momentCard"
+        },
+        {
+          "$ref": "#/$defs/phraseCard"
+        }
+      ],
+      "$comment": "Each encoded card snapshot is additionally limited to 8192 UTF-8 bytes by the server. The import path accepts local media URLs only."
+    },
+    "markdownBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "markdown"
+      ],
+      "properties": {
+        "type": {
+          "const": "markdown"
+        },
+        "markdown": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1048576,
+          "pattern": "\\S",
+          "$comment": "Normal article Markdown. Server rejects raw HTML and nonlocal image destinations in imports. Reserved painter-card fences and inline card references are validated and included in the 128-card total."
+        }
+      }
+    },
+    "cardBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "card"
+      ],
+      "properties": {
+        "type": {
+          "const": "card"
+        },
+        "card": {
+          "$ref": "#/$defs/card"
+        }
+      }
+    }
+  },
+  "$comment": "The server enforces a 1048576-byte UTF-8 input limit and the same compiled-Markdown byte limit; at most 128 cards including fenced and inline cards inside Markdown; at most 8192 bytes per card; exact JSON fields, no duplicate keys/null, depth <= 24; public URL safety; internal ID/url equality; image authorization. JSON Schema character lengths do not substitute for byte limits. Import never publishes or changes tags, cover, dates, or author."
+}

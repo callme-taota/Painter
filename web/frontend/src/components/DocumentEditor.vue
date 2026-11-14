@@ -40,6 +40,9 @@ const commands=[
   {label:'代码块',hint:'保留代码格式',search:'code daima',run:(e:Editor)=>e.chain().focus().toggleCodeBlock().run()},
   {label:'表格',hint:'3 列 × 3 行',search:'table biaoge',run:(e:Editor)=>e.chain().focus().insertTable({rows:3,cols:3,withHeaderRow:true}).run()},
   {label:'图片',hint:'从设备上传',search:'image photo tupian',run:()=>{emit('pick-image');return true}},
+  {label:'提示',hint:'说明、判断或注意事项',search:'callout note insight warning tishi',run:()=>{openCards('callout');return true}},
+  {label:'指标',hint:'数值、口径与来源',search:'metrics number data zhibiao',run:()=>{openCards('metrics');return true}},
+  {label:'摘要组',hint:'并列要点与结论',search:'summary group zhaiyao',run:()=>{openCards('summary');return true}},
   {label:'GitHub 仓库',hint:'公开仓库卡片',search:'github repository card kapian',run:()=>{openCards('github');return true}},
   {label:'Steam 游戏',hint:'商店游戏卡片',search:'steam game card youxi',run:()=>{openCards('steam');return true}},
   {label:'Apple Music',hint:'专辑或歌单卡片',search:'apple music album playlist card yinyue',run:()=>{openCards('apple_music');return true}},
@@ -68,7 +71,7 @@ function openCards(kind?:ArticleCardType,position?:number){
 function closeCards(){cardOpen.value=false;editor.value?.commands.focus()}
 function applyCard(value:{card:ArticleCard;inline:boolean;label:string}){
  const e=editor.value,range=cardRange.value;if(!e||!range||!editable.value)return
- if(value.inline){const attrs={href:value.card.url,title:articleReferenceTitle(value.card)};if(!range.block&&e.state.doc.textBetween(range.from,range.to,' ')===value.label&&range.from!==range.to)e.chain().focus().setTextSelection(range).setMark('link',attrs).run();else e.chain().focus().insertContentAt(range,{type:'text',text:value.label,marks:[{type:'link',attrs}]},{contentType:'json'}).run()}
+ if(value.inline&&value.card.v===1&&value.card.type==='link'){const attrs={href:value.card.url,title:articleReferenceTitle(value.card)};if(!range.block&&e.state.doc.textBetween(range.from,range.to,' ')===value.label&&range.from!==range.to)e.chain().focus().setTextSelection(range).setMark('link',attrs).run();else e.chain().focus().insertContentAt(range,{type:'text',text:value.label,marks:[{type:'link',attrs}]},{contentType:'json'}).run()}
  else{const node={type:'articleCard',attrs:{snapshot:JSON.stringify(value.card)}};e.chain().focus().insertContentAt(range,range.block?node:[node,{type:'paragraph'}],{contentType:'json'}).run()}
  cardOpen.value=false
 }
