@@ -7,8 +7,8 @@
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ]
   },
-  "__plugin-vue_export-helper-DNkIjL55.js": {
-    "file": "chunks/_plugin-vue_export-helper-DNkIjL55.js",
+  "__plugin-vue_export-helper-DxfA4p8d.js": {
+    "file": "chunks/_plugin-vue_export-helper-DxfA4p8d.js",
     "name": "_plugin-vue_export-helper"
   },
   "_api-lupqPqyz.js": {
@@ -108,14 +108,14 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-D7ygwZ6I.js",
+    "file": "chunks/AuthForm-aYcrEoj0.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DNkIjL55.js"
+      "__plugin-vue_export-helper-DxfA4p8d.js"
     ],
     "css": [
       "AuthForm-CftWU_Hm.css"
@@ -134,7 +134,7 @@
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor-CHUMswrp.js",
+    "file": "chunks/MarkdownEditor--Ht5EDQp.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
@@ -146,7 +146,7 @@
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
       "_confirm-B86amM10.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DNkIjL55.js",
+      "__plugin-vue_export-helper-DxfA4p8d.js",
       "_infiniteScroll-CcHvAPba.js"
     ],
     "css": [
@@ -232,7 +232,7 @@
     "isDynamicEntry": true
   },
   "src/public.ts": {
-    "file": "public-Dzg9mF_9.js",
+    "file": "public-Bdfc0l4K.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
@@ -263,12 +263,12 @@
       "src/homeShowcase.ts"
     ],
     "css": [
-      "public-eMbyN1p3.css",
+      "public-BvtI7mzV.css",
       "sharing-COMRoiPd.css"
     ]
   },
   "src/setup.ts": {
-    "file": "setup-CtrzQNbz.js",
+    "file": "setup-C1h6UUd7.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
@@ -276,7 +276,7 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DNkIjL55.js"
+      "__plugin-vue_export-helper-DxfA4p8d.js"
     ],
     "css": [
       "setup-ClpE19T_.css"
@@ -292,7 +292,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-CkiAYNuF.js",
+    "file": "studio-D55XVPB_.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
@@ -304,7 +304,7 @@
       "_api-lupqPqyz.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DNkIjL55.js",
+      "__plugin-vue_export-helper-DxfA4p8d.js",
       "_publicSession-BMy9aUG-.js",
       "_infiniteScroll-CcHvAPba.js",
       "_contentCards-BEDm4DAn.js",

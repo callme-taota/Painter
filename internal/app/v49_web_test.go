@@ -168,6 +168,25 @@ func TestV49SeriesSSRReadingPaginationPermissionsAndSitemap(t *testing.T) {
 			t.Fatal("public serial pagination failed", pagePath, response.Code)
 		}
 		doc := friendWebDocument(t, response.Body.String())
+		filters := friendWebClass(doc, "series-status-filter")
+		if len(filters) != 1 {
+			t.Fatal("serial status filters are not grouped separately from item metadata")
+		}
+		statusLinks := friendWebNodes(filters[0], func(node *nethtml.Node) bool {
+			return node.Type == nethtml.ElementNode && node.Data == "a"
+		})
+		if len(statusLinks) != 3 {
+			t.Fatal("serial status choices missing")
+		}
+		for _, link := range statusLinks {
+			target, err := url.Parse(friendWebAttr(link, "href"))
+			if err != nil || target.Path != "/series" || target.Query().Get("q") != "V49" || target.Query().Has("cursor") {
+				t.Fatal("switching serial status must preserve the query and restart the list")
+			}
+			if (friendWebAttr(link, "aria-current") == "page") != (target.Query().Get("state") == "ongoing") {
+				t.Fatal("serial status selection does not match the current filter")
+			}
+		}
 		cards := friendWebClass(doc, "series-public-card")
 		if len(cards) != 1 {
 			t.Fatal("serial page size ignored", len(cards))
