@@ -52,6 +52,10 @@ func (a *App) homepagePage(ctx context.Context, site map[string]any) (webPage, e
 		cardName = name
 	}
 	p := webPage{Kind: "home", Site: site, HomeConfig: &cfg}
+	var hasArticles bool
+	if err := a.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM public_posts)").Scan(&hasArticles); err != nil {
+		return webPage{}, err
+	}
 	for _, key := range cfg.Order {
 		s := cfg.Sections[key]
 		if !s.Enabled {
@@ -60,6 +64,12 @@ func (a *App) homepagePage(ctx context.Context, site map[string]any) (webPage, e
 		section := homeWebSection{Key: key, Title: homeHeadingText(s.Title), Description: s.Description, LinkLabel: s.LinkLabel, LinkURL: s.LinkURL,
 			Name: name, CardName: cardName, Roles: roles, WritingTitle: homeHeadingText(cfg.WritingTitle), WritingDescription: cfg.WritingDescription,
 			ScrollLabel: cfg.ScrollLabel, Brand: webString(site["display_name"])}
+		if !hasArticles && key == "closing" && (s.LinkURL == "/posts" || s.LinkURL == "/#home-writing" || s.LinkURL == "#home-writing") {
+			continue
+		}
+		if !hasArticles && (section.LinkURL == "/posts" || section.LinkURL == "/#home-writing" || section.LinkURL == "#home-writing") {
+			section.LinkURL, section.LinkLabel = "/about", "了解更多"
+		}
 		switch key {
 		case "intro":
 			section.Description = homeHeadingText(description)
@@ -69,7 +79,7 @@ func (a *App) homepagePage(ctx context.Context, site map[string]any) (webPage, e
 				section.LinkURL = "/posts"
 			}
 		case "articles":
-			if s.Limit == 0 {
+			if s.Limit == 0 || !hasArticles {
 				continue
 			}
 			posts, e := a.PublicPosts(ctx, url.Values{"limit": {strconv.Itoa(s.Limit)}})

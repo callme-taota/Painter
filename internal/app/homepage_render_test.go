@@ -329,8 +329,14 @@ func TestHomeSSRDefaultsPreserveIntroductionAndEmptyWalls(t *testing.T) {
 	compactText := func(value string) string { return strings.Join(strings.Fields(value), "") }
 	for _, cookie := range []*http.Cookie{nil, owner} {
 		doc := homeSSRDocument(t, a, cookie)
-		if !reflect.DeepEqual(homeSSRSections(doc), []string{"intro", "articles", "closing"}) {
-			t.Fatal("migration changed existing sections", homeSSRSections(doc))
+		if !reflect.DeepEqual(homeSSRSections(doc), []string{"intro", "closing"}) {
+			t.Fatal("empty article section should be omitted", homeSSRSections(doc))
+		}
+		links := friendWebNodes(homeSSRSection(doc, "intro"), func(n *nethtml.Node) bool {
+			return n.Type == nethtml.ElementNode && n.Data == "a" && friendWebAttr(n, "href") == "/about"
+		})
+		if len(links) != 1 {
+			t.Fatal("empty home must offer an existing destination")
 		}
 		intro := homeSSRSection(doc, "intro")
 		// Presentation may split the same copy across spans or whitespace.
@@ -400,6 +406,7 @@ func TestHomeSSRArticleCountAndPublishedSnapshot(t *testing.T) {
 func TestHomeSSRSixSectionOrderEscapingAndNativeWalls(t *testing.T) {
 	a, calls := homeSSRApp(t)
 	_, owner, csrf := testIdentity(t, a, "owner")
+	relatedFixture{t, a, owner, csrf}.post("Native wall public article", true)
 	homeSSRProfile(t, a)
 	game := homeTestInput("steam")
 	game["title"] = `<em data-home-item-xss>Game & title</em>`
