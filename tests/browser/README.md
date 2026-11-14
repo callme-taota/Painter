@@ -67,3 +67,17 @@ Go 集成用例仅使用显式 `PAINTER_TEST_DATABASE_URL`，不回退到 `DATAB
 生成的截图和 JSON 报告通常写入已忽略的 `tests/artifacts/`，部分用例默认输出到临时目录。应为每次候选运行设置独立结果目录，先确认报告里的 origin、夹具与当前实例一致，再复用结果。报告不保存 Cookie、口令或真实私有正文。
 
 脚本通过只表示其断言覆盖的范围。模拟响应不证明真实后端持久化；只读候选检查不证明生产迁移；截图数量不代表视觉质量。Chromium / WebKit 的视口与触摸模拟也不替代真实手机、操作系统输入法、帧率或外部账号授权验证。完整数据库、构建和部署检查见[仓库测试说明](../../README.md#测试)。
+
+## V50 连续列表与搜索
+
+`v50-continuous-reading.cjs` 和 `v50-infinite-recovery.cjs` 固定只访问可丢弃实例 `http://127.0.0.1:18094`。设置 `OWNER_STATE_FILE` 为该实例已有的站长会话，`PLAYWRIGHT_MODULE` 为 Playwright 模块位置，可选 `CHROMIUM_EXECUTABLE` 与 `ARTIFACT_DIR`。会话和账号文件必须放在 Git 外。前者会创建明确标注 UX50 的未公开草稿并保存历史版本；后者只读，不可复用正式实例或正式账号。
+
+夹具前提：超过 20 篇 UX50 公开文章、动态和专栏，超过 30 条公开片语，45 个标题为 `UX50 Game 0` 至 `UX50 Game 44` 的公开游戏；最新公开文章有 45 条评论，测试站长有 30 个收藏。夹具仅用于独立 PostgreSQL 18 测试库。公共脚本用 `limit=3` 验证追加，后台使用实际批量；内容选择器检查自身滚动容器。脚本覆盖两种视口、离开保护、保存与历史版本、失败不循环请求、重试不丢记录、末尾停止、评论和收藏等。
+
+```bash
+PLAYWRIGHT_MODULE=/private/node_modules/playwright \
+OWNER_STATE_FILE=/private/isolated-owner-state.json \
+ARTIFACT_DIR=tests/artifacts/v50 \
+node tests/browser/v50-continuous-reading.cjs
+# 保持同一环境变量，再运行 v50-infinite-recovery.cjs。
+```

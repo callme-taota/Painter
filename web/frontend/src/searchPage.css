@@ -32,3 +32,5 @@ input:is([type=checkbox],[type=radio]):disabled{cursor:not-allowed;opacity:.5}
 .search-query-field input{height:calc(var(--control-height) - 2px);min-height:0;padding-block:0;font-size:14px;line-height:var(--control-leading)}
 .sort-options .check{border-radius:var(--radius-item)}
 @media(max-width:720px),(pointer:coarse){.search-query-field input{font-size:16px}}
+
+.search-content-types{border:0;margin:0 0 20px;padding:0;display:flex;flex-wrap:wrap;gap:8px}.search-content-types label{position:relative;cursor:pointer}.search-content-types input{position:absolute;opacity:0;width:1px;height:1px}.search-content-types span{display:block;min-height:44px;padding:10px 16px;border-radius:6px;line-height:24px}.search-content-types input:checked+span{background:var(--subtle);color:var(--ink)}.search-content-types input:focus-visible+span{outline:2px solid var(--focus-ring);outline-offset:2px}.games-search{margin-block:24px}.search-content-list .summary{overflow-wrap:anywhere}

@@ -181,7 +181,9 @@ func TestV49SeriesSSRReadingPaginationPermissionsAndSitemap(t *testing.T) {
 		if strings.Contains(response.Body.String(), "V49 私人专栏标题") || strings.Contains(response.Body.String(), "V49 已删除专栏标题") {
 			t.Fatal("private or deleted serial appeared in public pagination")
 		}
-		pagination := friendWebClass(doc, "pagination")
+		pagination := friendWebNodes(doc, func(node *nethtml.Node) bool {
+			return node.Type == nethtml.ElementNode && friendWebHasAttr(node, "data-infinite-next")
+		})
 		if index == 2 {
 			if len(pagination) != 0 {
 				t.Fatal("last serial page linked to an empty next page")
@@ -192,10 +194,10 @@ func TestV49SeriesSSRReadingPaginationPermissionsAndSitemap(t *testing.T) {
 			t.Fatal("serial page omitted next navigation", index)
 		}
 		links := friendWebNodes(pagination[0], func(node *nethtml.Node) bool { return node.Type == nethtml.ElementNode && node.Data == "a" })
-		if len(links) != 1 {
-			t.Fatal("ambiguous next page link")
+		if len(links) != 0 {
+			t.Fatal("manual pagination must not be exposed")
 		}
-		pagePath = friendWebAttr(links[0], "href")
+		pagePath = friendWebAttr(pagination[0], "data-infinite-next")
 		target, err := url.Parse(pagePath)
 		if err != nil || target.Path != "/series" || target.Query().Get("limit") != "1" || target.Query().Get("q") != "V49" || target.Query().Get("state") != "ongoing" || target.Query().Get("cursor") == "" {
 			t.Fatal("next page lost its public search filters", pagePath, err)

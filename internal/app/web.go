@@ -417,9 +417,14 @@ func (a *App) RegisterWeb() {
 	})
 	a.Mux.HandleFunc("GET /search", func(w http.ResponseWriter, r *http.Request) {
 		p := webPage{Kind: "search", Title: "搜索", NoIndex: true}
+		query := r.URL.Query()
+		if len(query["tag_id"]) > 0 || query.Get("author_id") != "" || query.Get("category_id") != "" {
+			p.Query = query
+			p.Query.Set("type", "post")
+		}
 		if r.URL.Query().Get("q") != "" || len(r.URL.Query()["tag_id"]) > 0 || r.URL.Query().Get("author_id") != "" {
 			p.SearchActive = true
-			data, e := a.SearchPosts(r.Context(), r.URL.Query())
+			data, e := a.SearchContent(r.Context(), r.URL.Query())
 			if e != nil {
 				p.Error = "搜索暂不可用，请缩短关键词或稍后重试。"
 				var ae *APIError
@@ -481,7 +486,11 @@ func (a *App) RegisterWeb() {
 		render(w, r, webPage{Kind: "phrases", Title: "片语", Description: webString(item["text"]), Items: []map[string]any{item}})
 	})
 	a.Mux.HandleFunc("GET /phrases", func(w http.ResponseWriter, r *http.Request) {
-		data, e := a.PublicPhrases(r.Context(), r.URL.Query())
+		query := r.URL.Query()
+		if query.Get("limit") == "" {
+			query.Set("limit", "20")
+		}
+		data, e := a.PublicPhrases(r.Context(), query)
 		if e != nil {
 			failure(w, r, e)
 			return

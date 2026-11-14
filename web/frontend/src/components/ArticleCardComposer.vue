@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import InfiniteList from './InfiniteList.vue'
 import {computed,nextTick,onBeforeUnmount,onMounted,reactive,ref,watch} from 'vue'
-import {api,body,type Row} from '../api'
+import {appendUnique,api,body,type Row} from '../api'
 import {articleCardKinds,articleCardMarkdown,isInternalArticleCard,internalArticleCardURL,type ArticleCard,type ArticleCardType} from '../articleCards'
 import SelectField from './SelectField.vue'
 import Icon from './Icon.vue'
@@ -35,7 +36,7 @@ async function loadReferences(reset=false){
  if(!isInternal.value||props.disabled||referencesBusy.value&&!reset)return
  const type=form.type,at=++referenceRequest;referenceController?.abort();referenceController=new AbortController();referencesBusy.value=true;referencesError.value=''
  const cursor=reset?'':nextCursor.value
- try{const data=await api<{items:Row[];next_cursor?:string|null;has_more:boolean}>((type==='moment'?'/moments':'/phrases')+'?limit=30'+(cursor?'&cursor='+encodeURIComponent(cursor):''),{signal:referenceController.signal});if(at!==referenceRequest||type!==form.type)return;if(!Array.isArray(data.items))throw new Error('内容列表暂不可用，请重试');references.value=reset?data.items:[...references.value,...data.items];nextCursor.value=typeof data.next_cursor==='string'?data.next_cursor:'';hasMore.value=data.has_more===true}catch(e){if(at===referenceRequest&&(e as Error).name!=='AbortError')referencesError.value=(e as Error).message}finally{if(at===referenceRequest)referencesBusy.value=false}
+ try{const data=await api<{items:Row[];next_cursor?:string|null;has_more:boolean}>((type==='moment'?'/moments':'/phrases')+'?limit=30'+(cursor?'&cursor='+encodeURIComponent(cursor):''),{signal:referenceController.signal});if(at!==referenceRequest||type!==form.type)return;if(!Array.isArray(data.items))throw new Error('内容列表暂不可用，请重试');references.value=reset?data.items:appendUnique(references.value,data.items);nextCursor.value=typeof data.next_cursor==='string'?data.next_cursor:'';hasMore.value=data.has_more===true}catch(e){if(at===referenceRequest&&(e as Error).name!=='AbortError')referencesError.value=(e as Error).message}finally{if(at===referenceRequest)referencesBusy.value=false}
 }
 async function resolve(input:Row){
  if(props.disabled||busy.value)return
@@ -68,8 +69,9 @@ async function previewCard(){if(!ready.value||busy.value||props.disabled)return;
      </button>
      <p v-if="!referencesBusy&&!filteredReferences.length&&!referencesError" class="article-card-picker__empty">{{referenceQuery?'已加载内容中没有匹配项。':'还没有公开的'+internalLabel+'。先在内容管理中发布，再来引用。'}}</p>
      <p v-if="referencesBusy" class="article-card-picker__empty" role="status">正在读取公开{{internalLabel}}…</p>
+     <InfiniteList :has-more="hasMore" :loading="referencesBusy" :disabled="disabled" :error="referencesError" @load="loadReferences()"/>
     </div>
-    <div class="article-card-panel__wide article-card-panel__actions"><button v-if="hasMore" type="button" :disabled="referencesBusy||disabled" @click="loadReferences()">加载更多{{internalLabel}}</button><button type="button" class="quiet" :disabled="referencesBusy||disabled" @click="loadReferences(true)">刷新公开列表</button><button type="button" class="quiet" :disabled="busy||disabled||!ready" data-card-preview @click="previewCard">预览卡片</button></div>
+    <div class="article-card-panel__wide article-card-panel__actions"><button type="button" class="quiet" :disabled="referencesBusy||disabled" @click="loadReferences(true)">刷新公开列表</button><button type="button" class="quiet" :disabled="busy||disabled||!ready" data-card-preview @click="previewCard">预览卡片</button></div>
     <p v-if="referencesError" class="article-card-panel__wide article-card-panel__error" role="alert">{{referencesError}} <button type="button" class="quiet" :disabled="referencesBusy" @click="loadReferences(!references.length)">重新读取</button></p>
    </template>
    <template v-else>

@@ -1,6 +1,6 @@
 import './raycast-search.css'
 
-type Suggestion={kind:'post'|'tag';label:string;url:string}
+type Suggestion={kind:'post'|'tag'|'series'|'moment'|'phrase';label:string;url:string}
 type SearchItem=Suggestion|{kind:'command';label:string;url:string;detail:string;icon:'post'|'image'|'quote'}
 const commands:SearchItem[]=[
   {kind:'command',label:'浏览文章',url:'/posts',detail:'文章列表',icon:'post'},
@@ -12,8 +12,8 @@ function icon(name:keyof typeof paths){const el=document.createElementNS('http:/
 function safeSuggestion(value:unknown):Suggestion|undefined{
   if(!value||typeof value!=='object')return
   const item=value as Partial<Suggestion>
-  if((item.kind!=='post'&&item.kind!=='tag')||typeof item.label!=='string'||typeof item.url!=='string'||!item.url.startsWith('/')||item.url.startsWith('//'))return
-  try{const url=new URL(item.url,location.origin);if(url.origin===location.origin)return{kind:item.kind,label:item.label,url:url.pathname+url.search+url.hash}}catch{return}
+  if(!['post','tag','series','moment','phrase'].includes(String(item.kind))||typeof item.label!=='string'||typeof item.url!=='string'||!item.url.startsWith('/')||item.url.startsWith('//'))return
+  try{const url=new URL(item.url,location.origin);if(url.origin===location.origin)return{kind:item.kind as Suggestion['kind'],label:item.label,url:url.pathname+url.search+url.hash}}catch{return}
 }
 export function initSearch(){
   const found=document.querySelector<HTMLDialogElement>('#site-search')
@@ -25,7 +25,7 @@ export function initSearch(){
   // Progressive enhancement keeps the original SSR form and established selectors.
   const row=input.closest('.quick-search-row')
   if(row){const lens=icon('search');lens.classList.add('raycast-search-input-icon');row.prepend(lens);const submit=row.querySelector<HTMLButtonElement>('button');if(submit){submit.setAttribute('aria-label','查看完整搜索结果');submit.title='查看完整搜索结果';submit.replaceChildren(icon('arrow'));submit.classList.add('raycast-search-submit')}const close=dialog.querySelector<HTMLButtonElement>('[data-search-close]');if(close){close.type='button';close.title='关闭搜索（Esc）';row.append(close)}}
-  input.placeholder='搜索文章、标签，或跳转…';input.setAttribute('aria-describedby','raycast-search-status');status.id='raycast-search-status';status.setAttribute('aria-live','polite')
+  input.placeholder='搜索站内内容、标签，或跳转…';input.setAttribute('aria-describedby','raycast-search-status');status.id='raycast-search-status';status.setAttribute('aria-live','polite')
   const footer=dialog.querySelector<HTMLElement>('.search-dialog-foot'),fullSearch=footer?.querySelector<HTMLAnchorElement>('a')
   if(footer){const hints=document.createElement('div');hints.className='raycast-search-keys';for(const [label,keys,css] of [['选择',['↑','↓'],''],['打开',['Enter'],''],['关闭',['Esc'],'raycast-search-key-close']] as const){const group=document.createElement('span');group.className=css;const text=document.createElement('span');text.textContent=label;group.append(text);for(const key of keys){const kbd=document.createElement('kbd');kbd.textContent=key;group.append(kbd)}hints.append(group)}footer.replaceChildren(hints);if(fullSearch){fullSearch.replaceChildren(document.createTextNode('完整搜索'),icon('arrow'));footer.append(fullSearch)}}
   let items:SearchItem[]=[],options:HTMLElement[]=[],active=-1,timer:ReturnType<typeof setTimeout>|undefined,abort:AbortController|undefined,seq=0,composing=false,opener:HTMLElement|null=null
@@ -37,13 +37,13 @@ export function initSearch(){
   function render(suggestions:Suggestion[],q:string){
     clear();items=q?suggestions:[...suggestions,...commands];let previousGroup='';const fragment=document.createDocumentFragment()
     for(const [index,item] of items.entries()){
-      const group=item.kind==='command'?'站内入口':item.kind==='tag'?'标签':q?'匹配文章':'最近文章'
+      const group=item.kind==='command'?'站内入口':item.kind==='tag'?'标签':item.kind==='series'?'专栏':item.kind==='moment'?'动态':item.kind==='phrase'?'片语':q?'匹配文章':'最近文章'
       if(group!==previousGroup){const heading=document.createElement('li');heading.role='presentation';heading.className='raycast-search-group';heading.textContent=group;fragment.append(heading);previousGroup=group}
       const option=document.createElement('li');option.id='search-option-'+index;option.role='option';option.setAttribute('aria-selected','false');option.dataset.searchKind=item.kind
       const link=document.createElement('a');link.href=item.url;link.tabIndex=-1
-      const mark=document.createElement('span');mark.className='raycast-search-item-icon';mark.append(icon(item.kind==='command'?item.icon:item.kind))
+      const mark=document.createElement('span');mark.className='raycast-search-item-icon';mark.append(icon(item.kind==='command'?item.icon:item.kind==='tag'?'tag':item.kind==='moment'?'image':item.kind==='phrase'?'quote':'post'))
       const label=document.createElement('span');label.className='raycast-search-label';label.textContent=item.label
-      const detail=document.createElement('small');detail.className='suggestion-kind';detail.textContent=item.kind==='command'?item.detail:item.kind==='tag'?'标签':'文章'
+      const detail=document.createElement('small');detail.className='suggestion-kind';detail.textContent=item.kind==='command'?item.detail:item.kind==='tag'?'标签':item.kind==='series'?'专栏':item.kind==='moment'?'动态':item.kind==='phrase'?'片语':'文章'
       const action=icon('arrow');action.classList.add('raycast-search-item-action');link.append(mark,label,detail,action);option.append(link)
       option.addEventListener('pointermove',event=>{if(event.pointerType==='mouse'&&!event.buttons)select(index)});options.push(option);fragment.append(option)
     }

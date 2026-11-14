@@ -7,12 +7,12 @@
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ]
   },
-  "__plugin-vue_export-helper-B3hcWqIb.js": {
-    "file": "chunks/_plugin-vue_export-helper-B3hcWqIb.js",
+  "__plugin-vue_export-helper-DNkIjL55.js": {
+    "file": "chunks/_plugin-vue_export-helper-DNkIjL55.js",
     "name": "_plugin-vue_export-helper"
   },
-  "_api-C8H_xkjj.js": {
-    "file": "chunks/api-C8H_xkjj.js",
+  "_api-lupqPqyz.js": {
+    "file": "chunks/api-lupqPqyz.js",
     "name": "api",
     "imports": [
       "_publicSession-BMy9aUG-.js",
@@ -24,9 +24,13 @@
     "name": "browser",
     "isDynamicEntry": true
   },
-  "_confirm-BR2Rbzby.js": {
-    "file": "chunks/confirm-BR2Rbzby.js",
+  "_confirm-B86amM10.js": {
+    "file": "chunks/confirm-B86amM10.js",
     "name": "confirm",
+    "imports": [
+      "_infiniteScroll-CcHvAPba.js",
+      "_runtime-core.esm-bundler-BsA5dPn8.js"
+    ],
     "css": [
       "confirm-yGYsN9G7.css"
     ]
@@ -48,6 +52,10 @@
   "_contentCards-SzCLZTvF.css": {
     "file": "contentCards-SzCLZTvF.css",
     "src": "_contentCards-SzCLZTvF.css"
+  },
+  "_infiniteScroll-CcHvAPba.js": {
+    "file": "chunks/infiniteScroll-CcHvAPba.js",
+    "name": "infiniteScroll"
   },
   "_postLike-BVbF5CPe.js": {
     "file": "chunks/postLike-BVbF5CPe.js",
@@ -100,61 +108,63 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-DKKrHob5.js",
+    "file": "chunks/AuthForm-D7ygwZ6I.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-B3hcWqIb.js"
+      "__plugin-vue_export-helper-DNkIjL55.js"
     ],
     "css": [
       "AuthForm-CftWU_Hm.css"
     ]
   },
   "src/components/FollowIsland.vue": {
-    "file": "chunks/FollowIsland-DHtpYpSx.js",
+    "file": "chunks/FollowIsland-D9V8FaHo.js",
     "name": "FollowIsland",
     "src": "src/components/FollowIsland.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_api-C8H_xkjj.js",
+      "_api-lupqPqyz.js",
       "_postLike-BVbF5CPe.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "_publicSession-BMy9aUG-.js"
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor-B6cFBU4-.js",
+    "file": "chunks/MarkdownEditor-CHUMswrp.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_publicSession-BMy9aUG-.js",
-      "_api-C8H_xkjj.js",
+      "_api-lupqPqyz.js",
       "_contentCards-BEDm4DAn.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
-      "_confirm-BR2Rbzby.js",
+      "_confirm-B86amM10.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-B3hcWqIb.js"
+      "__plugin-vue_export-helper-DNkIjL55.js",
+      "_infiniteScroll-CcHvAPba.js"
     ],
     "css": [
-      "MarkdownEditor-B-YF8Q-A.css"
+      "MarkdownEditor-MQaLJMVp.css"
     ]
   },
   "src/components/PostIsland.vue": {
-    "file": "chunks/PostIsland-ppk-oqRm.js",
+    "file": "chunks/PostIsland-BWDCJ15M.js",
     "name": "PostIsland",
     "src": "src/components/PostIsland.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_confirm-BR2Rbzby.js",
-      "_api-C8H_xkjj.js",
+      "_confirm-B86amM10.js",
+      "_api-lupqPqyz.js",
       "_postLike-BVbF5CPe.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
+      "_infiniteScroll-CcHvAPba.js",
       "_publicSession-BMy9aUG-.js"
     ],
     "css": [
@@ -177,7 +187,7 @@
     "isDynamicEntry": true
   },
   "src/homeShowcase.ts": {
-    "file": "chunks/homeShowcase-CDMXDpmd.js",
+    "file": "chunks/homeShowcase-DxZXnicN.js",
     "name": "homeShowcase",
     "src": "src/homeShowcase.ts",
     "isDynamicEntry": true,
@@ -216,18 +226,19 @@
     "isDynamicEntry": true
   },
   "src/phrases.ts": {
-    "file": "chunks/phrases-Cph4hzch.js",
+    "file": "chunks/phrases-Cxg9l1y2.js",
     "name": "phrases",
     "src": "src/phrases.ts",
     "isDynamicEntry": true
   },
   "src/public.ts": {
-    "file": "public-CNTMmlhS.js",
+    "file": "public-Dzg9mF_9.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
     "imports": [
       "_shadcn-theme-bY7Nbq2X.js",
+      "_infiniteScroll-CcHvAPba.js",
       "_contentCards-BEDm4DAn.js",
       "_postLike-BVbF5CPe.js",
       "_publicSession-BMy9aUG-.js"
@@ -248,15 +259,16 @@
       "src/phrases.ts",
       "src/homeWriting.ts",
       "src/homeShowcase.ts",
-      "src/homeExtras.ts"
+      "src/homeExtras.ts",
+      "src/homeShowcase.ts"
     ],
     "css": [
-      "public-Dd8oeMbW.css",
+      "public-eMbyN1p3.css",
       "sharing-COMRoiPd.css"
     ]
   },
   "src/setup.ts": {
-    "file": "setup-DXbDpBZx.js",
+    "file": "setup-CtrzQNbz.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
@@ -264,7 +276,7 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-B3hcWqIb.js"
+      "__plugin-vue_export-helper-DNkIjL55.js"
     ],
     "css": [
       "setup-ClpE19T_.css"
@@ -280,7 +292,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-BLqNHRAW.js",
+    "file": "studio-CkiAYNuF.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
@@ -288,12 +300,13 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "src/public.ts",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_api-C8H_xkjj.js",
+      "_confirm-B86amM10.js",
+      "_api-lupqPqyz.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "_confirm-BR2Rbzby.js",
-      "__plugin-vue_export-helper-B3hcWqIb.js",
+      "__plugin-vue_export-helper-DNkIjL55.js",
       "_publicSession-BMy9aUG-.js",
+      "_infiniteScroll-CcHvAPba.js",
       "_contentCards-BEDm4DAn.js",
       "_postLike-BVbF5CPe.js"
     ],

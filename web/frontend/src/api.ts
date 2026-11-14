@@ -2,6 +2,7 @@ import { randomID } from './random'
 import { reactive } from 'vue'
 import {invalidatePublicSession,loadPublicSession,observePublicSession} from './publicSession'
 export type Row = Record<string, any>
+export function appendUnique<T extends Row>(current:T[],incoming:T[]):T[]{const ids=new Set(current.map(row=>String(row.id||row.post_id||row.management_id||'')));return [...current,...incoming.filter(row=>{const id=String(row.id||row.post_id||row.management_id||'');if(id&&ids.has(id))return false;if(id)ids.add(id);return true})]}
 export const session = reactive<Row>({ loading:true, authenticated:false, user:null, csrf_token:'' })
 const pendingGets=new Map<string,Promise<any>>()
 export type SessionEndReason='signout'|'expired'

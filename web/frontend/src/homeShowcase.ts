@@ -29,6 +29,8 @@ export function initHomeShowcase() {
   if (firstGameArt && !phone.matches) firstGameArt.loading = 'eager'
   if (gameTile && !gameTileArt) gameTile.classList.add('has-missing-art')
   document.querySelectorAll<HTMLImageElement>('[data-game-hero],[data-game-tile-hero],[data-game-logo],[data-library-cover]').forEach(img => {
+    if(img.dataset.artFallbackReady)return
+    img.dataset.artFallbackReady='true'
     const fail = () => {
       // Both real surfaces must use the same fallback, including a failure that
       // occurs while the wall cell is growing into the first full game scene.

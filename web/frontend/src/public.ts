@@ -1,4 +1,7 @@
 import 'vite/modulepreload-polyfill'
+import './infiniteScroll.css'
+import {initPublicInfinite} from './publicInfinite'
+initPublicInfinite()
 import './style.css'
 import './controls.css'
 import './homeStory.css'
@@ -90,3 +93,9 @@ import './series.css'
 import './sharing.css'
 import {initSharing} from './sharing'
 initSharing()
+
+document.addEventListener('painter:list-appended',event=>{
+ const container=(event as CustomEvent<{container:HTMLElement}>).detail.container
+ initMoments();initArticleCards(container);initFriendAvatars()
+ if(container.querySelector('[data-library-cover]'))void import('./homeShowcase').then(m=>m.initHomeShowcase()).catch(()=>{})
+})

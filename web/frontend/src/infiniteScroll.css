@@ -1,0 +1,1 @@
+.infinite-status{min-height:32px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;margin-block:20px;color:var(--muted);font-size:14px;line-height:1.7}.infinite-status[aria-busy=true]{cursor:progress}.infinite-status .quiet{min-height:44px}

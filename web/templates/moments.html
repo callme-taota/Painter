@@ -2,7 +2,7 @@
 <header class="page-heading"><h1>动态</h1><p>此刻的想法，日常的切片。</p></header>
 <section class="moments-feed" data-moment-feed data-layout="two" aria-label="公开动态">
 {{if .Items}}<div class="moments-toolbar"><span class="moment-feed-note">短一点，也值得记录。</span><div class="moments-layout" role="group" aria-label="动态布局" hidden><button type="button" data-moment-layout="list" aria-pressed="false">列表</button><button type="button" data-moment-layout="two" aria-pressed="true">双列</button><button type="button" data-moment-layout="grid" aria-pressed="false">多列</button></div></div>
-<div class="moments-items">{{range .Items}}{{template "moment-card" .}}{{end}}</div>
+<div class="moments-items" data-infinite-items>{{range .Items}}{{template "moment-card" .}}{{end}}</div>
 {{else}}<div class="moments-empty"><h2>等一个想法停下来</h2><p>公开发布的动态会出现在这里。</p></div>{{end}}
 </section>
 {{end}}

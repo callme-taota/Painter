@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import InfiniteList from './InfiniteList.vue'
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId} from 'vue'
-import {api, APIError, body, list, type Row} from '../api'
+import {appendUnique,api, APIError, body, list, type Row} from '../api'
 import {confirmAction} from '../confirm'
 import {randomID} from '../random'
 import Icon from './Icon.vue'
@@ -16,7 +17,7 @@ const uid = useId(), textarea = ref<HTMLTextAreaElement>(), fileInput = ref<HTML
 const rows = ref<Moment[]>([]), loading = ref(true), busy = ref(false)
 const scope = ref(props.owner ? 'site' : 'mine'), status = ref('all')
 const listError = ref(''), error = ref(''), notice = ref(''), conflict = ref(false), latest = ref<Moment|null>(null)
-const maxLength = ref(500), maxImages = ref(9), maxImageBytes = ref(10*1024*1024), page = ref(0), cursors = ref(['']), nextCursor = ref('')
+const maxLength = ref(500), maxImages = ref(9), maxImageBytes = ref(10*1024*1024), nextCursor = ref('')
 const form = reactive<Moment>({id:'',version:0,text:'',images:[],public_text:null,public_images:[],published:false,status:'draft'})
 const images = ref<SelectedImage[]>([])
 const imageInputs = (value:Array<MomentImage|SelectedImage>):ImageInput[] => value.map(image => ({media_id:image.media_id,alt:image.alt}))
@@ -167,20 +168,19 @@ function mutationError(cause:unknown) {
     error.value = '这条动态已在其他位置更新。你的输入已保留，请先读取最新版本。'
   }
 }
-async function load() {
+async function load(append=false) {
+  if(append&&(loading.value||locked.value||!nextCursor.value))return
   const at = ++sequence
   controller?.abort()
   controller = new AbortController()
   loading.value = true
   listError.value = ''
-  rows.value = []
-  nextCursor.value = ''
   try {
     const query = new URLSearchParams({scope:scope.value,status:status.value,limit:'20'})
-    if (cursors.value[page.value]) query.set('cursor',cursors.value[page.value])
+    if (append&&nextCursor.value) query.set('cursor',nextCursor.value)
     const data = await api('/me/moments?' + query,{signal:controller.signal})
     if (stopped || at !== sequence) return
-    rows.value = list(data).map(parseMoment)
+    rows.value = append?appendUnique(rows.value,list(data).map(parseMoment)):list(data).map(parseMoment)
     nextCursor.value = data.has_more === false ? '' : data.next_cursor || ''
     const limit = Number(data.max_text_length || data.max_length)
     if (Number.isSafeInteger(limit) && limit > 0) maxLength.value = limit
@@ -191,15 +191,10 @@ async function load() {
     if (at === sequence && (cause as Error).name !== 'AbortError') listError.value = (cause as Error).message
   } finally { if (!stopped && at === sequence) loading.value = false }
 }
-function filter() { page.value = 0; cursors.value = ['']; void load() }
+function filter() { void load() }
 function changeScope(value:string) { if (locked.value || loading.value) return; scope.value = value; filter() }
 function changeStatus(value:string|number) { if (locked.value || loading.value) return; status.value = String(value); filter() }
-function paginate(step:number) {
-  if (loading.value || locked.value || (step < 0 && !page.value) || (step > 0 && !nextCursor.value)) return
-  if (step > 0) cursors.value[page.value + 1] = nextCursor.value
-  page.value += step
-  void load()
-}
+
 async function edit(row?:Moment) {
   if (locked.value) return
   if (row && row.id === form.id) { textarea.value?.focus(); return }
@@ -345,7 +340,7 @@ onBeforeUnmount(() => { stopped = true; sequence++; controller?.abort(); uploadC
     <div v-if="owner" class="moment-scope" role="group" aria-label="动态范围"><button type="button" :aria-pressed="scope==='site'" :disabled="locked||loading" @click="changeScope('site')">全站</button><button type="button" :aria-pressed="scope==='mine'" :disabled="locked||loading" @click="changeScope('mine')">我的</button></div>
     <SelectField :model-value="status" label="动态状态" :options="statusOptions" :disabled="locked||loading" @update:model-value="changeStatus"/>
    </div>
-   <div v-if="listError" class="moment-feedback is-error" role="alert">{{listError}}<br><button type="button" :disabled="loading||locked" @click="load">重新加载列表</button></div>
+   <div v-if="listError" class="moment-feedback is-error" role="alert">{{listError}}<br><button type="button" :disabled="loading||locked" @click="load()">重新加载列表</button></div>
    <p v-if="loading" class="moment-list-loading" role="status">正在载入动态…</p>
    <div class="moment-list" :aria-busy="loading">
     <article v-for="row in rows" :key="row.id" class="moment-list-row" :class="{'is-editing':form.id===row.id}">
@@ -357,7 +352,7 @@ onBeforeUnmount(() => { stopped = true; sequence++; controller?.abort(); uploadC
     </article>
    </div>
    <div v-if="!loading&&!listError&&!rows.length" class="moment-library-empty"><h2>{{status==='deleted'?'没有已删除的动态':status==='draft'?'没有草稿':status==='published'?'还没有公开动态':'这里还没有动态'}}</h2><p>{{status==='deleted'?'删除的动态会显示在这里，仅供查看。':'写下此刻的想法，保存后再决定何时公开。'}}</p></div>
-   <div class="moment-pagination"><span>{{loading?'正在更新…':listError?'列表未载入':`第 ${page+1} 页 · 本页 ${rows.length} 条`}}</span><div><button type="button" :disabled="page===0||loading||locked" @click="paginate(-1)">上一页</button><button type="button" :disabled="!nextCursor||loading||locked" @click="paginate(1)">下一页</button></div></div>
+   <InfiniteList :has-more="!!nextCursor" :loading="loading" :disabled="locked" :error="listError" @load="load(true)"/><p class="manager-caption">已显示 {{rows.length}} 条动态</p>
   </section>
  </div>
 </template>
