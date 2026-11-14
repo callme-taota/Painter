@@ -21,12 +21,12 @@ export function initMobileNavigation(){
   if(event.target===dialog){const box=dialog.getBoundingClientRect();const e=event as MouseEvent;if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)dialog.close()}
   if((event.target as HTMLElement).closest('[data-floating-action=top],[data-floating-action=bottom]'))dialog.close()
  })
- const reading=document.querySelector<HTMLElement>('.article-aside')
+ const reading=document.querySelector<HTMLElement>('[data-article-toc] [data-article-toc-scroll]')
  if(reading){
   const wrapper=document.createElement('details');wrapper.className='mobile-contents'
   const summary=document.createElement('summary');summary.textContent='在这篇文章中'
-  const links=document.createElement('nav');links.setAttribute('aria-label','文章目录')
-  for(const item of reading.querySelectorAll<HTMLAnchorElement>('nav a')){const link=item.cloneNode(true) as HTMLAnchorElement;links.append(link)}
+  const links=document.createElement('nav');links.setAttribute('aria-label','文章目录');links.dataset.mobileArticleTocScroll='';links.tabIndex=0
+  for(const item of reading.childNodes)links.append(item.cloneNode(true))
   wrapper.append(summary,links);slot.before(wrapper)
  }
  query.addEventListener('change',layout);layout()

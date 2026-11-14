@@ -13,6 +13,7 @@ initFriendAvatars()
 import './header-scroll.css'
 import {initScrollHeader} from './scrollHeader'
 import {initArticleInfo} from './reading'
+import {initArticleTOC} from './articleTOC'
 initScrollHeader()
 initArticleInfo()
 import {initTheme} from './theme'
@@ -86,6 +87,7 @@ import {initMobileViewport,registerMobileOverlay} from './mobileOverlays'
 import {initMobileNavigation} from './mobileNavigation'
 initMobileViewport()
 initMobileNavigation()
+initArticleTOC()
 const searchDialog=document.querySelector<HTMLDialogElement>('#site-search')
 if(searchDialog)registerMobileOverlay(searchDialog,()=>document.querySelector<HTMLElement>('[data-search-open]')?.click())
 

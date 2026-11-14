@@ -27,7 +27,7 @@ type webPage struct {
 	Series                                                                                                       []map[string]any
 	CSS                                                                                                          []string
 	Query                                                                                                        url.Values
-	TOC                                                                                                          []TOCEntry
+	TOC                                                                                                          []*ArticleTOCNode
 	HTML                                                                                                         template.HTML
 	JSONLD                                                                                                       template.JS
 	SearchActive, NoIndex, Registration, LoginError, Creator, Authenticated                                      bool
@@ -351,7 +351,7 @@ func (a *App) RegisterWeb() {
 			failure(w, r, e)
 			return
 		}
-		render(w, r, webPage{Kind: "article", Title: webString(post["title"]), Description: webString(post["summary"]), Post: post, Related: related, Series: series, TOC: toc, ReadTime: minutes, HTML: template.HTML(webString(post["sanitized_html"])), JSONLD: template.JS(ld)})
+		render(w, r, webPage{Kind: "article", Title: webString(post["title"]), Description: webString(post["summary"]), Post: post, Related: related, Series: series, TOC: articleTOCTree(toc), ReadTime: minutes, HTML: template.HTML(webString(post["sanitized_html"])), JSONLD: template.JS(ld)})
 	})
 	a.Mux.HandleFunc("GET /tags", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/search", http.StatusMovedPermanently)

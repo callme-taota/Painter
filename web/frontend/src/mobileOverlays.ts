@@ -7,7 +7,8 @@ export function dismissMobileOverlay(dialog:HTMLDialogElement,value=''):Promise<
  if(!dialog.open)return Promise.resolve()
  if(!dialog.dataset.mobileOverlayToken||history.state?.painterMobileOverlay!==dialog.dataset.mobileOverlayToken){dialog.close(value);return Promise.resolve()}
  return new Promise(resolve=>{
-  const done=()=>{clearTimeout(timeout);window.removeEventListener('popstate',done);resolve()}
+  // History restores scroll after popstate dispatch; navigate on the next task.
+  const done=()=>{clearTimeout(timeout);window.removeEventListener('popstate',done);window.setTimeout(resolve,0)}
   const timeout=window.setTimeout(done,700)
   window.addEventListener('popstate',done,{once:true});dialog.close(value)
  })

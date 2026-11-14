@@ -1,4 +1,7 @@
 /* The introduction, reading surface and onward articles have distinct roles. */
+:root{--article-toc-offset:128px}
+html:has(body[data-page-kind=article]){scroll-padding-top:var(--article-toc-offset)}
+body[data-page-kind=article] .reading-paper>.prose :is(h1,h2,h3,h4,h5,h6){scroll-margin-top:0}
 body[data-page-kind=article] .article-reading{display:grid;grid-template-columns:minmax(0,760px) 220px;column-gap:clamp(32px,5vw,72px);row-gap:28px;align-items:start;justify-content:center}
 body[data-page-kind=article] .article-heading{grid-column:1;grid-row:1;padding:0;margin:0;border:0;min-width:0}
 body[data-page-kind=article] .article-heading h1{font-size:clamp(2rem,3.6vw,3.25rem);line-height:1.4;letter-spacing:-.03em;text-wrap:balance;margin:0 0 24px}
@@ -19,8 +22,8 @@ body[data-page-kind=article] .article-intro .topic-links{display:flex;flex:1 1 1
 .article-info-panel .article-dates>div{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:start;gap:12px;font-size:inherit}
 .article-info-panel .article-dates dt{font-weight:400;color:var(--muted)}
 .article-info-panel .article-dates dd{font-size:inherit;overflow-wrap:anywhere}
-body[data-page-kind=article] .article-rail{contain:size;align-self:stretch;grid-column:2;grid-row:1 / span 3;position:sticky;top:116px;max-height:calc(100dvh - 140px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent;overscroll-behavior:contain;min-width:0;padding:4px 0 12px}
-.article-author{padding-bottom:28px}
+body[data-page-kind=article] .article-rail{align-self:start;grid-column:2;grid-row:1 / span 3;position:sticky;top:116px;display:flex;flex-direction:column;max-height:calc(100dvh - 140px);min-width:0;padding:4px 0 12px}
+.article-author{flex:none;padding-bottom:28px}
 .article-author h2{font:500 .75rem/1.6 var(--font-ui);color:var(--muted);letter-spacing:0;margin:0 0 16px}
 .article-author .author-line{gap:12px;align-items:center;min-width:0}
 .article-author .author-line .avatar{width:44px;height:44px;flex:none}
@@ -28,8 +31,18 @@ body[data-page-kind=article] .article-rail{contain:size;align-self:stretch;grid-
 .article-author-name{min-width:0;overflow-wrap:anywhere}
 .article-author-name strong{font-size:.9rem;line-height:1.8;font-weight:600}
 .article-author-more{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:8px;font-size:.75rem;color:var(--muted)}
-body[data-page-kind=article] .article-rail .article-aside{display:block;position:static;padding:24px 0 0;border-top:1px solid var(--line)}
-.article-return{display:inline-flex;gap:8px;align-items:center;min-height:44px;margin-top:24px;font-size:.75rem;color:var(--muted)}
+body[data-page-kind=article] .article-rail .article-aside{display:flex;flex:0 1 auto;flex-direction:column;min-height:0;position:static;padding:20px 0 0;border-top:1px solid var(--line)}
+.article-aside>h2{flex:none;margin-bottom:12px}
+body[data-page-kind=article] .article-aside [data-article-toc-scroll]{display:block;flex:0 1 auto;min-height:0;max-height:min(360px,45dvh);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--muted) transparent;scroll-padding-block:8px;border:0;padding:2px 4px 2px 0}
+.article-toc-list,.article-toc-list ol{list-style:none;margin:0;padding:0}
+.article-toc-list ol{margin-inline-start:8px;padding-inline-start:10px;border-inline-start:1px solid var(--line)}
+.article-toc-list li{margin:0;padding:0;min-width:0}
+.article-aside nav .article-toc-list a{display:block;padding:6px 8px;border-radius:var(--radius-item);font-size:13px;line-height:1.6;overflow-wrap:anywhere;text-decoration:none;color:var(--muted)}
+.article-toc-list>li>a{font-weight:500}
+.article-aside nav .article-toc-list a:hover{color:var(--ink);background:var(--subtle);text-decoration:none}
+.article-aside nav .article-toc-list a[aria-current=location]{color:var(--link);font-weight:600;background:var(--subtle)}
+.article-aside nav .article-toc-list a:focus-visible,.article-aside [data-article-toc-scroll]:focus-visible{outline:2px solid var(--focus-ring);outline-offset:-2px}
+.article-return{display:inline-flex;flex:none;gap:8px;align-items:center;min-height:44px;margin-top:16px;font-size:.75rem;color:var(--muted)}
 body[data-page-kind=article] .reading-paper{grid-column:1;grid-row:2;min-width:0}
 .article-cover-frame{padding:0;margin:0 0 32px;line-height:0}
 body[data-page-kind=article] .article-cover-frame .article-cover{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;border-radius:var(--radius-control);margin:0;background:var(--subtle)}

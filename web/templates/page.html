@@ -23,7 +23,7 @@
    <div class="author-line"><a class="author-avatar-link" href="/users/{{.Post.author.id}}" aria-label="查看 {{.Post.author.display_name}} 的文章">{{if .Post.author.avatar_url}}<img class="avatar" src="{{.Post.author.avatar_url}}" width="44" height="44" alt="">{{else}}<span class="avatar">{{initial .Post.author.display_name}}</span>{{end}}</a><a class="article-author-name" href="/users/{{.Post.author.id}}"><strong>{{.Post.author.display_name}}</strong></a></div>
    <a class="article-author-more" href="/users/{{.Post.author.id}}">查看作者文章 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></a>
   </section>
-  <div class="article-aside"><h2>在这篇文章中</h2><nav aria-label="文章目录">{{range .TOC}}<a href="#{{.ID}}">{{.Text}}</a>{{else}}<a href="#main">回到文章开头</a>{{end}}</nav><a class="article-return" href="/posts"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> 返回所有文章</a></div>
+  <div class="article-aside" data-article-toc><h2 id="article-toc-title">在这篇文章中</h2><nav aria-label="文章目录" data-article-toc-scroll tabindex="0">{{if .TOC}}<ol class="article-toc-list">{{template "article-toc-nodes" .TOC}}</ol>{{else}}<a href="#main">回到文章开头</a>{{end}}</nav><a class="article-return" href="/posts"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> 返回所有文章</a></div>
  </aside>
  <div class="reading-paper">
   {{if .Post.cover_url}}<figure class="article-cover-frame"><img class="article-cover" src="{{.Post.cover_url}}" width="1200" height="675" alt="文章封面"></figure>{{end}}
@@ -102,3 +102,5 @@
 {{end}}
 
 {{define "search-content-list"}}<div class="post-list search-content-list" data-infinite-items>{{range .Items}}<article class="post-row"><div class="meta">{{if eq .kind "series"}}专栏{{else if eq .kind "moment"}}动态{{else if eq .kind "phrase"}}片语{{else}}文章{{end}}</div><div><h2><a href="{{.url}}">{{.title}}</a></h2><p class="summary">{{range .highlight.body}}{{if .match}}<mark>{{.text}}</mark>{{else}}{{.text}}{{end}}{{end}}</p></div></article>{{else}}<section class="empty"><h2>没有找到匹配的内容</h2><p>试试更短的关键词，或切换内容类型。标签和作者筛选只匹配文章。</p><a class="button" href="/search">重新搜索</a></section>{{end}}</div>{{end}}
+
+{{define "article-toc-nodes"}}{{range .}}<li data-toc-level="{{.Level}}" data-toc-depth="{{.Depth}}"><a href="#{{.ID}}" data-toc-link data-toc-level="{{.Level}}" data-toc-depth="{{.Depth}}">{{.Text}}</a>{{if .Children}}<ol>{{template "article-toc-nodes" .Children}}</ol>{{end}}</li>{{end}}{{end}}

@@ -40,8 +40,14 @@ html.mobile-overlay-open{overflow:hidden;overscroll-behavior:none}
  .mobile-sheet .create-popover a{display:flex;align-items:center;gap:10px;min-height:48px;color:var(--ink);padding:8px 0;font-size:15px}
  .mobile-contents{border-bottom:1px solid var(--line);margin-top:8px;padding-bottom:8px}
  .mobile-contents>summary{font-size:16px;min-height:50px;padding-block:13px;cursor:pointer}
- .mobile-contents nav{display:flex;flex-direction:column;padding-bottom:6px;gap:4px}
- .mobile-contents nav>a{min-height:44px;display:flex;align-items:center;padding:8px 12px;border-radius:8px;font-size:15px;color:var(--ink);background:var(--subtle)}
+ .mobile-contents nav{display:block;max-height:min(360px,45dvh);min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 4px 6px 0;scrollbar-width:thin;scrollbar-color:var(--muted) transparent;scroll-padding-block:8px}
+ .mobile-contents nav:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+ .mobile-contents nav ol{list-style:none;margin:0;padding:0}
+ .mobile-contents nav ol ol{margin-left:12px}
+ .mobile-contents nav li{margin:0;padding:0;min-width:0}
+ .mobile-contents nav a{min-height:44px;display:flex;align-items:center;margin-bottom:4px;padding:8px 12px;border-radius:8px;font-size:15px;line-height:1.5;overflow-wrap:anywhere;color:var(--ink);background:var(--subtle);text-decoration:none}
+ .mobile-contents nav a[aria-current=location]{color:var(--ink);font-weight:600;background:var(--line)}
+ .mobile-contents nav a:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
  .mobile-sheet .floating-like{flex-direction:row}
  .mobile-sheet [data-like-count]{font:500 13px/20px var(--font-ui);color:var(--muted)}
  /* A full-height search task leaves room for the software keyboard. */
