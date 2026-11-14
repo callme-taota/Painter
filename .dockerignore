@@ -1,0 +1,51 @@
+# Repository metadata and local tooling
+.cc-connect
+.git
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.DS_Store
+
+# Private deployment configuration, credentials and runtime data
+.env
+.env.*
+*.env
+!deploy/example.env
+private
+.private
+secrets
+credentials
+.auth
+.sessions
+runtime
+**/*storage-state*.json
+**/*.session.json
+data
+media
+backups
+**/*.dump
+**/*.backup
+**/*.sql.gz
+**/*.pid
+
+# Local binaries, reports and temporary output
+bin
+/painter
+dist
+releases
+coverage
+coverage.out
+**/*.test
+**/*.prof
+**/*.tsbuildinfo
+**/*.log
+logs
+artifacts
+tests/artifacts
+playwright-report
+test-results
+web/.impeccable
+draft_*_folder
+# Docker regenerates these in its frontend stage; Git still ships them for Go-only builds.
+web/assets

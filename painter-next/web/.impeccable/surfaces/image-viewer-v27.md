@@ -1,7 +1,0 @@
-# V27: direct image overlay
-
-Read/Experience refinement of the one shared picture viewer. The user explicitly rejects its card, framed shell, header and footer. An edge-to-edge dark backdrop contains the unframed, uncropped image directly; only close and previous/next icon buttons are visible in normal multi-image viewing. One-image groups need only close. Titles, image position and alt remain available to assistive technology without extra visible chrome.
-
-Keep native dialog modality, Escape, focus return, arrow/Home/End navigation, original-image anchors and modified-click/noJS/unsupported-dialog fallbacks. Clicking empty backdrop closes; image and controls do not. Loading and error remain small, readable states; the original-link recovery is visible only for an actual failed load. Late loads/errors cannot overwrite a newer selection or reopen a closed viewer. All moments, home photos and ordinary article images share this same implementation; provider card artwork retains its native destination.
-
-Preserve global tokens and other UI; no image files, DB/schema, owner config, publication or rendering pipeline changes. Verify real photo containment on desktop/mobile/landscape, focus and navigation, single/multiple and failures, all three consumers, noJS and repeated initialization. One coordinated four-image light/dark desktop/mobile batch, one detector, independent scoped finish review and narrow documentation before binary-only formal update.

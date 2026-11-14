@@ -1,35 +1,51 @@
-# Nuxt dev/build outputs
-.output
-.data
-.nuxt
-.nitro
-.cache
-dist
+# Private deployment configuration and credentials
+.env
+.env.*
+*.env
+!deploy/example.env
+/private/
+/.private/
+/secrets/
+/credentials/
+/.auth/
+/.sessions/
+/runtime/
+*storage-state*.json
+*.session.json
 
-# Node dependencies
-node_modules
+# Runtime data and backups
+/data/
+/media/
+/backups/
+*.dump
+*.backup
+*.sql.gz
+*.pid
 
-# Logs
-logs
-*.log
+# Dependencies and build output
+node_modules/
+/bin/
+/painter
+/dist/
+/releases/
+*.test
+*.prof
+*.tsbuildinfo
+coverage.out
+/coverage/
+# web/assets is intentionally tracked for Go builds without a frontend toolchain.
 
-# Misc
-.DS_Store
-.fleet
-.idea
-.vscode
-
-# Server 
-.idea
-painter-backend/server/static/webroot/node_modules
-painter-backend/server/static/webroot/dist
-painter-backend/server/static/upload/*
-painter-backend/build/*
-painter-backend/logs/*
-painter-backend/server/static/webroot/*
-
-# Local assistant state and document preview captures
+# Generated reports, screenshots and local working files
 /.cc-connect/
+/tests/artifacts/
+/artifacts/
+/logs/
+*.log
+/playwright-report/
+/test-results/
+/web/.impeccable/
 /draft_*_folder/
-# Captured external API reference may contain temporary authorization data
-/diagrams/2026-10-21-pg-board-update/native-create-reference.md
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
