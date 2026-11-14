@@ -27,5 +27,22 @@ async function flush(){await Promise.resolve();await Promise.resolve()}
  {const h=harness(),a=h.load('api');await a.loadSession();let called=false;a.onSessionEnd(()=>{called=true});h.setRespond(()=>Promise.resolve(response({},503)));await assert.rejects(a.api('/session',{method:'DELETE'}));equal(called,false,'failed sign-out does not stop local editor persistence');equal(a.session.authenticated,true,'failed sign-out keeps current identity')}
  {const h=harness(),a=h.load('api'),drain=deferred();await a.loadSession();let ends=[],events=0;h.window.addEventListener('painter:session-expired',()=>events++);a.onSessionEnd(reason=>{ends.push(reason);return drain.promise});h.setRespond(()=>Promise.resolve(response({},401)));const one=a.api('/expired-one'),two=a.api('/expired-two');const results=Promise.allSettled([one,two]);await new Promise(resolve=>setImmediate(resolve));equal(ends,['expired'],'simultaneous 401s share one recovery flush');equal(a.session.authenticated,true,'expiry preserves actor until local flush completes');equal(events,0,'expiry notification waits for local flush');drain.resolve();await results;equal(a.session.authenticated,false,'expiry clears identity after local flush');equal(events,1,'simultaneous 401s notify once');await assert.rejects(a.api('/expired-three'));equal(ends.length,1,'subsequent same-document 401 does not flush again');equal(events,1,'subsequent same-document 401 does not notify again')}
  {const h=harness(),a=h.load('api'),logout=deferred();await a.loadSession();let ends=[],events=0;a.onSessionEnd(reason=>{ends.push(reason)});h.window.addEventListener('painter:session-expired',()=>events++);h.setRespond(path=>path.endsWith('/session')?logout.promise:Promise.resolve(response({},401)));const exiting=a.api('/session',{method:'DELETE'});await assert.rejects(a.api('/preview'));equal(events,0,'concurrent 401 cannot redirect active sign-out');equal(ends.length,0,'concurrent 401 cannot start duplicate teardown during sign-out');logout.resolve(response({},204));await exiting;equal(ends,['signout'],'explicit sign-out owns its local cleanup');equal(events,0,'explicit sign-out never dispatches expiry navigation')}
+ {
+  const h=harness(),a=h.load('api');
+  h.setRespond(()=>Promise.resolve({ok:false,status:502,json:async()=>{throw new SyntaxError('Cloudflare HTML')}}));
+  const form=new FormData();
+  form.append('file',new Blob(['image']),'cover.png');
+  await assert.rejects(a.api('/media',{method:'POST',body:form}),e=>{
+   equal(e.code,'UPLOAD_INTERRUPTED','HTML gateway error has an upload recovery code');
+   ok(e.message.includes('重新选择图片'),'gateway error explains how to retry');
+   ok(!e.message.includes('<html'),'gateway markup is never shown');
+   return true;
+  });
+  equal(h.calls.length,1,'ambiguous upload failure is not automatically replayed');
+  equal(h.calls[0][1].body,form,'multipart body is passed through');
+  ok(!h.calls[0][1].headers.has('Content-Type'),'browser retains multipart boundary ownership');
+  h.setRespond(()=>Promise.resolve(response({error:{code:'PAYLOAD_TOO_LARGE',message:'图片超过大小限制'}},413)));
+  await assert.rejects(a.api('/media',{method:'POST',body:form}),e=>e.code==='PAYLOAD_TOO_LARGE'&&e.message==='图片超过大小限制');
+ }
  console.log(JSON.stringify({status:'passed',checks}));
 })().catch(error=>{console.error(error);process.exitCode=1});

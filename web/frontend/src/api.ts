@@ -45,7 +45,12 @@ async function perform<T>(path:string,options:RequestInit & {version?:number|str
   }
   const res=await fetch('/api/v1'+path,{...options,headers,credentials:'same-origin'})
   const data=res.status===204?{}:await res.json().catch(()=>({}))
-  if(!res.ok){if(res.status===401)await expireSession(signOut);throw new APIError(res.status,data.error?.code||'REQUEST_FAILED',data.error?.message||'请求失败，请稍后重试',data.error?.details)}
+  if(!res.ok){
+   if(res.status===401)await expireSession(signOut)
+   const uploadInterrupted=path==='/media'&&method==='POST'&&[408,502,503,504,520,522,524].includes(res.status)
+   const fallback=uploadInterrupted?'图片上传未完成，连接中断或服务暂时不可用，请稍后重新选择图片重试。':'请求失败，请稍后重试'
+   throw new APIError(res.status,data.error?.code||(uploadInterrupted?'UPLOAD_INTERRUPTED':'REQUEST_FAILED'),data.error?.message||fallback,data.error?.details)
+  }
   if(signOut){await finishLocalSession('signout');explicitlySignedOut=true}
   // A post-write read must not join a pre-write read.
   if(!['GET','HEAD'].includes(method))pendingGets.clear()

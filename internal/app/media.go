@@ -12,6 +12,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -32,11 +33,45 @@ func (a *App) mediaPath(key string) string { return filepath.Join(a.Config.Media
 func mediaRefsSQL() string {
 	return `EXISTS(SELECT 1 FROM post_draft_media_refs WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM post_revision_media_refs WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM users WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM site_profile WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM author_page_profiles WHERE background_media_id=m.id) OR EXISTS(SELECT 1 FROM moment_images WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM homepage_items WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM series WHERE cover_media_id=m.id AND deleted_at_ms IS NULL)`
 }
+
+// Upload bodies may arrive slowly through a tunnel. The ordinary server's
+// 30-second read AND write deadlines otherwise expire while the image is still
+// arriving. Extend only authenticated uploads, and keep a finite total budget.
+func mediaUploadDeadlines(w http.ResponseWriter) error {
+	controller := http.NewResponseController(w)
+	now := time.Now()
+	for _, err := range []error{
+		controller.SetReadDeadline(now.Add(5 * time.Minute)),
+		controller.SetWriteDeadline(now.Add(5*time.Minute + 30*time.Second)),
+	} {
+		// Recorders and in-memory handlers have no network deadlines to extend.
+		if err != nil && !errors.Is(err, http.ErrNotSupported) {
+			return E(503, "UPLOAD_CONNECTION_FAILED", "上传连接不可用，请稍后重试")
+		}
+	}
+	return nil
+}
+
+func mediaUploadReadError(err, fallback error) error {
+	var oversized *http.MaxBytesError
+	if errors.As(err, &oversized) {
+		return E(413, "PAYLOAD_TOO_LARGE", "图片超过大小限制")
+	}
+	var timeout net.Error
+	if errors.As(err, &timeout) && timeout.Timeout() {
+		return E(408, "UPLOAD_TIMEOUT", "图片上传超时，请检查网络后重新选择图片重试")
+	}
+	return fallback
+}
+
 func (a *App) mediaUpload(w http.ResponseWriter, r *http.Request) error {
 	if _, e := a.Require(r); e != nil {
 		return e
 	}
 	if e := a.checkCSRF(r); e != nil {
+		return e
+	}
+	if e := mediaUploadDeadlines(w); e != nil {
 		return e
 	}
 	limit := a.Config.UploadLimit
@@ -68,13 +103,15 @@ func (a *App) mediaUpload(w http.ResponseWriter, r *http.Request) error {
 			break
 		}
 		if err != nil {
-			return E(400, "VALIDATION_FAILED", "无效文件请求")
+			return mediaUploadReadError(err, E(400, "VALIDATION_FAILED", "无效文件请求"))
 		}
 		if part.FileName() == "" {
 			if _, err = io.Copy(io.Discard, io.LimitReader(part, 4097)); err != nil {
-				return err
+				return mediaUploadReadError(err, E(400, "VALIDATION_FAILED", "无效文件请求"))
 			}
-			part.Close()
+			if err = part.Close(); err != nil {
+				return mediaUploadReadError(err, E(400, "VALIDATION_FAILED", "无效文件请求"))
+			}
 			continue
 		}
 		if found {
@@ -86,12 +123,14 @@ func (a *App) mediaUpload(w http.ResponseWriter, r *http.Request) error {
 			return E(400, "VALIDATION_FAILED", "文件名过长")
 		}
 		size, err = io.Copy(io.MultiWriter(temp, h), io.LimitReader(part, limit+1))
-		part.Close()
 		if err != nil {
-			return E(503, "STORAGE_UNAVAILABLE", "上传写入失败")
+			return mediaUploadReadError(err, E(503, "STORAGE_UNAVAILABLE", "上传写入失败"))
 		}
 		if size > limit {
 			return E(413, "PAYLOAD_TOO_LARGE", "图片超过大小限制")
+		}
+		if err = part.Close(); err != nil {
+			return mediaUploadReadError(err, E(400, "VALIDATION_FAILED", "无效文件请求"))
 		}
 	}
 	if !found || size == 0 {

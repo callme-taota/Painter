@@ -7,12 +7,12 @@
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ]
   },
-  "__plugin-vue_export-helper-DxfA4p8d.js": {
-    "file": "chunks/_plugin-vue_export-helper-DxfA4p8d.js",
+  "__plugin-vue_export-helper-DAHvvSey.js": {
+    "file": "chunks/_plugin-vue_export-helper-DAHvvSey.js",
     "name": "_plugin-vue_export-helper"
   },
-  "_api-lupqPqyz.js": {
-    "file": "chunks/api-lupqPqyz.js",
+  "_api-v3P5Q7QN.js": {
+    "file": "chunks/api-v3P5Q7QN.js",
     "name": "api",
     "imports": [
       "_publicSession-BMy9aUG-.js",
@@ -24,8 +24,8 @@
     "name": "browser",
     "isDynamicEntry": true
   },
-  "_confirm-B86amM10.js": {
-    "file": "chunks/confirm-B86amM10.js",
+  "_confirm-B4DBii4K.js": {
+    "file": "chunks/confirm-B4DBii4K.js",
     "name": "confirm",
     "imports": [
       "_infiniteScroll-CcHvAPba.js",
@@ -108,45 +108,45 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-aYcrEoj0.js",
+    "file": "chunks/AuthForm-RG4mmVOC.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DxfA4p8d.js"
+      "__plugin-vue_export-helper-DAHvvSey.js"
     ],
     "css": [
       "AuthForm-CftWU_Hm.css"
     ]
   },
   "src/components/FollowIsland.vue": {
-    "file": "chunks/FollowIsland-D9V8FaHo.js",
+    "file": "chunks/FollowIsland-Gk8cHOCC.js",
     "name": "FollowIsland",
     "src": "src/components/FollowIsland.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_api-lupqPqyz.js",
+      "_api-v3P5Q7QN.js",
       "_postLike-BVbF5CPe.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "_publicSession-BMy9aUG-.js"
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor--Ht5EDQp.js",
+    "file": "chunks/MarkdownEditor-BQT5lsSA.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_publicSession-BMy9aUG-.js",
-      "_api-lupqPqyz.js",
+      "_api-v3P5Q7QN.js",
       "_contentCards-BEDm4DAn.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
-      "_confirm-B86amM10.js",
+      "_confirm-B4DBii4K.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DxfA4p8d.js",
+      "__plugin-vue_export-helper-DAHvvSey.js",
       "_infiniteScroll-CcHvAPba.js"
     ],
     "css": [
@@ -154,14 +154,14 @@
     ]
   },
   "src/components/PostIsland.vue": {
-    "file": "chunks/PostIsland-BWDCJ15M.js",
+    "file": "chunks/PostIsland-No5dIp_D.js",
     "name": "PostIsland",
     "src": "src/components/PostIsland.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_confirm-B86amM10.js",
-      "_api-lupqPqyz.js",
+      "_confirm-B4DBii4K.js",
+      "_api-v3P5Q7QN.js",
       "_postLike-BVbF5CPe.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "_infiniteScroll-CcHvAPba.js",
@@ -232,7 +232,7 @@
     "isDynamicEntry": true
   },
   "src/public.ts": {
-    "file": "public-Bdfc0l4K.js",
+    "file": "public-sEyhuvoe.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
@@ -268,7 +268,7 @@
     ]
   },
   "src/setup.ts": {
-    "file": "setup-C1h6UUd7.js",
+    "file": "setup-DCzIVwm3.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
@@ -276,7 +276,7 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DxfA4p8d.js"
+      "__plugin-vue_export-helper-DAHvvSey.js"
     ],
     "css": [
       "setup-ClpE19T_.css"
@@ -292,7 +292,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-D55XVPB_.js",
+    "file": "studio-D8mAzKyv.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
@@ -300,11 +300,11 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "src/public.ts",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_confirm-B86amM10.js",
-      "_api-lupqPqyz.js",
+      "_confirm-B4DBii4K.js",
+      "_api-v3P5Q7QN.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-DxfA4p8d.js",
+      "__plugin-vue_export-helper-DAHvvSey.js",
       "_publicSession-BMy9aUG-.js",
       "_infiniteScroll-CcHvAPba.js",
       "_contentCards-BEDm4DAn.js",
