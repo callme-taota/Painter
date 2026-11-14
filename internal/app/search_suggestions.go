@@ -85,6 +85,17 @@ func (a *App) searchSuggestions(w http.ResponseWriter, r *http.Request) error {
 		return searchError(e)
 	}
 	rows.Close()
+	if len(terms) > 0 {
+		conditions := []string{"kind<>'post'"}
+		for i := range terms {
+			conditions = append(conditions, fmt.Sprintf("strpos(casefold(normalize(title||' '||summary,NFKC)),$%d)>0", i+1))
+		}
+		extra, err := contentObjects(ctx, tx, `WITH content AS (`+searchContentUnion+`) SELECT jsonb_build_object('kind',kind,'label',title,'url',url) FROM content WHERE `+strings.Join(conditions, " AND ")+` ORDER BY stamp DESC,id DESC,kind LIMIT 6`, args...)
+		if err != nil {
+			return searchError(err)
+		}
+		items = append(items, extra...)
+	}
 	if e = tx.Commit(ctx); e != nil {
 		return searchError(e)
 	}

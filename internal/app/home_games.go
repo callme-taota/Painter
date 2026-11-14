@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -83,7 +84,14 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 	if e != nil {
 		return nil, e
 	}
+	query := Normalize(q.Get("q"))
+	if len(q["q"]) > 1 || !utf8.ValidString(query) || utf8.RuneCountInString(query) > 64 {
+		return nil, E(400, "VALIDATION_FAILED", "游戏名称最多64个字符")
+	}
 	scope := homeGamesScope(order, platform, limit)
+	if query != "" {
+		scope += ":q:" + hashString(query)
+	}
 	page := homeGamePage{Scope: scope, ID: "0", Value: -1}
 	cursor := q.Get("cursor")
 	if cursor != "" {
@@ -110,7 +118,7 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 		return nil, NotFound()
 	}
 	var total int
-	if e = tx.QueryRow(ctx, `SELECT count(*) FROM homepage_items WHERE kind='steam' AND visible AND ($1::text='all' OR platform=$1)`, platform).Scan(&total); e != nil {
+	if e = tx.QueryRow(ctx, `SELECT count(*) FROM homepage_items WHERE kind='steam' AND visible AND ($1::text='all' OR platform=$1) AND strpos(casefold(normalize(title,NFKC)),$2)>0`, platform, query).Scan(&total); e != nil {
 		return nil, e
 	}
 	condition, sorting := `(position,id)>($2::bigint,$3::bigint)`, `position,id`
@@ -124,8 +132,8 @@ func (a *App) PublicGames(ctx context.Context, q url.Values) (map[string]any, er
 	}
 	// Every branch references all five typed placeholders; order is a fixed enum,
 	// never a user-supplied SQL expression. No query can widen public visibility.
-	statement := `SELECT ` + homeItemColumns + ` FROM homepage_items WHERE kind='steam' AND visible AND ($5::text='all' OR platform=$5) AND ($3::bigint=0 OR ` + condition + `) AND $4::text IS NOT NULL AND $2::bigint IS NOT NULL ORDER BY ` + sorting + ` LIMIT $1`
-	rows, e := tx.Query(ctx, statement, limit+1, page.Value, page.ID, page.Title, platform)
+	statement := `SELECT ` + homeItemColumns + ` FROM homepage_items WHERE kind='steam' AND visible AND ($5::text='all' OR platform=$5) AND ($3::bigint=0 OR ` + condition + `) AND $4::text IS NOT NULL AND $2::bigint IS NOT NULL AND strpos(casefold(normalize(title,NFKC)),$6)>0 ORDER BY ` + sorting + ` LIMIT $1`
+	rows, e := tx.Query(ctx, statement, limit+1, page.Value, page.ID, page.Title, platform, query)
 	if e != nil {
 		return nil, e
 	}

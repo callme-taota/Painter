@@ -45,7 +45,13 @@ func (a *App) decodePage(cursor string, v any) error {
 func (a *App) RegisterSearch() {
 	a.Handle("GET /api/v1/search/suggestions", a.searchSuggestions)
 	a.Handle("GET /api/v1/search", func(w http.ResponseWriter, r *http.Request) error {
-		v, e := a.SearchPosts(r.Context(), r.URL.Query())
+		var v map[string]any
+		var e error
+		if r.URL.Query().Get("type") == "" {
+			v, e = a.SearchPosts(r.Context(), r.URL.Query())
+		} else {
+			v, e = a.SearchContent(r.Context(), r.URL.Query())
+		}
 		if e == nil {
 			JSON(w, 200, v)
 		}
