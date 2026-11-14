@@ -88,12 +88,12 @@ func TestHomeMusicStrictURLsArtworkAndIdentity(t *testing.T) {
 			t.Fatal("unsafe playlist URL accepted", raw)
 		}
 	}
-	parsed, e := homeMusicParsePage([]byte(homeMusicFixture("cn")), homeMusicRealSource, "", id, "cn")
+	parsed, e := homeMusicParsePage([]byte(homeMusicFixture("cn")), homeMusicRealSource, id, "cn")
 	if e != nil || parsed.TrackCount != 3 || parsed.AlbumCount != 2 || !parsed.Partial || parsed.Title != "逃塔喜欢的音乐" || parsed.Items[0].ProviderID != "1872514327" || !strings.HasSuffix(parsed.Items[0].ImageURL, "/632x632bb.jpg") || !homeMusicValidateSnapshot(parsed) {
 		t.Fatal("public snapshot/dedupe/artwork", parsed, e)
 	}
 	for _, body := range []string{`<html>no serialized data</html>`, strings.ReplaceAll(homeMusicFixture("cn"), homeMusicRealID, "pl.other"), strings.Replace(homeMusicFixture("cn"), `"storefront":"cn"`, `"storefront":"us"`, 1), strings.Replace(homeMusicFixture("cn"), `"kind":"playlist"`, `"kind":"album"`, 1)} {
-		if _, e := homeMusicParsePage([]byte(body), homeMusicRealSource, "", id, "cn"); e == nil {
+		if _, e := homeMusicParsePage([]byte(body), homeMusicRealSource, id, "cn"); e == nil {
 			t.Fatal("unverified page identity accepted")
 		}
 	}
@@ -165,7 +165,7 @@ func TestHomeMusicRedirectBoundsAndReadCap(t *testing.T) {
 	for i := range ids {
 		ids[i] = fmt.Sprint(1000 + i)
 	}
-	if _, e := homeMusicParsePage([]byte(homeMusicFixture("cn", ids...)), homeMusicRealSource, "", homeMusicRealID, "cn"); e == nil {
+	if _, e := homeMusicParsePage([]byte(homeMusicFixture("cn", ids...)), homeMusicRealSource, homeMusicRealID, "cn"); e == nil {
 		t.Fatal("more than 300 page tracks accepted")
 	}
 }

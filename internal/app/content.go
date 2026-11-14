@@ -569,7 +569,7 @@ func contentSetRelations(ctx context.Context, tx pgx.Tx, id string, d draftInput
 	}
 	return nil
 }
-func contentAudit(ctx context.Context, tx pgx.Tx, p Principal, action, id string, r *http.Request) error {
+func contentAudit(ctx context.Context, tx pgx.Tx, p Principal, action, id string) error {
 	_, e := tx.Exec(ctx, "INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,request_id,created_at_ms) VALUES($1,$2,'post',$3,$4,$5)", p.ID, action, id, RequestID(ctx), NowMillis())
 	return e
 }
@@ -633,7 +633,7 @@ func (a *App) createPost(w http.ResponseWriter, r *http.Request) error {
 		if e = contentSetRelations(ctx, tx, id, d); e != nil {
 			return nil, e
 		}
-		if e = contentAudit(ctx, tx, p, "post.create", id, r); e != nil {
+		if e = contentAudit(ctx, tx, p, "post.create", id); e != nil {
 			return nil, e
 		}
 		if e = contentEvent(ctx, tx, p, "post.created.v1", id, 1, ""); e != nil {
@@ -695,7 +695,7 @@ func (a *App) saveDraft(w http.ResponseWriter, r *http.Request) error {
 		if e != nil {
 			return nil, e
 		}
-		if e = contentAudit(ctx, tx, p, "post.save", id, r); e != nil {
+		if e = contentAudit(ctx, tx, p, "post.save", id); e != nil {
 			return nil, e
 		}
 		return contentAck(id, v, dv, r), nil
@@ -872,7 +872,7 @@ func (a *App) snapshotPost(w http.ResponseWriter, r *http.Request, publish bool)
 				return nil, e
 			}
 		}
-		if e = contentAudit(ctx, tx, p, action, id, r); e != nil {
+		if e = contentAudit(ctx, tx, p, action, id); e != nil {
 			return nil, e
 		}
 		out := contentAck(id, v, dv, r)
@@ -937,7 +937,7 @@ func (a *App) changePostState(w http.ResponseWriter, r *http.Request, action str
 				return nil, e
 			}
 		}
-		if e = contentAudit(ctx, tx, p, auditAction, id, r); e != nil {
+		if e = contentAudit(ctx, tx, p, auditAction, id); e != nil {
 			return nil, e
 		}
 		if topic != "" {
@@ -1077,7 +1077,7 @@ func (a *App) restoreRevision(w http.ResponseWriter, r *http.Request) error {
 		if e != nil {
 			return nil, e
 		}
-		if e = contentAudit(ctx, tx, p, "post.restore", id, r); e != nil {
+		if e = contentAudit(ctx, tx, p, "post.restore", id); e != nil {
 			return nil, e
 		}
 		return contentAck(id, v, dv, r), nil

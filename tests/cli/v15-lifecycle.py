@@ -1,4 +1,4 @@
-import json,subprocess,pathlib,os,uuid,urllib.request,urllib.error,selectors,time
+import json,subprocess,pathlib,os,uuid,urllib.request,urllib.error,selectors
 binary=os.environ.get('PAINTER_BINARY','/tmp/painter-next-v15-cli');origin=os.environ.get('BASE_URL','http://192.168.2.209:18081');config='/tmp/painter-v15-admin.json'
 from urllib.parse import urlparse
 location=urlparse(origin)

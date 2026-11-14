@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"net/http/httptest"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -96,7 +95,7 @@ func (a *App) SeedDemo(ctx context.Context) (DemoReport, error) {
 		if _, e = tx.Exec(ctx, "INSERT INTO post_publications(post_id,revision_id,published_by,published_at_ms) VALUES($1,$2,$3,$4)", id, rid, author, at); e != nil {
 			return report, e
 		}
-		if e = contentAudit(ctx, tx, p, "post.create", id, httptest.NewRequest("POST", "/cli/seed-demo", nil)); e != nil {
+		if e = contentAudit(ctx, tx, p, "post.create", id); e != nil {
 			return report, e
 		}
 		report.CreatedPosts++

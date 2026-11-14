@@ -511,12 +511,8 @@ func validLegacyDay(s string) bool {
 	if len(s) != 10 {
 		return false
 	}
-	_, e := timeParseDay(s)
+	_, e := time.Parse("2006-01-02", s)
 	return e == nil
-}
-func timeParseDay(s string) (int64, error) {
-	t, e := time.Parse("2006-01-02", s)
-	return t.UnixMilli(), e
 }
 
 // ImportLegacy only targets an empty business database. Its media journal records

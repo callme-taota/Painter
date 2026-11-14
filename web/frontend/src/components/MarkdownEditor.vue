@@ -86,7 +86,6 @@ const recoveryActorID=String(session.user?.id||'')
 const recoveryKey=computed(()=>`painter:${location.origin}:${recoveryActorID}:${draft.id||clientID.value}`)
 const recoveryWrites=new Set<Promise<boolean>>()
 const removeSessionEnd=onSessionEnd(async reason=>{if(reason==='expired'){try{documentEditor.value?.flush()}catch{/* Preserve the last serialised Markdown if the document view cannot flush. */}}endingSession.value=true;clearTimeout(saveTimer);clearTimeout(persistTimer);clearTimeout(previewTimer);clearTimeout(coverTimer);previewAbort?.abort();coverAbort?.abort();if(reason==='expired')await persist(true);await Promise.allSettled([...recoveryWrites])})
-const isDirty=computed(()=>state.value!=='已保存')
 function defaultDates(value:Row={}){return {created:typeof value.created==='boolean'?value.created:true,updated:typeof value.updated==='boolean'?value.updated:true,published:typeof value.published==='boolean'?value.published:true}}
 function defaultCover(value:Row={}){return {mode:value.mode||'auto',template:value.template||'editorial',color:value.color||'ink',...((value.mode==='upload'&&value.media_id)?{media_id:String(value.media_id)}:{})}}
 const coverPreview=ref(''),coverBusy=ref(false)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref,reactive,onMounted,onBeforeUnmount,computed,defineAsyncComponent,nextTick,watch} from 'vue'
-import {api,body,loadSession,session,list,date,download,type Row} from './api'
+import {api,body,loadSession,session,list,date,type Row} from './api'
 import {clearRecovery} from './storage'
 import {initLiquidGlass} from './liquidGlass'
 import {registerMobileOverlay} from './mobileOverlays'
@@ -27,7 +27,7 @@ const MarkdownEditor=defineAsyncComponent(()=>import('./components/MarkdownEdito
 const path=location.pathname.replace(/\/$/,'')||'/me',editing=/^\/studio\/posts\/(new|[^/]+)$/.test(path),postId=path.split('/')[3]==='new'?undefined:path.split('/')[3]
 const allowAnalytics=ref(localStorage.getItem('painter-analytics')!=='off')
 function privacyChange(){localStorage.setItem('painter-analytics',allowAnalytics.value?'on':'off');message.value=allowAnalytics.value?'已允许本浏览器的访问统计。':'已关闭本浏览器的访问统计。'}
-const error=ref(''),errorCode=ref(''),dataLoaded=ref(false),message=ref(''),loading=ref(true),busy=ref(false),rows=ref<Row[]>([]),cursor=ref<string|null>(null),hasMore=ref(false),profile=reactive<Row>({}),settings=reactive<Row>({}),site=reactive<Row>({}),report=ref<Row>({}),sessions=ref<Row[]>([]),moderationReason=ref(''),search=ref(''),range=reactive({from:new Date(Date.now()-6*86400000).toISOString().slice(0,10),to:new Date().toISOString().slice(0,10)})
+const error=ref(''),errorCode=ref(''),dataLoaded=ref(false),message=ref(''),loading=ref(true),busy=ref(false),rows=ref<Row[]>([]),cursor=ref<string|null>(null),hasMore=ref(false),profile=reactive<Row>({}),settings=reactive<Row>({}),site=reactive<Row>({}),report=ref<Row>({}),moderationReason=ref(''),range=reactive({from:new Date(Date.now()-6*86400000).toISOString().slice(0,10),to:new Date().toISOString().slice(0,10)})
 const navigationGroups=computed(()=>navigation(session.user?.role||''))
 const introRolesText=ref('')
 const mobileQuery=matchMedia('(max-width:960px)'),phoneQuery=matchMedia('(max-width:720px)'),mobile=ref(mobileQuery.matches),phone=ref(phoneQuery.matches),drawer=ref<HTMLDialogElement>(),settingsSection=ref(resolveSettingsSection(location.hash))
@@ -77,7 +77,6 @@ function changeSection(id:string){settingsSection.value=id;history.replaceState(
 function settingsKey(e:KeyboardEvent){const buttons=Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role=tab]')),index=buttons.indexOf(e.target as HTMLButtonElement);let next=index;if(e.key==='ArrowRight')next=(index+1)%buttons.length;else if(e.key==='ArrowLeft')next=(index+buttons.length-1)%buttons.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=buttons.length-1;else return;e.preventDefault();buttons[next].click();buttons[next].focus()}
 const title=computed(()=>({'/studio/home':'首页内容','/studio/series':'专栏管理','/studio/posts':session.user?.role==='owner'?'文章管理':'我的文章','/studio/moments':session.user?.role==='owner'?'动态管理':'我的动态','/me':'个人中心','/me/bookmarks':'收藏文章','/me/following':'关注与粉丝','/me/followers':'关注与粉丝','/me/history':'阅读足迹','/me/sessions':'登录会话','/me/media':'我的媒体','/studio/settings':'站点设置','/studio/friends':'友链','/studio/phrases':'片语','/studio/taxonomy':'标签管理','/studio/members':'成员权限','/studio/comments':'评论管理','/studio/analytics':session.user?.role==='owner'?'站点访问分析':'我的文章分析','/studio/operations':'存储与任务'}[path]||'个人空间'))
 const description=computed(()=>({'/studio/home':'编排首页介绍、文章与自己的游戏、唱片和照片。','/studio/series':'将已有文章编排成有顺序的连载章节。','/studio/posts':'草稿、线上文章和回收站，都在这里。','/studio/moments':'记录此刻的想法，保存草稿后再发布。','/me':'管理自己的阅读、公开资料与账号安全。收藏、足迹和联系方式只对本人可见。','/me/bookmarks':'把值得重读的文章留在身边。','/me/history':'从上一次阅读继续。','/studio/analytics':session.user?.role==='owner'?'查看全站业务与访问情况，业务事实与访问估算分别呈现。':'查看自己文章的访问情况，当前数据范围仅包含你的文章。','/studio/settings':'网站信息、功能与登录，各有清晰的位置。','/studio/friends':'为值得相遇的网站，留一个位置。','/studio/phrases':'留下一句话，或一个值得停留的词。'}[path]||'管理你的内容与账户。'))
-const filteredRows=computed(()=>search.value?rows.value.filter(r=>String(r.title||r.display_name||r.username||r.body||'').toLowerCase().includes(search.value.toLowerCase())):rows.value)
 function show(e:unknown){if((e as {status?:number})?.status===401){sessionExpired();return}error.value=(e as Error).message||'操作失败，请重试';errorCode.value=(e as {code?:string}).code||''}
 async function task(fn:()=>Promise<void>){busy.value=true;error.value='';errorCode.value='';message.value='';try{await fn()}catch(e){show(e)}finally{busy.value=false}}
 function endpoint(){if(path==='/studio/members')return '/admin/users';if(path==='/studio/comments')return '/admin/comments';return path.startsWith('/me/')?path:''}

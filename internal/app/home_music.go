@@ -251,7 +251,7 @@ func homeMusicArtworkURL(art homeMusicArtwork) string {
 	}
 	return value
 }
-func homeMusicParsePage(raw []byte, source, resolved, id, country string) (homeMusicSnapshot, error) {
+func homeMusicParsePage(raw []byte, source, id, country string) (homeMusicSnapshot, error) {
 	var result homeMusicSnapshot
 	serialized, e := homeMusicSerialized(raw)
 	if e != nil {
@@ -338,7 +338,7 @@ func (a *App) homeMusicFetch(ctx context.Context, source string) (homeMusicSnaps
 		target := homeMusicCountry(source, candidate)
 		raw, e := a.homeMusicPageGET(ctx, target, "playlist", id, candidate)
 		if e == nil {
-			if snapshot, e := homeMusicParsePage(raw, source, target, id, candidate); e == nil {
+			if snapshot, e := homeMusicParsePage(raw, source, id, candidate); e == nil {
 				return snapshot, nil
 			}
 		}

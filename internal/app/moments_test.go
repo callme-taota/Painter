@@ -82,6 +82,13 @@ func momentItems(t *testing.T, a *App, cookie *http.Cookie, path string) []any {
 	return momentResponse(t, momentCall(t, a, cookie, "", "GET", path, nil, 0, ""), 200)["items"].([]any)
 }
 
+func validateMomentText(text string) error {
+	if err := validateMomentTextField(text); err != nil {
+		return err
+	}
+	return validateMomentNonempty(text, 0)
+}
+
 func TestMomentTextUnicodeBoundaries(t *testing.T) {
 	for _, text := range []string{"界", strings.Repeat("界", 500), strings.Repeat("🌿", 500), strings.Repeat("e\u0301", 250), " \n\t保留 内部与首尾空白\r\n ", `<script>alert("literal text")</script>`, strings.Repeat(" ", 498) + "\n字"} {
 		if err := validateMomentText(text); err != nil {

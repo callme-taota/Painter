@@ -16,6 +16,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func (a *App) completeLogin(ctx context.Context, g githubProfile) (string, error) {
+	token, pending, err := a.completeGitHubAuthentication(ctx, g, nil, "")
+	if err == nil && pending != nil {
+		return "", E(401, "MFA_REQUIRED", "请完成两步验证")
+	}
+	return token, err
+}
+
 func TestGitHubPKCEStateOnceAndStableSubject(t *testing.T) {
 	a := testApp(t)
 	a.Config.BootstrapGitHubID = "42"

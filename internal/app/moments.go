@@ -92,13 +92,6 @@ func (a *App) RegisterMoments() {
 	})
 }
 
-func validateMomentText(text string) error {
-	if err := validateMomentTextField(text); err != nil {
-		return err
-	}
-	return validateMomentNonempty(text, 0)
-}
-
 func validateMomentTextField(text string) error {
 	if !utf8.ValidString(text) || utf8.RuneCountInString(text) > MomentTextLimit {
 		return E(400, "VALIDATION_FAILED", fmt.Sprintf("动态最多%d个字符，空格与换行计入字数", MomentTextLimit))

@@ -414,7 +414,7 @@ func Run(ctx context.Context, options Options, hooks Hooks) (result Snapshot, er
 	if e != nil {
 		return result, e
 	}
-	for _, old := range snapshots[minimum(options.Keep, len(snapshots)):] {
+	for _, old := range snapshots[min(options.Keep, len(snapshots)):] {
 		if err = os.RemoveAll(filepath.Join(store.root, old.Name)); err != nil {
 			state.ErrorCode = "RETENTION_FAILED"
 			return result, err
@@ -424,12 +424,6 @@ func Run(ctx context.Context, options Options, hooks Hooks) (result Snapshot, er
 		return result, err
 	}
 	return result, nil
-}
-func minimum(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 func Check(ctx context.Context, root, name string, hooks Hooks) (json.RawMessage, error) {
 	if !validName(name) || hooks.Check == nil {

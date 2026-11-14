@@ -297,9 +297,9 @@ func (a *App) adminPutSettings(w http.ResponseWriter, r *http.Request) error {
 	}
 	return e
 }
-func adminTaxonomyCount(table string) string {
-	return `(SELECT count(*) FROM effective_revision_tags rt JOIN public_posts pp ON pp.revision_id=rt.revision_id WHERE rt.tag_id=t.id)`
-}
+
+const adminTaxonomyCountSQL = `(SELECT count(*) FROM effective_revision_tags rt JOIN public_posts pp ON pp.revision_id=rt.revision_id WHERE rt.tag_id=t.id)`
+
 func (a *App) adminTaxonomyList(w http.ResponseWriter, r *http.Request, table string) error {
 	// Legacy category reads are aliases of the one tag vocabulary.
 	table = "tags"
@@ -322,7 +322,7 @@ func (a *App) adminTaxonomyList(w http.ResponseWriter, r *http.Request, table st
 	if management {
 		where = ""
 	}
-	rows, e := a.Pool.Query(r.Context(), `SELECT t.id::text,t.name,t.description,t.archived_at_ms IS NOT NULL,`+adminTaxonomyCount(table)+` FROM `+table+` t WHERE t.id>$1::bigint AND NOT EXISTS(SELECT 1 FROM tag_aliases a WHERE a.tag_id=t.id AND a.canonical_tag_id<>t.id)`+where+` ORDER BY t.id LIMIT $2`, c.ID, Limit(r)+1)
+	rows, e := a.Pool.Query(r.Context(), `SELECT t.id::text,t.name,t.description,t.archived_at_ms IS NOT NULL,`+adminTaxonomyCountSQL+` FROM `+table+` t WHERE t.id>$1::bigint AND NOT EXISTS(SELECT 1 FROM tag_aliases a WHERE a.tag_id=t.id AND a.canonical_tag_id<>t.id)`+where+` ORDER BY t.id LIMIT $2`, c.ID, Limit(r)+1)
 	if e != nil {
 		return e
 	}
@@ -372,7 +372,7 @@ func (a *App) adminTaxonomyGet(w http.ResponseWriter, r *http.Request, table str
 	table = "tags"
 	var name, desc string
 	var count int64
-	e = a.Pool.QueryRow(r.Context(), `SELECT t.name,t.description,`+adminTaxonomyCount(table)+` FROM `+table+` t WHERE t.id=$1 AND t.archived_at_ms IS NULL`, id).Scan(&name, &desc, &count)
+	e = a.Pool.QueryRow(r.Context(), `SELECT t.name,t.description,`+adminTaxonomyCountSQL+` FROM `+table+` t WHERE t.id=$1 AND t.archived_at_ms IS NULL`, id).Scan(&name, &desc, &count)
 	if e == pgx.ErrNoRows {
 		return NotFound()
 	}

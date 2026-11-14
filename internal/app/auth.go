@@ -282,17 +282,6 @@ func (a *App) githubIdentity(ctx context.Context, code, verifier string, credent
 	return profile, nil
 	// Provider token and optional refresh token are intentionally not persisted.
 }
-func (a *App) completeLogin(ctx context.Context, g githubProfile) (string, error) {
-	return a.completeGitHubLogin(ctx, g, nil, "")
-}
-
-func (a *App) completeGitHubLogin(ctx context.Context, g githubProfile, r *http.Request, expectedConfig string) (string, error) {
-	token, pending, err := a.completeGitHubAuthentication(ctx, g, r, expectedConfig)
-	if err == nil && pending != nil {
-		return "", E(401, "MFA_REQUIRED", "请完成两步验证")
-	}
-	return token, err
-}
 func (a *App) completeGitHubAuthentication(ctx context.Context, g githubProfile, r *http.Request, expectedConfig string) (string, *pendingMFA, error) {
 	tx, e := a.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if e != nil {
