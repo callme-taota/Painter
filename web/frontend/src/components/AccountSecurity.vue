@@ -1,45 +1,48 @@
 <script setup lang="ts">
 import {nextTick,onBeforeUnmount,onMounted,ref} from 'vue'
-import {api,body,loadSession,session} from '../api'
+import {APIError,api,body,loadSession,session} from '../api'
+import {toast} from '../toast'
 import {confirmAction} from '../confirm'
 
 type Security={mfa_enabled:boolean;mfa_enabled_at_ms:number|null;recovery_codes_remaining:number;has_local_password:boolean}
 type Setup={secret:string;otpauth_uri:string;expires_at:string}
 const emit=defineEmits<{updated:[number]}>()
 const status=ref<Security|null>(null),setup=ref<Setup|null>(null),codes=ref<string[]>([])
-const current=ref(''),code=ref(''),error=ref(''),message=ref(''),qrError=ref('')
+const current=ref(''),code=ref(''),error=ref(''),recoveryNotice=ref(''),qrError=ref('')
 const loading=ref(true),busy=ref(false),action=ref<'disable'|'regenerate'|''>(''),canvas=ref<HTMLCanvasElement>()
 async function load(){loading.value=true;error.value='';try{status.value=await api<Security>('/me/security')}catch(e){error.value=(e as Error).message}finally{loading.value=false}}
+function mutationError(e:unknown){if(e instanceof APIError&&[400,401,403,409,422].includes(e.status))error.value=e.message;else toast.error(e instanceof Error?e.message:'操作失败，请稍后重试。')}
+async function refreshSession(){try{await loadSession();emit('updated',session.user.version)}catch{toast.warning('安全设置已更新，但登录状态未能刷新。请重新加载页面。')}}
 async function begin(){
  if(busy.value)return
- busy.value=true;error.value='';message.value='';qrError.value=''
+ busy.value=true;error.value='';qrError.value=''
  try{
   setup.value=await api<Setup>('/me/mfa/setup',{method:'POST',body:body({current_password:current.value})})
   current.value='';code.value='';await nextTick()
   try{const QRCode=(await import('qrcode')).default;if(canvas.value)await QRCode.toCanvas(canvas.value,setup.value.otpauth_uri,{width:200,margin:2,errorCorrectionLevel:'M'})}catch{qrError.value='二维码未能生成，可手动输入下方密钥。'}
- }catch(e){error.value=(e as Error).message}finally{busy.value=false}
+ }catch(e){mutationError(e)}finally{busy.value=false}
 }
 async function enable(){
  if(busy.value)return
  busy.value=true;error.value=''
  try{
   const data=await api<{recovery_codes:string[];csrf_token:string}>('/me/mfa/enable',{method:'POST',body:body({code:code.value})})
-  session.csrf_token=data.csrf_token;setup.value=null;code.value='';codes.value=data.recovery_codes
-  await loadSession();emit('updated',session.user.version);await load();message.value='两步验证已启用。请保存恢复码，其他设备已退出登录。'
- }catch(e){error.value=(e as Error).message}finally{busy.value=false}
+  session.csrf_token=data.csrf_token;setup.value=null;code.value='';codes.value=data.recovery_codes;recoveryNotice.value='两步验证已启用，其他设备已退出登录。请保存恢复码。'
+  await refreshSession();await load();toast.success('两步验证已启用。')
+ }catch(e){mutationError(e)}finally{busy.value=false}
 }
 async function manage(){
  if(busy.value||!action.value)return
  if(action.value==='disable'&&!await confirmAction('关闭两步验证？','关闭后所有设备及关联应用将退出登录，需要重新使用密码登录。','关闭两步验证'))return
- busy.value=true;error.value='';message.value=''
+ busy.value=true;error.value=''
  try{
   const data=await api<{recovery_codes?:string[]}>('/me/mfa/'+(action.value==='disable'?'disable':'recovery-codes'),{method:'POST',body:body({current_password:current.value,code:code.value})})
   current.value='';code.value=''
   if(action.value==='disable'){location.assign('/login?mfa_disabled=1');return}
-  codes.value=data.recovery_codes||[];action.value='';await loadSession();emit('updated',session.user.version);await load();message.value='恢复码已更新，旧恢复码已失效。请保存新的恢复码。'
- }catch(e){error.value=(e as Error).message}finally{busy.value=false}
+  codes.value=data.recovery_codes||[];recoveryNotice.value='旧恢复码已失效，其他设备已退出登录。请保存新的恢复码。';action.value='';await refreshSession();await load();toast.success('恢复码已更新。')
+ }catch(e){mutationError(e)}finally{busy.value=false}
 }
-async function copySecret(){try{await navigator.clipboard.writeText(setup.value?.secret||'');message.value='密钥已复制，请粘贴到验证器。'}catch{error.value='无法自动复制，请选中密钥后手动复制。'}}
+async function copySecret(){try{await navigator.clipboard.writeText(setup.value?.secret||'');toast.success('密钥已复制，请粘贴到验证器。')}catch{toast.error('无法自动复制，请选中密钥后手动复制。')}}
 function downloadCodes(){
  const text=['Painter 两步验证恢复码',`账号：${session.user?.username||''}`,`网站：${location.origin}`,'每组仅可使用一次，请保存在私人密码管理器或离线位置。','',...codes.value].join('\n')
  const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='painter-recovery-codes.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
@@ -56,12 +59,12 @@ onBeforeUnmount(()=>{window.removeEventListener('beforeunload',beforeLeave);canc
   <p class="muted">登录时，在密码或 GitHub 验证后再输入动态码。可使用 Apple 密码、1Password、Microsoft Authenticator 等验证器。</p>
   <p v-if="loading" role="status">正在读取安全设置…</p>
   <p v-if="error" class="notice error" role="alert">{{error}} <button v-if="!status" type="button" class="quiet" :disabled="busy||loading" @click="load">重新加载</button></p>
-  <p v-if="message" class="notice success" role="status">{{message}}</p>
+
   <template v-if="status&&!loading">
    <section v-if="codes.length" class="recovery-display" aria-labelledby="recovery-title">
-    <h3 id="recovery-title">保存恢复码</h3><p class="muted">仅在此显示一次。遗失验证器时，每组可恢复登录一次。请勿公开分享。</p>
+    <h3 id="recovery-title">保存恢复码</h3><p v-if="recoveryNotice" class="muted">{{recoveryNotice}}</p><p class="muted">仅在此显示一次。遗失验证器时，每组可恢复登录一次。请勿公开分享。</p>
     <ul class="recovery-codes"><li v-for="item in codes" :key="item"><code>{{item}}</code></li></ul>
-    <div class="form-actions"><button type="button" @click="downloadCodes">下载恢复码</button><button type="button" class="primary" @click="codes=[];message='恢复码已收起。'">我已妥善保存</button></div>
+    <div class="form-actions"><button type="button" @click="downloadCodes">下载恢复码</button><button type="button" class="primary" @click="codes=[];recoveryNotice='';toast.info('恢复码已收起。')">我已妥善保存</button></div>
    </section>
    <template v-else-if="!status.mfa_enabled">
     <form v-if="!setup" class="security-form" @submit.prevent="begin">
@@ -79,7 +82,7 @@ onBeforeUnmount(()=>{window.removeEventListener('beforeunload',beforeLeave);canc
    </template>
    <template v-else>
     <p class="muted">剩余 {{status.recovery_codes_remaining}} 组恢复码。更换验证器前，请先确认仍可使用当前验证方式。</p>
-    <div v-if="!action" class="form-actions"><button type="button" @click="action='regenerate';message=''">重新生成恢复码</button><button type="button" class="quiet danger" @click="action='disable';message=''">关闭两步验证</button></div>
+    <div v-if="!action" class="form-actions"><button type="button" @click="action='regenerate'">重新生成恢复码</button><button type="button" class="quiet danger" @click="action='disable'">关闭两步验证</button></div>
     <form v-else class="security-form" @submit.prevent="manage"><h3>{{action==='disable'?'关闭两步验证':'重新生成恢复码'}}</h3><label v-if="status.has_local_password">当前登录密码<input v-model="current" type="password" required autocomplete="current-password"></label><p v-else class="muted">需要最近 5 分钟内完成的 GitHub 登录。</p><label>动态码或未使用的恢复码<input v-model="code" required maxlength="64" autocomplete="one-time-code" autocapitalize="none" spellcheck="false"></label><p class="muted">{{action==='disable'?'所有设备和关联应用将退出登录。':'旧恢复码会全部失效，其他设备将退出登录。'}}</p><div class="form-actions"><button :class="action==='disable'?'danger':'primary'" :disabled="busy">{{busy?'正在处理…':action==='disable'?'确认关闭并退出登录':'生成新的恢复码'}}</button><button type="button" :disabled="busy" @click="cancel">取消</button></div></form>
    </template>
   </template>

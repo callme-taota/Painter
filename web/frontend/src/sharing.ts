@@ -1,4 +1,5 @@
 import {registerMobileOverlay} from './mobileOverlays'
+import {toast} from './toast'
 
 type ShareMode='short'|'embed'|'share'
 type ShareManifest={type:string;id:string;title:string;short_url:string;share_url:string;embed_url:string;canonical_url:string;embed_html:string}
@@ -85,11 +86,11 @@ export function initSharing(){
   try{
    if(!navigator.clipboard?.writeText)throw new Error('clipboard unavailable')
    await navigator.clipboard.writeText(text)
-   if(dialog.open&&current===copyRequest)status.textContent=mode==='embed'?'HTML 已复制':'链接已复制'
+   if(dialog.open&&current===copyRequest){status.textContent='';toast.success(mode==='embed'?'HTML 已复制':'链接已复制',{id:'sharing-copy'})}
   }catch{
    if(!dialog.open||current!==copyRequest)return
    field.focus();field.select();field.setSelectionRange(0,field.value.length)
-   status.textContent='未能自动复制，已选中内容，请长按或使用复制快捷键。'
+   status.textContent='';toast.warning('未能自动复制，已选中内容。请长按或使用复制快捷键。',{id:'sharing-copy'})
   }
  })
  render()

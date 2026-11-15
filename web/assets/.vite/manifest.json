@@ -7,8 +7,8 @@
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ]
   },
-  "__plugin-vue_export-helper-CQjV9x8B.js": {
-    "file": "chunks/_plugin-vue_export-helper-CQjV9x8B.js",
+  "__plugin-vue_export-helper-CVtMhL5q.js": {
+    "file": "chunks/_plugin-vue_export-helper-CVtMhL5q.js",
     "name": "_plugin-vue_export-helper"
   },
   "_api-v3P5Q7QN.js": {
@@ -57,11 +57,12 @@
     "file": "chunks/infiniteScroll-CcHvAPba.js",
     "name": "infiniteScroll"
   },
-  "_postLike-BVbF5CPe.js": {
-    "file": "chunks/postLike-BVbF5CPe.js",
+  "_postLike-C1m3jQXW.js": {
+    "file": "chunks/postLike-C1m3jQXW.js",
     "name": "postLike",
     "imports": [
-      "_publicSession-BMy9aUG-.js"
+      "_publicSession-BMy9aUG-.js",
+      "_toast-C2gSWGM7.js"
     ]
   },
   "_publicSession-BMy9aUG-.js": {
@@ -93,6 +94,17 @@
       "geist-latin-BgDaEnEv.woff2"
     ]
   },
+  "_toast-C2gSWGM7.js": {
+    "file": "chunks/toast-C2gSWGM7.js",
+    "name": "toast",
+    "css": [
+      "toast-L9esdD3p.css"
+    ]
+  },
+  "_toast-L9esdD3p.css": {
+    "file": "toast-L9esdD3p.css",
+    "src": "_toast-L9esdD3p.css"
+  },
   "node_modules/vue/dist/vue.runtime.esm-bundler.js": {
     "file": "chunks/vue.runtime.esm-bundler-BDHfSOUB.js",
     "name": "vue.runtime.esm-bundler",
@@ -108,33 +120,34 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-BrdQ7ir6.js",
+    "file": "chunks/AuthForm-BofKNy8k.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-CQjV9x8B.js"
+      "__plugin-vue_export-helper-CVtMhL5q.js"
     ],
     "css": [
       "AuthForm-CftWU_Hm.css"
     ]
   },
   "src/components/FollowIsland.vue": {
-    "file": "chunks/FollowIsland-Gk8cHOCC.js",
+    "file": "chunks/FollowIsland-DTcL4tVu.js",
     "name": "FollowIsland",
     "src": "src/components/FollowIsland.vue",
     "isDynamicEntry": true,
     "imports": [
       "_api-v3P5Q7QN.js",
-      "_postLike-BVbF5CPe.js",
+      "_postLike-C1m3jQXW.js",
+      "_toast-C2gSWGM7.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "_publicSession-BMy9aUG-.js"
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor-BuSs5U2A.js",
+    "file": "chunks/MarkdownEditor-zzdLVGa1.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
@@ -145,16 +158,17 @@
       "_contentCards-YzrU5CfU.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
       "_confirm-B86amM10.js",
+      "_toast-C2gSWGM7.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-CQjV9x8B.js",
+      "__plugin-vue_export-helper-CVtMhL5q.js",
       "_infiniteScroll-CcHvAPba.js"
     ],
     "css": [
-      "MarkdownEditor-BuOQfIDI.css"
+      "MarkdownEditor-BS421Iqa.css"
     ]
   },
   "src/components/PostIsland.vue": {
-    "file": "chunks/PostIsland-CRFgnkVQ.js",
+    "file": "chunks/PostIsland-BZ9TwbK4.js",
     "name": "PostIsland",
     "src": "src/components/PostIsland.vue",
     "isDynamicEntry": true,
@@ -162,7 +176,8 @@
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_confirm-B86amM10.js",
       "_api-v3P5Q7QN.js",
-      "_postLike-BVbF5CPe.js",
+      "_postLike-C1m3jQXW.js",
+      "_toast-C2gSWGM7.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "_infiniteScroll-CcHvAPba.js",
       "_publicSession-BMy9aUG-.js"
@@ -226,13 +241,16 @@
     "isDynamicEntry": true
   },
   "src/phrases.ts": {
-    "file": "chunks/phrases-Cxg9l1y2.js",
+    "file": "chunks/phrases-8vLKTZdf.js",
     "name": "phrases",
     "src": "src/phrases.ts",
-    "isDynamicEntry": true
+    "isDynamicEntry": true,
+    "imports": [
+      "_toast-C2gSWGM7.js"
+    ]
   },
   "src/public.ts": {
-    "file": "public-nug2QeMw.js",
+    "file": "public-DK1pvwLI.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
@@ -240,7 +258,8 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "_infiniteScroll-CcHvAPba.js",
       "_contentCards-YzrU5CfU.js",
-      "_postLike-BVbF5CPe.js",
+      "_postLike-C1m3jQXW.js",
+      "_toast-C2gSWGM7.js",
       "_publicSession-BMy9aUG-.js"
     ],
     "dynamicImports": [
@@ -268,7 +287,7 @@
     ]
   },
   "src/setup.ts": {
-    "file": "setup-B7i1hOzU.js",
+    "file": "setup-EysYw4vO.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
@@ -276,7 +295,7 @@
       "_shadcn-theme-bY7Nbq2X.js",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-CQjV9x8B.js"
+      "__plugin-vue_export-helper-CVtMhL5q.js"
     ],
     "css": [
       "setup-ClpE19T_.css"
@@ -292,7 +311,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-kIbBqFm4.js",
+    "file": "studio-BIqK4tF1.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
@@ -304,18 +323,19 @@
       "_api-v3P5Q7QN.js",
       "_SelectField.vue_vue_type_script_setup_true_lang-Cp24VxgB.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "__plugin-vue_export-helper-CQjV9x8B.js",
+      "_toast-C2gSWGM7.js",
+      "__plugin-vue_export-helper-CVtMhL5q.js",
       "_publicSession-BMy9aUG-.js",
       "_infiniteScroll-CcHvAPba.js",
       "_contentCards-YzrU5CfU.js",
-      "_postLike-BVbF5CPe.js"
+      "_postLike-C1m3jQXW.js"
     ],
     "dynamicImports": [
       "_browser-CqDbEFy1.js",
       "src/components/MarkdownEditor.vue"
     ],
     "css": [
-      "studio-DWDjOACf.css",
+      "studio-BZpy_USo.css",
       "sharing-COMRoiPd.css"
     ]
   }

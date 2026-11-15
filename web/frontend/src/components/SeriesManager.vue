@@ -5,8 +5,9 @@ import {appendUnique,api,body,list,date,type Row} from '../api'
 import SelectField from './SelectField.vue'
 import Icon from './Icon.vue'
 import {confirmAction} from '../confirm'
+import {toast} from '../toast'
 import '../series.css'
-const items=ref<Row[]>([]),selected=ref<Row|null>(null),chapters=ref<Row[]>([]),loading=ref(true),busy=ref(false),error=ref(''),message=ref(''),query=ref(''),next=ref(''),more=ref(false),baseline=ref('')
+const items=ref<Row[]>([]),selected=ref<Row|null>(null),chapters=ref<Row[]>([]),loading=ref(true),busy=ref(false),error=ref(''),query=ref(''),next=ref(''),more=ref(false),baseline=ref('')
 const candidates=ref<Row[]>([]),postQuery=ref(''),postNext=ref(''),postMore=ref(false),postLoading=ref(false),picker=ref(false)
 let listVersion=0,detailVersion=0,postVersion=0
 const payload=()=>selected.value?{title:selected.value.title,slug:selected.value.slug||'',description:selected.value.description||'',cover_media_id:selected.value.cover_media_id||null,status:selected.value.status,state:selected.value.state,chapter_post_ids:chapters.value.map(c=>String(c.post_id||c.id))}:null
@@ -15,26 +16,27 @@ const selectedIDs=computed(()=>new Set(chapters.value.map(c=>String(c.post_id||c
 const deletedChapters=computed(()=>chapters.value.filter(chapter=>chapter.status==='deleted').length)
 const stateOptions=[{value:'ongoing',label:'连载中'},{value:'completed',label:'已完结'}],visibilityOptions=[{value:'draft',label:'草稿 · 仅自己可见'},{value:'published',label:'公开 · 进入专栏列表'}]
 function report(e:unknown){error.value=e instanceof Error?e.message:'操作失败，请稍后重试'}
+function mutationError(e:unknown){if(['VERSION_CONFLICT','VALIDATION_FAILED'].includes((e as {code?:string})?.code||''))report(e);else toast.error(e instanceof Error?e.message:'操作失败，请稍后重试')}
 async function load(append=false){if(append&&(loading.value||busy.value||!next.value))return;const generation=++listVersion;loading.value=true;error.value='';try{const q=new URLSearchParams({limit:'20',q:query.value});if(append&&next.value)q.set('cursor',next.value);const data=await api('/me/series?'+q);if(generation!==listVersion)return;items.value=append?appendUnique(items.value,list(data)):list(data);next.value=data.next_cursor||'';more.value=!!data.has_more}catch(e){if(generation===listVersion)report(e)}finally{if(generation===listVersion)loading.value=false}}
 async function mayLeave(){return !dirty.value||await confirmAction('放弃未保存的专栏修改？','章节顺序和资料尚未保存。','放弃修改')}
-function assign(data:Row){selected.value={...data};chapters.value=(data.chapters||[]).map((c:Row)=>({...c}));baseline.value=JSON.stringify(payload());candidates.value=[];picker.value=false;message.value=''}
+function assign(data:Row){selected.value={...data};chapters.value=(data.chapters||[]).map((c:Row)=>({...c}));baseline.value=JSON.stringify(payload());candidates.value=[];picker.value=false}
 async function open(row:Row){if(busy.value||!await mayLeave())return;const generation=++detailVersion;busy.value=true;error.value='';try{const data=await api('/studio/series/'+row.id);if(generation===detailVersion)assign(data)}catch(e){if(generation===detailVersion)report(e)}finally{if(generation===detailVersion)busy.value=false}}
-async function back(){if(busy.value||!await mayLeave())return;selected.value=null;chapters.value=[];error.value='';message.value=''}
+async function back(){if(busy.value||!await mayLeave())return;selected.value=null;chapters.value=[];error.value=''}
 async function create(){if(busy.value||!await mayLeave())return;detailVersion++;assign({title:'',slug:'',description:'',cover_media_id:null,status:'draft',state:'ongoing',chapters:[]});error.value=''}
-async function save(){if(!selected.value||busy.value)return;busy.value=true;error.value='';message.value='';try{const id=selected.value.id,data=await api(id?'/studio/series/'+id:'/series',{method:id?'PUT':'POST',version:id?selected.value.version:undefined,body:body(payload())});assign(data);message.value='专栏和章节顺序已保存';await load()}catch(e){report(e)}finally{busy.value=false}}
-async function remove(){if(!selected.value?.id||busy.value)return;if(!await confirmAction('删除这个专栏？','只删除专栏及章节引用，文章正文仍然保留。','删除专栏'))return;busy.value=true;error.value='';try{await api('/studio/series/'+selected.value.id,{method:'DELETE',version:selected.value.version});selected.value=null;chapters.value=[];message.value='专栏已删除，文章仍然保留';await load()}catch(e){report(e)}finally{busy.value=false}}
+async function save(){if(!selected.value||busy.value)return;busy.value=true;error.value='';try{const id=selected.value.id,data=await api(id?'/studio/series/'+id:'/series',{method:id?'PUT':'POST',version:id?selected.value.version:undefined,body:body(payload())});assign(data);toast.success('专栏和章节顺序已保存');await load()}catch(e){mutationError(e)}finally{busy.value=false}}
+async function remove(){if(!selected.value?.id||busy.value)return;if(!await confirmAction('删除这个专栏？','只删除专栏及章节引用，文章正文仍然保留。','删除专栏'))return;busy.value=true;error.value='';try{await api('/studio/series/'+selected.value.id,{method:'DELETE',version:selected.value.version});selected.value=null;chapters.value=[];toast.success('专栏已删除，文章仍然保留');await load()}catch(e){mutationError(e)}finally{busy.value=false}}
 async function findPosts(append=false){if(append&&(postLoading.value||!postNext.value))return;const generation=++postVersion;postLoading.value=true;error.value='';try{const q=new URLSearchParams({limit:'20',q:postQuery.value});if(append&&postNext.value)q.set('cursor',postNext.value);const data=await api('/me/posts?'+q);if(generation!==postVersion)return;const rows=list(data).filter(p=>p.status!=='deleted'&&p.status!=='trashed');candidates.value=append?appendUnique(candidates.value,rows):rows;postNext.value=data.next_cursor||'';postMore.value=!!data.has_more}catch(e){if(generation===postVersion)report(e)}finally{if(generation===postVersion)postLoading.value=false}}
 function showPicker(){picker.value=!picker.value;if(picker.value&&!candidates.value.length)void findPosts()}
 function add(post:Row){const id=String(post.id);if(selectedIDs.value.has(id)||chapters.value.length>=300)return;chapters.value.push({id,post_id:id,title:post.title,status:post.status})}
 function move(index:number,delta:number){const target=index+delta;if(target<0||target>=chapters.value.length)return;const copy=[...chapters.value];[copy[index],copy[target]]=[copy[target]!,copy[index]!];chapters.value=copy}
-async function upload(event:Event){const input=event.target as HTMLInputElement,file=input.files?.[0];if(!file||!selected.value||busy.value)return;busy.value=true;error.value='';try{const data=new FormData();data.append('file',file);const value=await api('/media',{method:'POST',body:data});selected.value.cover_media_id=value.media_id;selected.value.cover_url='/media/'+value.media_id;message.value='封面已上传，保存专栏后生效'}catch(e){report(e)}finally{busy.value=false;input.value=''}}
+async function upload(event:Event){const input=event.target as HTMLInputElement,file=input.files?.[0];if(!file||!selected.value||busy.value)return;busy.value=true;error.value='';try{const data=new FormData();data.append('file',file);const value=await api('/media',{method:'POST',body:data});selected.value.cover_media_id=value.media_id;selected.value.cover_url='/media/'+value.media_id;toast.success('封面已上传，保存专栏后生效')}catch(e){mutationError(e)}finally{busy.value=false;input.value=''}}
 function beforeUnload(event:BeforeUnloadEvent){if(dirty.value){event.preventDefault();event.returnValue=''}}
 onMounted(()=>{void load();addEventListener('beforeunload',beforeUnload)})
 onBeforeUnmount(()=>{listVersion++;detailVersion++;postVersion++;removeEventListener('beforeunload',beforeUnload)})
 </script>
 <template>
  <section class="series-manager" :class="{'has-selection':!!selected}" aria-label="专栏管理">
-  <p v-if="error" class="notice error" role="alert">{{error}}</p><p v-if="message" class="notice" role="status">{{message}}</p>
+  <p v-if="error" class="notice error" role="alert">{{error}}</p>
   <div class="series-manager-grid">
    <section class="series-index" aria-labelledby="my-series-title"><div class="series-panel-head"><h2 id="my-series-title">我的专栏</h2><button type="button" class="primary" :disabled="busy" @click="create">新建专栏</button></div>
     <form class="series-search" @submit.prevent="load()"><label class="sr-only" for="series-query">查找专栏</label><input id="series-query" v-model="query" type="search" maxlength="64" placeholder="查找专栏"><button :disabled="loading">搜索</button></form>

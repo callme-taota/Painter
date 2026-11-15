@@ -16,6 +16,7 @@ import SelectField from './SelectField.vue'
 import ArticleCardComposer from './ArticleCardComposer.vue'
 import {ArticleCardNode,ArticleReferenceLink,parseArticleCard,parseArticleReference,articleReferenceTitle,type ArticleCard,type ArticleCardType} from '../articleCards'
 import {initArticleCards} from '../contentCards'
+import {toast} from '../toast'
 
 const props=defineProps<{modelValue:string;disabled?:boolean;active?:boolean}>()
 const emit=defineEmits<{'update:modelValue':[value:string];save:[];'pick-image':[];image:[file:File];compatibility:[issue:string];composition:[value:boolean];'source-paste':[value:string]}>()
@@ -61,7 +62,7 @@ function insertMarkdown(value:string){if(!editor.value||!editable.value)return f
 function replaceText(token:string,replacement:string){const e=editor.value;if(!e||!editable.value)return false;let range:{from:number;to:number}|null=null;e.state.doc.descendants((node,pos)=>{if(range||!node.isText)return;const at=node.text?.indexOf(token)??-1;if(at>=0)range={from:pos+at,to:pos+at+token.length}});if(!range)return false;e.commands.insertContentAt(range,replacement,{contentType:'markdown',updateSelection:false});return true}
 function chooseBlock(value:string|number){if(!editable.value)return;if(value==='paragraph')editor.value?.chain().focus().setParagraph().run();else editor.value?.chain().focus().setHeading({level:Number(value) as 1|2|3}).run()}
 function openLink(){const e=editor.value;if(!e)return;const attrs=e.getAttributes('link');if(parseArticleReference(attrs.title,attrs.href)){openCards();return}cardOpen.value=false;linkValue.value=attrs.href||'';linkError.value='';linkOpen.value=true;void nextTick(()=>linkInput.value?.focus())}
-function applyLink(){if(!editable.value)return;const e=editor.value;if(!e)return;const value=linkValue.value.trim();if(value&&!safeMediaURL(value)){linkError.value='请输入网页、邮件或站内链接。';return}const chain=e.chain().focus().extendMarkRange('link');if(value)chain.setLink({href:value}).run();else chain.unsetLink().run();linkOpen.value=false}
+function applyLink(){if(!editable.value)return;const e=editor.value;if(!e)return;const value=linkValue.value.trim();if(value&&!safeMediaURL(value)){linkError.value='请输入网页、邮件或站内链接。';toast.error(linkError.value);return}const chain=e.chain().focus().extendMarkRange('link'),applied=value?chain.setLink({href:value}).run():chain.unsetLink().run();if(!applied){toast.error('链接尚未应用，请重新选择文字后重试。');return}linkOpen.value=false;toast.success(value?'链接已应用到当前草稿。':'链接已从当前文字移除。')}
 function openCards(kind?:ArticleCardType,position?:number){
  const e=editor.value;if(!e||!editable.value)return
  linkOpen.value=false;slash.value=null;bubble.value=null
@@ -72,9 +73,11 @@ function openCards(kind?:ArticleCardType,position?:number){
 function closeCards(){cardOpen.value=false;editor.value?.commands.focus()}
 function applyCard(value:{card:ArticleCard;inline:boolean;label:string}){
  const e=editor.value,range=cardRange.value;if(!e||!range||!editable.value)return
- if(value.inline&&value.card.v===1&&value.card.type==='link'){const attrs={href:value.card.url,title:articleReferenceTitle(value.card)};if(!range.block&&e.state.doc.textBetween(range.from,range.to,' ')===value.label&&range.from!==range.to)e.chain().focus().setTextSelection(range).setMark('link',attrs).run();else e.chain().focus().insertContentAt(range,{type:'text',text:value.label,marks:[{type:'link',attrs}]},{contentType:'json'}).run()}
- else{const node={type:'articleCard',attrs:{snapshot:JSON.stringify(value.card)}};e.chain().focus().insertContentAt(range,range.block?node:[node,{type:'paragraph'}],{contentType:'json'}).run()}
- cardOpen.value=false
+ let applied=false
+ if(value.inline&&value.card.v===1&&value.card.type==='link'){const attrs={href:value.card.url,title:articleReferenceTitle(value.card)};if(!range.block&&e.state.doc.textBetween(range.from,range.to,' ')===value.label&&range.from!==range.to)applied=e.chain().focus().setTextSelection(range).setMark('link',attrs).run();else applied=e.chain().focus().insertContentAt(range,{type:'text',text:value.label,marks:[{type:'link',attrs}]},{contentType:'json'}).run()}
+ else{const node={type:'articleCard',attrs:{snapshot:JSON.stringify(value.card)}};applied=e.chain().focus().insertContentAt(range,range.block?node:[node,{type:'paragraph'}],{contentType:'json'}).run()}
+ if(!applied){toast.error('卡片尚未应用，请重新选择插入位置后重试。');return}
+ cardOpen.value=false;toast.success(cardInitial.value?'卡片已更新到当前草稿，尚未发布。':'卡片已插入当前草稿，尚未发布。')
 }
 function updateMenus(){const e=editor.value;if(!e||!props.active||!editable.value||isComposing()){slash.value=null;bubble.value=null;return}const {from,to,empty,$from}=e.state.selection
   bubble.value=null

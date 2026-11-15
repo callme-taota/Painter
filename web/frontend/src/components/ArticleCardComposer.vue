@@ -6,6 +6,7 @@ import {articleCardKinds,articleCardMarkdown,articleCardTitle,isArticlePanel,isI
 import SelectField from './SelectField.vue'
 import Icon from './Icon.vue'
 import {initArticleCards} from '../contentCards'
+import {toast} from '../toast'
 
 const props=defineProps<{initial?:ArticleCard|null;label?:string;inline?:boolean;kind?:ArticleCardType;editing?:boolean;disabled?:boolean}>()
 const emit=defineEmits<{close:[];apply:[value:{card:ArticleCard;inline:boolean;label:string}]}>()
@@ -92,9 +93,9 @@ function addLayoutField(kind:'text'|'link'|'image'){
 }
 async function uploadLayoutImage(node:ArticleLayoutImage,event:Event){
  const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file||props.disabled||busy.value)return
- if(file.size>10*1024*1024){error.value='图片超过 10 MiB，请压缩后重试。';return}
+ if(file.size>10*1024*1024){error.value='图片超过 10 MiB，请压缩后重试。';toast.error(error.value);return}
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
- try{const data=new FormData();data.append('file',file);const result=await api<{media_id:string;state?:string}>('/media',{method:'POST',body:data,signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[/]media[/][a-fA-F0-9-]{16,128}$/.test('/media/'+result.media_id)||result.state&&result.state!=='ready')throw new Error('图片尚未上传完成，请重试。');node.src='/media/'+result.media_id;if(!node.alt)node.alt=Array.from(file.name).slice(0,200).join('')}catch(e){if(at===request&&(e as Error).name!=='AbortError')error.value='图片上传失败：'+(e as Error).message}finally{if(at===request)busy.value=false}
+ try{const data=new FormData();data.append('file',file);const result=await api<{media_id:string;state?:string}>('/media',{method:'POST',body:data,signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[/]media[/][a-fA-F0-9-]{16,128}$/.test('/media/'+result.media_id)||result.state&&result.state!=='ready')throw new Error('图片尚未上传完成，请重试。');node.src='/media/'+result.media_id;if(!node.alt)node.alt=Array.from(file.name).slice(0,200).join('');toast.success('图片已上传到卡片，插入草稿后仍需保存。')}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value='图片上传失败：'+(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
 async function showPreview(card:ArticleCard,signal?:AbortSignal){const at=request;const result=await api<{sanitized_html:string}>('/editor/preview',{method:'POST',body:body({markdown:articleCardMarkdown(card),seq:0}),signal});if(at===request&&!signal?.aborted){preview.value=result.sanitized_html;await nextTick();if(previewRoot.value)initArticleCards(previewRoot.value)}}
 async function loadReferences(reset=false){
@@ -106,7 +107,7 @@ async function loadReferences(reset=false){
 async function resolve(input:Row){
  if(props.disabled||busy.value)return
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
- try{const result=await api<{card:ArticleCard}>('/editor/cards/resolve',{method:'POST',body:body(input),signal:controller.signal});if(at!==request)return;if(result.card.v!==1)throw new Error('卡片信息不完整，请重新读取。');form.url=result.card.url;form.title=result.card.title||'';form.description=result.card.description||'';await nextTick();snapshot.value=result.card;await showPreview(result.card,controller.signal)}catch(e){if(at===request&&(e as Error).name!=='AbortError')error.value=(e as Error).message}finally{if(at===request)busy.value=false}
+ try{const result=await api<{card:ArticleCard}>('/editor/cards/resolve',{method:'POST',body:body(input),signal:controller.signal});if(at!==request)return;if(result.card.v!==1)throw new Error('卡片信息不完整，请重新读取。');form.url=result.card.url;form.title=result.card.title||'';form.description=result.card.description||'';await nextTick();snapshot.value=result.card;await showPreview(result.card,controller.signal);if(at===request)toast.success('卡片信息已读取，请确认后插入草稿。')}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
 function readMetadata(){void resolve({type:form.type,url:form.url.trim()})}
 function chooseReference(row:Row){void resolve({type:form.type,ref_id:String(row.id),url:internalArticleCardURL(form.type,String(row.id))})}
@@ -114,9 +115,9 @@ function referenceExcerpt(row:Row){const text=String(row.text||'');const points=
 async function apply(){
  if(props.disabled||busy.value||!ready.value)return
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
- try{const card=candidate();await showPreview(card,controller.signal);if(at!==request)return;const label=[form.emoji.trim(),form.label.trim()||articleCardTitle(card)].filter(Boolean).join(' ');emit('apply',{card,inline:isLink.value&&form.inline,label})}catch(e){if(at===request&&(e as Error).name!=='AbortError')error.value=(e as Error).message}finally{if(at===request)busy.value=false}
+ try{const card=candidate();await showPreview(card,controller.signal);if(at!==request)return;const label=[form.emoji.trim(),form.label.trim()||articleCardTitle(card)].filter(Boolean).join(' ');emit('apply',{card,inline:isLink.value&&form.inline,label})}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
-async function previewCard(){if(!ready.value||busy.value||props.disabled)return;const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value='';try{await showPreview(candidate(),controller.signal)}catch(e){if(at===request&&(e as Error).name!=='AbortError')error.value=(e as Error).message}finally{if(at===request)busy.value=false}}
+async function previewCard(){if(!ready.value||busy.value||props.disabled)return;const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value='';try{await showPreview(candidate(),controller.signal);if(at===request)toast.info('卡片预览已更新，尚未应用到草稿。')}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}}
 </script>
 
 <template>

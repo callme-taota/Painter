@@ -68,6 +68,24 @@ Go 集成用例仅使用显式 `PAINTER_TEST_DATABASE_URL`，不回退到 `DATAB
 
 脚本通过只表示其断言覆盖的范围。模拟响应不证明真实后端持久化；只读候选检查不证明生产迁移；截图数量不代表视觉质量。Chromium / WebKit 的视口与触摸模拟也不替代真实手机、操作系统输入法、帧率或外部账号授权验证。完整数据库、构建和部署检查见[仓库测试说明](../../README.md#测试)。
 
+## 统一操作通知
+
+`toast-core.cjs` 使用独立 DOM 验证通知的去重、数量限制、计时暂停、文本安全、主题、手机位置、原生 dialog 与 popover 回退，不连接应用或数据库。需要前端锁定依赖中的 TypeScript、Playwright 与 Chromium。
+
+`editor-toast.cjs` 访问明确指定的回环候选地址，使用候选站长的私有 `OWNER_STATE_FILE` 进入真实编辑器，拦截业务写入以验证保存 ACK 时序、幂等重试、自动保存安静状态、失败与恢复、发布、冲突、导入、导出和卡片插入。候选 SSR 路由仍需正常登录；模拟写入不证明后端持久化。另以独立候选的真实保存检查完成持久化闭环。
+
+```bash
+PLAYWRIGHT_MODULE=/private/node_modules/playwright \
+CHROMIUM_EXECUTABLE=/path/to/chromium \
+node tests/browser/toast-core.cjs
+
+PLAYWRIGHT_MODULE=/private/node_modules/playwright \
+CHROMIUM_EXECUTABLE=/path/to/chromium \
+PAINTER_QA_URL=http://127.0.0.1:18515 \
+OWNER_STATE_FILE=/private/isolated-owner-state.json \
+node tests/browser/editor-toast.cjs
+```
+
 ## V50 连续列表与搜索
 
 `v50-continuous-reading.cjs` 和 `v50-infinite-recovery.cjs` 固定只访问可丢弃实例 `http://127.0.0.1:18094`。设置 `OWNER_STATE_FILE` 为该实例已有的站长会话，`PLAYWRIGHT_MODULE` 为 Playwright 模块位置，可选 `CHROMIUM_EXECUTABLE` 与 `ARTIFACT_DIR`。会话和账号文件必须放在 Git 外。前者会创建明确标注 UX50 的未公开草稿并保存历史版本；后者只读，不可复用正式实例或正式账号。

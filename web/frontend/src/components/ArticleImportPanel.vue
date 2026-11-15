@@ -2,6 +2,7 @@
 import {computed,nextTick,onBeforeUnmount,onMounted,ref,useId,watch} from 'vue'
 import {api} from '../api'
 import {initArticleCards} from '../contentCards'
+import {toast} from '../toast'
 import SelectField from './SelectField.vue'
 import Icon from './Icon.vue'
 import '../articleImport.css'
@@ -36,12 +37,12 @@ async function loadFormat(){
 async function copyPrompt(){
  if(!format.value||props.disabled)return
  message.value=''
- try{if(!navigator.clipboard?.writeText)throw new Error('clipboard unavailable');await navigator.clipboard.writeText(format.value.prompt);if(closed)return;showPrompt.value=false;message.value='AI 提示词已复制。将它与原始内容一起交给 AI，生成文章 JSON。'}catch{if(closed)return;showPrompt.value=true;message.value='暂时无法自动复制，请选中下方提示词手动复制。';await nextTick();promptInput.value?.focus();promptInput.value?.select()}
+ try{if(!navigator.clipboard?.writeText)throw new Error('clipboard unavailable');await navigator.clipboard.writeText(format.value.prompt);if(closed)return;showPrompt.value=false;toast.success('AI 提示词已复制。将它与原始内容一起交给 AI，生成文章 JSON。')}catch{if(closed)return;showPrompt.value=true;message.value='暂时无法自动复制，请选中下方提示词手动复制。';toast.warning('暂时无法自动复制，已展开提示词供手动复制。');await nextTick();promptInput.value?.focus();promptInput.value?.select()}
 }
 function downloadFormat(kind:'example'|'schema'){
  if(!format.value||props.disabled)return
- const url=URL.createObjectURL(new Blob([format.value[kind]],{type:'application/json;charset=utf-8'})),link=document.createElement('a')
- link.href=url;link.download=kind==='example'?'painter-article.example.json':'painter-article.schema.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)
+ try{const url=URL.createObjectURL(new Blob([format.value[kind]],{type:'application/json;charset=utf-8'})),link=document.createElement('a')
+ link.href=url;link.download=kind==='example'?'painter-article.example.json':'painter-article.schema.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast.success(kind==='example'?'示例 JSON 已开始下载。':'格式规范已开始下载。')}catch{toast.error('下载未能开始，请重试。')}
 }
 function pasteJSON(event:ClipboardEvent){
  if(props.disabled)return
@@ -52,14 +53,14 @@ function pasteJSON(event:ClipboardEvent){
 async function readFile(event:Event){
  const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file||props.disabled)return
  invalidate();const at=++fileRequest
- if(file.size>limit){error.value='文件超过 1 MiB，请选择较小的文章 JSON。';return}
+ if(file.size>limit){error.value='文件超过 1 MiB，请选择较小的文章 JSON。';toast.error(error.value);return}
  readingFile.value=true;error.value=''
- try{const raw=await file.arrayBuffer();if(at!==fileRequest||closed||props.disabled)return;const decoded=new TextDecoder('utf-8',{fatal:true}).decode(raw);if(new TextEncoder().encode(decoded).length>limit)throw new Error('size');readingFile.value=false;json.value=decoded;filename.value=file.name;message.value='文件已读取。请先预览，再应用到草稿。'}catch(e){if(at===fileRequest&&!closed)error.value=e instanceof TypeError?'文件不是有效的 UTF-8 文本，请导出为 UTF-8 JSON 后重试。':'文件未能读取，当前 JSON 已保留，请重新选择。'}finally{if(at===fileRequest)readingFile.value=false}
+ try{const raw=await file.arrayBuffer();if(at!==fileRequest||closed||props.disabled)return;const decoded=new TextDecoder('utf-8',{fatal:true}).decode(raw);if(new TextEncoder().encode(decoded).length>limit)throw new Error('size');readingFile.value=false;json.value=decoded;filename.value=file.name;toast.info('文件已读取。请先预览，再应用到草稿。')}catch(e){if(at===fileRequest&&!closed){error.value=e instanceof TypeError?'文件不是有效的 UTF-8 文本，请导出为 UTF-8 JSON 后重试。':'文件未能读取，当前 JSON 已保留，请重新选择。';toast.error(error.value)}}finally{if(at===fileRequest)readingFile.value=false}
 }
 async function renderPreview(){
  if(!canPreview.value)return
  const source=json.value,at=++request;previewController?.abort();const controller=new AbortController();previewController=controller;busy.value=true;error.value='';message.value='';preview.value=null;validatedJSON.value=''
- try{const data=await api<ImportPreview>('/editor/import-preview',{method:'POST',body:source,signal:controller.signal});if(at!==request||closed||props.disabled||json.value!==source)return;if(!data||['title','summary','markdown','sanitized_html'].some(key=>typeof data[key as keyof ImportPreview]!=='string')||![data.block_count,data.card_count].every(value=>Number.isSafeInteger(value)&&value>=0))throw new Error('预览结果不完整，请重新预览。');preview.value=data;validatedJSON.value=source;await nextTick();if(at===request&&previewRoot.value){initArticleCards(previewRoot.value);previewHeading.value?.focus({preventScroll:true});if(matchMedia('(max-width:720px)').matches)previewHeading.value?.scrollIntoView({block:'start',behavior:'auto'})}}catch(e){if(at===request&&!closed&&(e as Error).name!=='AbortError')error.value=(e as Error).message||'预览未完成，请检查 JSON 后重试。'}finally{if(at===request)busy.value=false}
+ try{const data=await api<ImportPreview>('/editor/import-preview',{method:'POST',body:source,signal:controller.signal});if(at!==request||closed||props.disabled||json.value!==source)return;if(!data||['title','summary','markdown','sanitized_html'].some(key=>typeof data[key as keyof ImportPreview]!=='string')||![data.block_count,data.card_count].every(value=>Number.isSafeInteger(value)&&value>=0))throw new Error('预览结果不完整，请重新预览。');preview.value=data;validatedJSON.value=source;await nextTick();if(at===request&&previewRoot.value){initArticleCards(previewRoot.value);previewHeading.value?.focus({preventScroll:true});if(matchMedia('(max-width:720px)').matches)previewHeading.value?.scrollIntoView({block:'start',behavior:'auto'})}}catch(e){if(at===request&&!closed&&(e as Error).name!=='AbortError'){error.value=(e as Error).message||'预览未完成，请检查 JSON 后重试。';toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
 function apply(){if(!canApply.value||!preview.value)return;const result=preview.value;emit('apply',{title:result.title,summary:result.summary,markdown:result.markdown,mode:mode.value,includeMetadata:includeMetadata.value})}
 </script>

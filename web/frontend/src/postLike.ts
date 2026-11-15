@@ -1,4 +1,5 @@
 import {randomID} from './random'
+import {toast} from './toast'
 import {invalidatePublicSession,loadPublicSession,observePublicSession,type PublicSession} from './publicSession'
 export type LikeState={postId:string;liked:boolean;bookmarked:boolean;count:number;busy:boolean;session:PublicSession|null;loaded:boolean;loadedAt:number;error:string}
 const states=new Map<string,LikeState>(),loads=new Map<string,Promise<LikeState>>()
@@ -25,12 +26,12 @@ export async function loadLike(id:string):Promise<LikeState>{
  try{return await request}finally{if(loads.get(id)===request)loads.delete(id)}
 }
 export async function toggleLike(id:string){
- const state=await loadLike(id);if(!state.loaded||state.busy||!state.session?.authenticated)return state
+ const state=await loadLike(id);if(!state.loaded||state.busy||!state.session?.authenticated){if(state.error)toast.error(state.error,{id:'post-like:'+id});return state}
  state.busy=true;state.error='';announce(state)
  try{
   const response=await fetch(`/api/v1/posts/${id}/like`,{method:state.liked?'DELETE':'PUT',credentials:'same-origin',headers:{'X-CSRF-Token':state.session.csrf_token||'','Idempotency-Key':randomID()}})
-  if(!response.ok){if(response.status===401){invalidatePublicSession(true);return state}const data=await response.json().catch(()=>({}));throw new Error(data.error?.message||'点赞未能保存，请重试。')}
+  if(!response.ok){if(response.status===401){invalidatePublicSession(true);toast.error('登录已失效，请重新登录。',{id:'session-expired'});return state}const data=await response.json().catch(()=>({}));throw new Error(data.error?.message||'点赞未能保存，请重试。')}
   state.liked=!state.liked;state.count=Math.max(0,state.count+(state.liked?1:-1));announce(state)
-  const metrics=await read(`/posts/${id}/metrics`);state.count=Number(metrics.like_count??metrics.likes??0);state.loadedAt=Date.now()
- }catch(e){state.error=(e as Error).message}finally{state.busy=false;announce(state)}return state
+  try{const metrics=await read(`/posts/${id}/metrics`);state.count=Number(metrics.like_count??metrics.likes??0);state.loadedAt=Date.now()}catch{toast.warning('点赞状态已更新，计数暂时无法刷新。',{id:'post-like:'+id})}
+ }catch(e){state.error='';toast.error((e as Error).message,{id:'post-like:'+id})}finally{state.busy=false;announce(state)}return state
 }

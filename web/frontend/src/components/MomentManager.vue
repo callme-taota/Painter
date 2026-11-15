@@ -3,6 +3,7 @@ import InfiniteList from './InfiniteList.vue'
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId} from 'vue'
 import {appendUnique,api, APIError, body, list, type Row} from '../api'
 import {confirmAction} from '../confirm'
+import {toast} from '../toast'
 import {randomID} from '../random'
 import Icon from './Icon.vue'
 import SelectField from './SelectField.vue'
@@ -16,7 +17,7 @@ const props = defineProps<{owner:boolean}>()
 const uid = useId(), textarea = ref<HTMLTextAreaElement>(), fileInput = ref<HTMLInputElement>()
 const rows = ref<Moment[]>([]), loading = ref(true), busy = ref(false)
 const scope = ref(props.owner ? 'site' : 'mine'), status = ref('all')
-const listError = ref(''), error = ref(''), notice = ref(''), conflict = ref(false), latest = ref<Moment|null>(null)
+const listError = ref(''), error = ref(''), conflict = ref(false), latest = ref<Moment|null>(null)
 const maxLength = ref(500), maxImages = ref(9), maxImageBytes = ref(10*1024*1024), nextCursor = ref('')
 const form = reactive<Moment>({id:'',version:0,text:'',images:[],public_text:null,public_images:[],published:false,status:'draft'})
 const images = ref<SelectedImage[]>([])
@@ -94,7 +95,7 @@ function pickImages(event:Event) {
   const input = event.target as HTMLInputElement, files = Array.from(input.files || [])
   input.value = ''
   if (locked.value || deleted.value || !files.length) return
-  error.value = ''; notice.value = ''
+  error.value = ''
   if (images.value.length + files.length > maxImages.value) {
     error.value = `最多添加 ${maxImages.value} 张图片，当前还可添加 ${Math.max(0,maxImages.value-images.value.length)} 张。本次所选文件未添加，请重新选择。`
     return
@@ -161,12 +162,12 @@ function timestamp(value:unknown) {
 function author(row:Moment) { return row.author?.display_name || row.author?.username || '作者' }
 function rowStatus(row:Moment) { return row.status === 'deleted' || row.deleted_at ? '已删除' : row.published ? '已发布' : '草稿' }
 function mutationError(cause:unknown) {
-  error.value = cause instanceof Error ? cause.message : '操作失败，请重试。'
   if (form.id && cause instanceof APIError && [409,412].includes(cause.status)) {
     conflict.value = true
     latest.value = null
     error.value = '这条动态已在其他位置更新。你的输入已保留，请先读取最新版本。'
-  }
+  } else if(cause instanceof APIError&&cause.code==='VALIDATION_FAILED')error.value=cause.message
+  else toast.error(cause instanceof Error ? cause.message : '操作失败，请重试。')
 }
 async function load(append=false) {
   if(append&&(loading.value||locked.value||!nextCursor.value))return
@@ -204,7 +205,7 @@ async function edit(row?:Moment) {
     const result = row ? parseMoment(await api('/studio/moments/' + encodeURIComponent(row.id))) : undefined
     if (stopped) return
     fill(result)
-    error.value = ''; notice.value = ''
+    error.value = ''
     await nextTick()
     textarea.value?.focus()
   } catch (cause) { error.value = (cause as Error).message }
@@ -212,7 +213,7 @@ async function edit(row?:Moment) {
 }
 async function save() {
   if (locked.value || conflict.value || deleted.value || !valid.value || (form.id && !dirty.value)) return
-  busy.value = true; error.value = ''; notice.value = ''
+  busy.value = true; error.value = ''
   try {
     let result:Moment
     if (form.id) {
@@ -227,18 +228,18 @@ async function save() {
     if (stopped) return
     const keepInput = snapshot({text:result.text,images:imageInputs(result.images)}) !== snapshot(currentPayload())
     fill(result,keepInput)
-    notice.value = keepInput ? '已确认保存的草稿。当前新修改仍未保存，请再次保存。' : result.published ? '草稿已保存，公开内容保持原样。发布更新后才会替换公开内容。' : '草稿已保存，发布后才会公开。'
+    if(keepInput)toast.warning('已确认保存的草稿。当前新修改仍未保存，请再次保存。');else toast.success(result.published?'草稿已保存，公开内容保持原样。发布更新后才会替换公开内容。':'草稿已保存，发布后才会公开。')
     await load()
   } catch (cause) { if(!form.id&&cause instanceof APIError&&[400,413,422].includes(cause.status)){pendingCreate=null;createKey=randomID()} mutationError(cause) }
   finally { busy.value = false }
 }
 async function publish() {
   if (locked.value || !form.id || dirty.value || conflict.value || deleted.value || !valid.value || !publishChanged.value) return
-  busy.value = true; error.value = ''; notice.value = ''
+  busy.value = true; error.value = ''
   try {
     const result = parseMoment(await api('/studio/moments/' + encodeURIComponent(form.id) + '/publish',{method:'POST',version:form.version}))
     if (stopped) return
-    fill(result); notice.value = '动态已发布。'
+    fill(result); toast.success('动态已发布。')
     await load()
   } catch (cause) { mutationError(cause) }
   finally { busy.value = false }
@@ -248,10 +249,10 @@ async function withdraw() {
   busy.value = true
   try {
     if (!await confirmAction('撤回这条动态？','公开内容将被撤下，已保存的草稿会保留。','撤回动态')) return
-    error.value = ''; notice.value = ''
+    error.value = ''
     const result = parseMoment(await api('/studio/moments/' + encodeURIComponent(form.id) + '/publication',{method:'DELETE',version:form.version}))
     if (stopped) return
-    fill(result); notice.value = '动态已撤回，草稿已保留。'
+    fill(result); toast.success('动态已撤回，草稿已保留。')
     await load()
   } catch (cause) { mutationError(cause) }
   finally { busy.value = false }
@@ -262,16 +263,16 @@ async function remove(row:Moment) {
   try {
     const selected = form.id === row.id
     if (!await confirmAction('删除这条动态？',selected && dirty.value ? '当前未保存的文字、图片顺序和说明也会放弃；公开内容将被移除。此操作不能撤销。' : '动态会从公开页面移除，此操作不能撤销。','删除动态')) return
-    error.value = ''; notice.value = ''
+    error.value = ''
     await api('/studio/moments/' + encodeURIComponent(row.id),{method:'DELETE',version:selected ? form.version : row.version})
     if (stopped) return
     if (selected) fill()
     rows.value = rows.value.filter(item => item.id !== row.id)
-    notice.value = '动态已删除。'
+    toast.success('动态已删除。')
     await load()
   } catch (cause) {
     if (form.id === row.id) mutationError(cause)
-    else error.value = (cause as Error).message + ' 请刷新列表后重试。'
+    else toast.error((cause as Error).message + ' 请刷新列表后重试。')
   } finally { busy.value = false }
 }
 async function readLatest() {
@@ -286,14 +287,14 @@ async function readLatest() {
 function keepInput() {
   if (locked.value || !latest.value || latest.value.status === 'deleted' || latest.value.deleted_at) return
   fill(latest.value,true)
-  error.value = ''; notice.value = '已采用最新版本号，文字和图片已保留。检查内容后再次保存草稿。'
+  error.value = ''; toast.info('已采用最新版本号，文字和图片已保留。检查内容后再次保存草稿。')
 }
 async function useLatest() {
   if (locked.value || !latest.value) return
   busy.value = true
   try {
     if (dirty.value && !await confirmAction('使用服务器最新内容？','当前文字、图片顺序和说明将被最新草稿替换。','使用最新内容')) return
-    fill(latest.value); error.value = ''; notice.value = '已载入服务器最新内容。'
+    fill(latest.value); error.value = ''; toast.info('已载入服务器最新内容。')
   } finally { busy.value = false }
 }
 function beforeLeave(event:BeforeUnloadEvent) { if (dirty.value || uploading.value) { event.preventDefault(); event.returnValue = '' } }
@@ -302,7 +303,7 @@ onBeforeUnmount(() => { stopped = true; sequence++; controller?.abort(); uploadC
 </script>
 
 <template>
- <div v-if="notice" class="moment-feedback" role="status">{{notice}}</div>
+
  <div class="moment-management">
   <form id="moment-compose" class="moment-composer" aria-label="动态编辑" @submit.prevent="save">
    <div class="moment-composer-heading"><h2>{{deleted?'查看动态':form.id?'编辑动态':'写一条动态'}}</h2><button v-if="form.id||dirty" type="button" class="quiet" :disabled="locked" @click="edit()">新建动态</button></div>
