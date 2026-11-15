@@ -110,8 +110,7 @@
   .activity-mobile-navigation span{font-size:13px;line-height:1.6;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
   .home-activity .activity-day.is-selected-day{outline:2px solid var(--link);outline-offset:2px}
 
-  /* Records become a two-row touch collection with persistent identities.
-     The following game remains a real item in the same collection. */
+  /* Records become a two-row album-only touch collection. Games have their own shelf. */
   .home-collection-journey{margin:0;min-width:0}
   .home-record-wall.home-wall{width:100%;margin:48px 0;padding:0;background:var(--home-surface,var(--bg));color:var(--ink)}
   .home-record-wall .home-record-stage{display:flex;flex-direction:column;position:relative;min-height:0;height:auto;overflow:visible}
@@ -152,7 +151,7 @@
   .home-record-wall .home-record-tile>span{display:block;position:relative;inset:auto;opacity:1;transform:none;background:transparent;color:var(--ink);padding:8px 0 0;min-width:0;overflow:hidden}
   .home-record-wall .home-record-tile strong{display:block;font-size:13px;line-height:1.4;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-weight:500}
   .home-record-wall .home-record-tile small{display:block;font-size:12px;line-height:1.5;color:var(--muted);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:3px}
-  .home-record-wall .home-record-game{width:154px;height:auto}
+  .home-record-wall .home-record-game{display:none}
   .home-record-wall .home-record-game:after{display:none}
 
   /* Games keep cinematic real cover art, but tap/side-swipe replaces the long
