@@ -14,7 +14,7 @@
    {{if .Post.summary}}<p class="article-summary">{{.Post.summary}}</p>{{end}}
    <div class="article-meta-row">
     <nav class="topic-links" aria-label="文章标签">{{range .Post.tags}}<a href="/search?tag_id={{.id}}">#{{.name}}</a>{{end}}</nav>
-    <div class="article-reading-meta"><button type="button" class="quiet" data-share-type="post" data-share-id="{{.Post.id}}" aria-label="分享这篇文章">分享</button><span>{{.ReadTime}} 分钟阅读</span>{{template "article-information" .Post}}</div>
+    <div class="article-reading-meta"><button type="button" class="quiet" data-share-type="post" data-share-id="{{.Post.id}}" aria-label="分享这篇文章">分享</button><span>约 {{.ReadTime}} 分钟阅读</span>{{template "article-information" .Post}}</div>
    </div>
   </div>
  </header>

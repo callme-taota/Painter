@@ -324,11 +324,7 @@ func (a *App) RegisterWeb() {
 		toc := []TOCEntry{}
 		b, _ := json.Marshal(post["toc"])
 		_ = json.Unmarshal(b, &toc)
-		text := webString(post["plain_text"])
-		minutes := (utf8.RuneCountInString(text) + 399) / 400
-		if minutes < 1 {
-			minutes = 1
-		}
+		minutes := articleReadingMinutes(webString(post["sanitized_html"]))
 		schema := map[string]any{"@context": "https://schema.org", "@type": "BlogPosting", "headline": post["title"], "description": post["summary"], "mainEntityOfPage": a.Config.PublicBaseURL + "/posts/" + r.PathValue("id"), "author": post["author"]}
 		display, _ := post["date_display"].(map[string]any)
 		if display["published"] == true {
