@@ -93,6 +93,7 @@ if(searchDialog)registerMobileOverlay(searchDialog,()=>document.querySelector<HT
 
 import './series.css'
 import './sharing.css'
+import './publicBrowse.css'
 import {initSharing} from './sharing'
 initSharing()
 

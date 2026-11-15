@@ -1,7 +1,7 @@
 {{define "series-list-page"}}
-<header class="series-list-heading">
-  <div><h1>专栏</h1><p>一个主题，沿着章节慢慢展开</p></div>
-  <a class="text-link" href="/posts">全部文章 <span aria-hidden="true">→</span></a>
+<header class="browse-heading">
+  <h1>专栏</h1>
+  <a class="browse-heading-link" href="/posts">文章 <span aria-hidden="true">→</span></a>
 </header>
 <div class="series-browser-tools">
   <nav class="series-status-filter" aria-label="连载状态">
@@ -11,25 +11,26 @@
   </nav>
   <form class="series-search" action="/series" method="get" role="search">
     <label class="sr-only" for="public-series-query">搜索专栏</label>
-    <input id="public-series-query" name="q" type="search" maxlength="64" value="{{.Query.Get "q"}}" placeholder="查找想读的主题">
+    <input id="public-series-query" name="q" type="search" maxlength="64" value="{{.Query.Get "q"}}" placeholder="搜索专栏">
     {{if .Query.Get "state"}}<input type="hidden" name="state" value="{{.Query.Get "state"}}">{{end}}
-    <button>搜索专栏</button>
+    <button aria-label="搜索专栏">搜索</button>
   </form>
 </div>
 <div class="series-catalog" data-infinite-items>
   {{range .Items}}
   <article class="series-public-card">
-    {{if .cover_url}}<a href="/series/{{.id}}" tabindex="-1" aria-hidden="true"><img class="series-public-cover" src="{{.cover_url}}" width="1200" height="675" alt="" loading="lazy"></a>{{end}}
-    <div class="series-public-meta"><span class="series-state">{{if eq .state "completed"}}已完结{{else}}连载中{{end}}</span><span>{{.chapter_count}} 章已公开</span></div>
+    {{if .cover_url}}<a class="series-cover-link" href="/series/{{.id}}" tabindex="-1" aria-hidden="true"><img class="series-public-cover" src="{{.cover_url}}" width="1200" height="675" alt="" loading="lazy"></a>{{end}}
+    <div class="series-card-copy">
+    <div class="series-public-meta"><span class="series-state">{{if eq .state "completed"}}已完结{{else}}连载中{{end}}</span><span>{{.chapter_count}} 章</span></div>
     <h2><a href="/series/{{.id}}">{{.title}}</a></h2>
     {{if .description}}<p>{{.description}}</p>{{end}}
     <div class="series-public-meta series-card-byline"><a href="/users/{{.author.id}}">{{.author.display_name}}</a><time datetime="{{.updated_at}}">更新于 {{date .updated_at}}</time></div>
+    </div>
   </article>
   {{else}}
   <section class="series-empty">
-    <h2>{{if .Query.Get "q"}}没有找到匹配的专栏{{else}}新的连载正在酝酿{{end}}</h2>
-    <p>{{if .Query.Get "q"}}换个关键词试试，或查看全部专栏。{{else}}作者公开的专栏会在这里按章节展开。{{end}}</p>
-    <a href="{{if .Query.Get "q"}}/series{{else}}/posts{{end}}">{{if .Query.Get "q"}}全部专栏{{else}}先读一篇文章{{end}}</a>
+    <h2>{{if .Query.Get "q"}}没有找到匹配的专栏{{else if .Query.Get "state"}}暂无{{if eq (.Query.Get "state") "completed"}}已完结{{else}}连载中{{end}}专栏{{else}}暂无专栏{{end}}</h2>
+    <a href="{{if or (.Query.Get "q") (.Query.Get "state")}}/series{{else}}/posts{{end}}">{{if or (.Query.Get "q") (.Query.Get "state")}}全部专栏{{else}}浏览文章{{end}}</a>
   </section>
   {{end}}
 </div>
