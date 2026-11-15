@@ -37,6 +37,8 @@ type webPage struct {
 	HomeSections                                                                                                 []homeWebSection
 	HomeFirst                                                                                                    string
 	HomeHasIntro                                                                                                 bool
+	Authors                                                                                                      []map[string]any
+	AuthorTab                                                                                                    string
 }
 
 const siteFaviconPath = "images/painter-favicon-d4d342f8b170.ico"
@@ -230,8 +232,14 @@ func (a *App) RegisterWeb() {
 		if p.Canonical == "" {
 			p.Canonical = strings.TrimRight(a.Config.PublicBaseURL, "/") + r.URL.Path
 		}
-		if p.Kind == "search" || (p.Kind == "author" && r.URL.Query().Get("q") != "") {
-			p.Canonical += "?q=" + url.QueryEscape(r.URL.Query().Get("q"))
+		if p.Kind == "search" || (p.Kind == "author" && p.Query.Get("q") != "") {
+			canonicalQuery := url.Values{"q": {p.Query.Get("q")}}
+			if p.Kind == "author" && p.AuthorTab != "" && p.AuthorTab != "posts" {
+				canonicalQuery.Set("tab", p.AuthorTab)
+			}
+			p.Canonical += "?" + canonicalQuery.Encode()
+		} else if p.Kind == "author" && (p.AuthorTab == "moments" || p.AuthorTab == "series") {
+			p.Canonical += "?tab=" + p.AuthorTab
 		}
 		entry := "src/public.ts"
 		if p.Kind == "studio" {
@@ -309,6 +317,15 @@ func (a *App) RegisterWeb() {
 			return
 		}
 		render(w, r, webPage{Kind: "posts", Title: "所有文章", Items: webMaps(data["items"]), Tags: tags, Next: webNext(r, data)})
+	})
+	a.Mux.HandleFunc("GET /discover", func(w http.ResponseWriter, r *http.Request) {
+		p, e := a.communityPage(r.Context(), r.URL.Query())
+		if e != nil {
+			failure(w, r, e)
+			return
+		}
+		p.NoIndex = r.URL.Query().Get("cursor") != ""
+		render(w, r, p)
 	})
 	a.Mux.HandleFunc("GET /series", func(w http.ResponseWriter, r *http.Request) {
 		data, err := a.PublicSeries(r.Context(), r.URL.Query())
@@ -475,18 +492,31 @@ func (a *App) RegisterWeb() {
 			render(w, r, webPage{Kind: "author", Title: webString(u["display_name"]), User: u})
 			return
 		}
-		data, e := a.AuthorPosts(r.Context(), id, r.URL.Query())
-		p := webPage{Kind: "author", Title: webString(u["display_name"]), User: u, NoIndex: r.URL.Query().Get("q") != ""}
+		query, e := authorContentQuery(r.URL.Query().Get("tab"), r.URL.Query())
+		if e != nil {
+			failure(w, r, e)
+			return
+		}
+		tab := query.Get("tab")
+		data, e := a.AuthorContent(r.Context(), id, tab, query)
+		p := webPage{Kind: "author", Title: webString(u["display_name"]), User: u, Query: query, AuthorTab: tab, NoIndex: query.Get("q") != "" || query.Get("cursor") != "" || query.Get("state") != ""}
 		if e != nil {
 			var ae *APIError
-			p.Error = "暂时无法载入文章，请稍后重试。"
+			p.Error = "暂时无法载入内容，请稍后重试。"
 			if errors.As(e, &ae) {
 				p.Error = ae.Message
 				p.Status = ae.Status
 			}
 		} else {
 			p.Items = webMaps(data["items"])
-			p.Next = webNext(r, data)
+			if cursor := webString(data["next_cursor"]); cursor != "" {
+				next := make(url.Values, len(query)+1)
+				for key, values := range query {
+					next[key] = append([]string(nil), values...)
+				}
+				next.Set("cursor", cursor)
+				p.Next = r.URL.Path + "?" + next.Encode()
+			}
 		}
 		render(w, r, p)
 	})
@@ -713,7 +743,7 @@ func (a *App) RegisterWeb() {
 			NS      string   `xml:"xmlns,attr"`
 			URLs    []loc    `xml:"url"`
 		}{NS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
-		for _, path := range []string{"/", "/posts", "/series", "/products", "/moments", "/about"} {
+		for _, path := range []string{"/", "/discover", "/posts", "/series", "/products", "/moments", "/about"} {
 			out.URLs = append(out.URLs, loc{a.Config.PublicBaseURL + path})
 		}
 		var gamesEnabled bool

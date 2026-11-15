@@ -80,15 +80,15 @@ func v31NavigationLinks(root *nethtml.Node) []*nethtml.Node {
 
 func v31AssertBrowseLinks(t *testing.T, root *nethtml.Node, kind string) {
 	t.Helper()
-	want := map[string]string{"/": "首页", "/products": "产品", "/posts": "文章", "/series": "专栏", "/moments": "动态", "/phrases": "片语", "/games": "游戏墙"}
+	want := map[string]string{"/": "首页", "/discover": "站内", "/products": "产品", "/posts": "文章", "/series": "专栏", "/moments": "动态", "/phrases": "片语", "/games": "游戏墙"}
 	current := map[string]string{
-		"home": "/", "products": "/products", "product": "/products",
+		"home": "/", "discover": "/discover", "products": "/products", "product": "/products",
 		"posts": "/posts", "article": "/posts", "series-list": "/series", "series": "/series",
 		"moments": "/moments", "moment": "/moments", "phrases": "/phrases", "games": "/games",
 	}[kind]
 	links := v31NavigationLinks(root)
 	if len(links) != len(want) {
-		t.Fatalf("public browsing should expose seven native links, got %d", len(links))
+		t.Fatalf("public browsing should expose eight native links, got %d", len(links))
 	}
 	for _, link := range links {
 		href := friendWebAttr(link, "href")
@@ -177,7 +177,7 @@ func v31AssertCompactDock(t *testing.T, dock *nethtml.Node) (browse, more *netht
 
 func TestV31HeaderAndDockKeepNativePublicNavigation(t *testing.T) {
 	templates := v31NavigationTemplates(t)
-	for _, kind := range []string{"home", "products", "product", "article", "posts", "series-list", "series", "moments", "moment", "phrases", "games", "about", "search", "error"} {
+	for _, kind := range []string{"home", "discover", "products", "product", "article", "posts", "series-list", "series", "moments", "moment", "phrases", "games", "about", "search", "error"} {
 		t.Run(kind, func(t *testing.T) {
 			doc := v31NavigationDocument(t, templates, v31NavigationPage(kind, defaultFloatingControls(), false, true))
 			header := v31NavigationClass(t, doc, "site-header")

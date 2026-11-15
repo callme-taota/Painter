@@ -1,0 +1,26 @@
+{{define "discover-page"}}
+<header class="browse-heading discovery-heading">
+ <h1>{{t "站内"}}</h1>
+ <nav class="discovery-links" aria-label="{{t "内容导航"}}"><a href="/posts">{{t "文章"}}</a><a href="/moments">{{t "动态"}}</a><a href="/series">{{t "专栏"}}</a></nav>
+</header>
+{{if .Authors}}<section class="discovery-authors" aria-label="{{t "创作者"}}">
+ <h2>{{t "创作者"}}</h2>
+ <ul>{{range .Authors}}<li><a href="/users/{{.id}}">{{if .avatar_url}}<img src="{{.avatar_url}}" width="36" height="36" loading="lazy" alt="">{{else}}<span class="avatar" aria-hidden="true">{{initial .display_name}}</span>{{end}}<span>{{.display_name}}</span></a></li>{{end}}</ul>
+</section>{{end}}
+<div class="discovery-layout">
+ <section class="discovery-writing" aria-labelledby="discovery-writing-title">
+  <h2 id="discovery-writing-title">{{t "最新文章"}}</h2>
+  <div class="discovery-posts" data-infinite-items>{{range .Items}}
+   <article class="discovery-post" data-list-key="post-{{.id}}">
+    {{if .cover_url}}<a class="discovery-cover" href="/posts/{{.id}}" aria-hidden="true" tabindex="-1"><img src="{{.cover_url}}" width="1200" height="675" alt="" loading="lazy"></a>{{end}}
+    <div class="discovery-post-copy">
+     <h3><a href="/posts/{{.id}}">{{.title}}</a></h3>
+     {{if .summary}}<p>{{.summary}}</p>{{end}}
+     <div class="discovery-byline">{{with .author}}<a href="/users/{{.id}}">{{if .avatar_url}}<img src="{{.avatar_url}}" width="22" height="22" alt="" loading="lazy">{{else}}<span class="avatar" aria-hidden="true">{{initial .display_name}}</span>{{end}}<span>{{.display_name}}</span></a>{{end}}{{if .date_display.published}}<time datetime="{{.published_at}}">{{date .published_at}}</time>{{else if .date_display.created}}<time datetime="{{.created_at}}">{{date .created_at}}</time>{{end}}{{range $i,$tag := .tags}}{{if lt $i 2}}<a class="discovery-tag" href="/search?tag_id={{.id}}">#{{.name}}</a>{{end}}{{end}}</div>
+    </div>
+   </article>
+  {{else}}<div class="discovery-empty"><h3>{{t "暂无文章"}}</h3><p>{{t "公开发布的文章会出现在这里。"}}</p></div>{{end}}</div>
+ </section>
+ {{if .Series}}<aside class="discovery-series" aria-labelledby="discovery-series-title"><div class="discovery-section-heading"><h2 id="discovery-series-title">{{t "专栏"}}</h2><a href="/series">{{t "全部专栏"}} <span aria-hidden="true">→</span></a></div><div>{{range .Series}}<article><div class="discovery-series-state"><span>{{if eq .state "completed"}}{{t "已完结"}}{{else}}{{t "连载中"}}{{end}}</span><span>{{t "{count} 章" "count" .chapter_count}}</span></div><h3><a href="/series/{{.id}}">{{.title}}</a></h3>{{if .description}}<p>{{.description}}</p>{{end}}{{with .author}}<a class="discovery-series-author" href="/users/{{.id}}">{{.display_name}}</a>{{end}}</article>{{end}}</div></aside>{{end}}
+</div>
+{{end}}

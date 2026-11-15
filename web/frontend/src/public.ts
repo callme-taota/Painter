@@ -96,6 +96,7 @@ if(searchDialog)registerMobileOverlay(searchDialog,()=>document.querySelector<HT
 import './series.css'
 import './sharing.css'
 import './publicBrowse.css'
+import './discover.css'
 import './products.css'
 import './dockCompact.css'
 import {initPWA} from './pwa'

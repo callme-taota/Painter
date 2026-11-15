@@ -4,6 +4,7 @@ import './raycast-search.css'
 type Suggestion={kind:'post'|'tag'|'series'|'moment'|'phrase';label:string;url:string}
 type SearchItem=Suggestion|{kind:'command';label:string;url:string;detail:string;icon:'post'|'image'|'quote'}
 const commands:SearchItem[]=[
+  {kind:'command',label:t('站内'),url:'/discover',detail:t('文章与创作者'),icon:'post'},
   {kind:'command',label:t('浏览文章'),url:'/posts',detail:t('文章列表'),icon:'post'},
   {kind:'command',label:t('查看动态'),url:'/moments',detail:t('日常与图片'),icon:'image'},
   {kind:'command',label:t('读一句片语'),url:'/phrases',detail:t('句子与词语'),icon:'quote'},
