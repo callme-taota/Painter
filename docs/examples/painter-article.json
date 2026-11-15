@@ -70,6 +70,68 @@
       }
     },
     {
+      "type": "card",
+      "card": {
+        "v": 3,
+        "type": "layout",
+        "root": {
+          "kind": "panel",
+          "children": [
+            {
+              "kind": "text",
+              "role": "title",
+              "text": "下一步如何整理（组合示例）"
+            },
+            {
+              "kind": "grid",
+              "children": [
+                {
+                  "kind": "stack",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "role": "label",
+                      "text": "待核验记录"
+                    },
+                    {
+                      "kind": "text",
+                      "role": "value",
+                      "text": "4 条"
+                    },
+                    {
+                      "kind": "text",
+                      "role": "detail",
+                      "text": "虚构示例，不推导真实结论。"
+                    }
+                  ]
+                },
+                {
+                  "kind": "stack",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "role": "label",
+                      "text": "处理说明"
+                    },
+                    {
+                      "kind": "text",
+                      "role": "body",
+                      "text": "回到原材料核对时间、单位与来源，保留缺失信息。"
+                    },
+                    {
+                      "kind": "link",
+                      "text": "示例来源（占位，未核验）",
+                      "url": "https://example.com/research-notes"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
       "type": "markdown",
       "markdown": "## 来源与限制\n\n[1] https://example.com/research-notes —— 用于演示来源字段的占位地址；未访问、未核验，不作为现实证据。\n\n本示例没有上传图片，也没有引用站内动态、片语或媒体编号。"
     }

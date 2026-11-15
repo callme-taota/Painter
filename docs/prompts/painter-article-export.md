@@ -39,6 +39,17 @@ C. 摘要：
 {"v":2,"type":"summary","title":"可省略的标题","entries":[{"title":"必填条目标题","body":"必填的非空白条目正文"}]}
 entries 必须为1至6项。归纳原文要点、已知限制或明确给出的后续事项；不得借摘要补写结论。
 
+四补充、需要混合展示时使用 v3 组合卡片
+常规提示、指标、摘要优先使用上述短格式。需要在一张卡片里同时展示指标、说明、链接或已上传图片时，使用受控组件组合，不自行发明新的 type：
+{"v":3,"type":"layout","root":{"kind":"panel","children":[{"kind":"text","role":"title","text":"原材料中的要点"},{"kind":"grid","children":[{"kind":"stack","children":[{"kind":"text","role":"label","text":"原文指标名称"},{"kind":"text","role":"value","text":"原文提供的数值与单位"}]},{"kind":"stack","children":[{"kind":"text","role":"label","text":"信息边界"},{"kind":"text","role":"body","text":"原材料明确提供的限制说明"}]}]}]}}
+1. 卡片顶层只能有 v、type、root。root 必须是 panel；panel 可选 tone 为 note、insight、warning，不能嵌套 panel。
+2. panel 和 stack 的 children 为1至12个节点；可以包含 text、link、image、grid 或 stack。grid 的 children 为1至6个 stack，列数由 Painter 自适应，不指定 columns、width、gap 等视觉属性。
+3. text 必须有 kind、role、text。role 只允许 title、label、value、body、detail；文字非空白，上限分别200、120、100、2000、500字符。只有body、detail可换行，均为纯文本。
+4. link 只能有 kind、text、url，text非空白且最多120字符，url为原材料真实提供的安全公开HTTPS地址。不要写空占位链接。
+5. image 只能有 kind、src、alt；src必须是用户已提供的真实/media地址，alt为最多200字符的单行纯文本（装饰图可为空）。不得猜测编号或放远程图。
+6. 每卡最多64个节点、6层（根panel算第1层）、6张图片，编码后仍不得超过8192字节。所有节点精确使用各自字段，不写null、重复字段、HTML、Markdown样式、class、style、事件、函数或数据绑定。
+7. 此格式是Painter组件树，不是A2UI消息流，不输出createSurface、updateComponents、catalogId等协议消息。不生成新的事实或削弱原材料的限定条件。
+
 五、长度与安全
 1. 卡片标题和摘要条目标题最多200字符；body最多2000字符；指标label和source.label最多120字符；value最多100字符；detail最多500字符；source.url最多2048个UTF-8字节。标题、标签、value为单行纯文本；body、detail可用JSON转义后的LF或CRLF换行，不使用制表符。
 2. blocks 必须为1至256项；整篇最多128张卡片；每张卡片编码后最多8192个UTF-8字节；完整JSON与最终Markdown均不得超过1048576个UTF-8字节。合并过细区块；材料过长时保留明确的节选范围和缺失说明，不静默删掉限制或伪称完整。

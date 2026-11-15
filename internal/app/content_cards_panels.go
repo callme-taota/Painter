@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"encoding/json"
-	stdhtml "html"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -103,7 +102,7 @@ func contentPanelText(value string, limit int, required bool) bool {
 }
 
 func validateContentPanel(c contentCard) error {
-	if c.URL != "" || c.RefID != "" || c.Description != "" || c.Subtitle != "" || c.ImageURL != "" || c.Stats != nil || c.MetadataSource != "" || c.ResolvedAt != "" {
+	if c.Root != nil || c.URL != "" || c.RefID != "" || c.Description != "" || c.Subtitle != "" || c.ImageURL != "" || c.Stats != nil || c.MetadataSource != "" || c.ResolvedAt != "" {
 		return contentCardInvalid("内容面板不能附带链接或供应商快照")
 	}
 	if !contentCardText(c.Title, 200, false) {
@@ -144,37 +143,6 @@ func validateContentPanel(c contentCard) error {
 	return nil
 }
 
-func contentPanelParagraph(class, value string) string {
-	if value == "" {
-		return ""
-	}
-	text := stdhtml.EscapeString(value)
-	text = strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
-	return `<p class="content-panel__` + class + `">` + strings.ReplaceAll(text, "\n", "<br />") + `</p>`
-}
-
 func contentPanelHTML(c contentCard) string {
-	classes := "content-panel content-panel--" + c.Type
-	if c.Type == "callout" {
-		classes += " content-panel--" + c.Tone
-	}
-	markup := `<div class="` + classes + `">` + contentPanelParagraph("title", c.Title)
-	if c.Type == "callout" {
-		return markup + contentPanelParagraph("body", c.Body) + "</div>\n"
-	}
-	markup += `<div class="content-panel__grid">`
-	if c.Type == "metrics" {
-		for _, metric := range c.Metrics {
-			markup += `<div class="content-panel__item">` + contentPanelParagraph("label", metric.Label) + contentPanelParagraph("value", metric.Value) + contentPanelParagraph("detail", metric.Detail)
-			if metric.Source != nil {
-				markup += `<a class="content-panel__source" href="` + stdhtml.EscapeString(metric.Source.URL) + `" target="_blank" rel="noopener noreferrer">` + stdhtml.EscapeString(metric.Source.Label) + `</a>`
-			}
-			markup += `</div>`
-		}
-	} else {
-		for _, entry := range c.Entries {
-			markup += `<div class="content-panel__item">` + contentPanelParagraph("label", entry.Title) + contentPanelParagraph("body", entry.Body) + `</div>`
-		}
-	}
-	return markup + "</div></div>\n"
+	return contentLayoutHTML(compileContentPanel(c), c.Type)
 }

@@ -6,15 +6,23 @@ import './articleCards.css'
 
 export type ArticleReferenceType='github'|'steam'|'apple_music'|'link'|'moment'|'phrase'
 export type ArticlePanelType='callout'|'metrics'|'summary'
-export type ArticleCardType=ArticleReferenceType|ArticlePanelType
+export type ArticleCardType=ArticleReferenceType|ArticlePanelType|'layout'
 export type ArticleCardV1={v:1;type:ArticleReferenceType;url:string;title?:string;ref_id?:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string}
 export type ArticleCardSource={label:string;url:string}
 export type ArticleCardMetric={label:string;value:string;detail?:string;source?:ArticleCardSource}
 export type ArticleCardEntry={title:string;body:string}
 export type ArticlePanelCard={v:2;title?:string}&({type:'callout';tone:'note'|'insight'|'warning';body:string}|{type:'metrics';metrics:ArticleCardMetric[]}|{type:'summary';entries:ArticleCardEntry[]})
-export type ArticleCard=ArticleCardV1|ArticlePanelCard
-export const articleCardKinds=[{value:'callout',label:'提示'},{value:'metrics',label:'指标'},{value:'summary',label:'摘要组'},{value:'github',label:'GitHub 仓库'},{value:'steam',label:'Steam 游戏'},{value:'apple_music',label:'Apple Music'},{value:'link',label:'网页参考'},{value:'moment',label:'站内动态'},{value:'phrase',label:'站内片语'}] as const
-const labels:Record<ArticleCardType,string>={callout:'提示',metrics:'指标',summary:'摘要组',github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:'网页参考',moment:'动态',phrase:'片语'}
+export type ArticleTextRole='title'|'label'|'value'|'body'|'detail'
+export type ArticleLayoutText={kind:'text';role:ArticleTextRole;text:string}
+export type ArticleLayoutLink={kind:'link';text:string;url:string}
+export type ArticleLayoutImage={kind:'image';src:string;alt:string}
+export type ArticleLayoutStack={kind:'stack';children:ArticleLayoutNode[]}
+export type ArticleLayoutNode=ArticleLayoutText|ArticleLayoutLink|ArticleLayoutImage|ArticleLayoutStack|{kind:'grid';children:ArticleLayoutStack[]}
+export type ArticleLayoutPanel={kind:'panel';tone?:'note'|'insight'|'warning';children:ArticleLayoutNode[]}
+export type ArticleLayoutCard={v:3;type:'layout';root:ArticleLayoutPanel}
+export type ArticleCard=ArticleCardV1|ArticlePanelCard|ArticleLayoutCard
+export const articleCardKinds=[{value:'callout',label:'提示'},{value:'metrics',label:'指标'},{value:'summary',label:'摘要组'},{value:'layout',label:'组合卡片'},{value:'github',label:'GitHub 仓库'},{value:'steam',label:'Steam 游戏'},{value:'apple_music',label:'Apple Music'},{value:'link',label:'网页参考'},{value:'moment',label:'站内动态'},{value:'phrase',label:'站内片语'}] as const
+const labels:Record<ArticleCardType,string>={callout:'提示',metrics:'指标',summary:'摘要组',layout:'组合卡片',github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:'网页参考',moment:'动态',phrase:'片语'}
 export const articleReferencePrefix='painter:v1:'
 export const isInternalArticleCard=(type:string)=>type==='moment'||type==='phrase'
 export const isArticlePanel=(type:string):type is ArticlePanelType=>type==='callout'||type==='metrics'||type==='summary'
@@ -31,6 +39,48 @@ function publicURL(value:unknown):URL|null {
   try{const u=new URL(value);if(u.protocol!=='https:'||u.username||u.password||u.port||!/\./.test(u.hostname)||/^(?:localhost|127\.|0\.|10\.|169\.254\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(u.hostname)||/\.(?:localhost|local|internal)$/.test(u.hostname)||u.hostname.endsWith('.'))return null;return u}catch{return null}
 }
 
+// JSON.parse alone would silently discard duplicate keys, including escaped names.
+function uniqueJSONKeys(raw:string){
+  const containers:(Set<string>|null)[]=[]
+  for(let i=0;i<raw.length;i++){
+    const char=raw[i]
+    if(char==='{')containers.push(new Set())
+    else if(char==='[')containers.push(null)
+    else if(char==='}'||char===']')containers.pop()
+    else if(char==='"'){
+      const start=i++
+      for(;i<raw.length;i++){if(raw[i]==='\\')i++;else if(raw[i]==='"')break}
+      let next=i+1;while(/\s/.test(raw[next]||'')&&next<raw.length)next++
+      if(raw[next]===':'){
+        const keys=containers.at(-1),key=JSON.parse(raw.slice(start,i+1)) as string
+        if(!keys||keys.has(key))return false
+        keys.add(key)
+      }
+    }
+  }
+  return true
+}
+
+function validLayout(root:unknown){
+  let count=0,images=0
+  const limits:Record<ArticleTextRole,number>={title:200,label:120,value:100,body:2000,detail:500}
+  const visit=(node:unknown,depth:number,isRoot=false):boolean=>{
+    if(depth>6||++count>64||!object(node))return false
+    if(node.kind==='panel'||node.kind==='stack'||node.kind==='grid'){
+      if(!fields(node,node.kind==='panel'?['kind','tone','children']:['kind','children'])||!Array.isArray(node.children)||node.children.length<1||node.children.length>(node.kind==='grid'?6:12))return false
+      if(node.kind==='panel'&&(!isRoot||node.tone!==undefined&&!['note','insight','warning'].includes(node.tone)))return false
+      if(isRoot&&node.kind!=='panel')return false
+      return node.children.every(child=>(node.kind!=='grid'||object(child)&&child.kind==='stack')&&visit(child,depth+1))
+    }
+    if(isRoot)return false
+    if(node.kind==='text')return fields(node,['kind','role','text'])&&typeof node.role==='string'&&Object.hasOwn(limits,node.role)&&(node.role==='body'||node.role==='detail'?bodyText(node.text,limits[node.role],true):text(node.text,limits[node.role as ArticleTextRole],true))
+    if(node.kind==='link')return fields(node,['kind','text','url'])&&text(node.text,120,true)&&!!publicURL(node.url)
+    if(node.kind==='image')return fields(node,['kind','src','alt'])&&++images<=6&&typeof node.src==='string'&&mediaURL.test(node.src)&&text(node.alt,200)
+    return false
+  }
+  return visit(root,1,true)
+}
+
 // This only controls the document representation. The server validates every
 // preview/save and remains authoritative; unknown snapshots stay editable code.
 export function parseArticleCard(raw:string):ArticleCard|null {
@@ -38,6 +88,7 @@ export function parseArticleCard(raw:string):ArticleCard|null {
   try{
     const c=JSON.parse(raw)
     if(!object(c)||!articleCardKinds.some(k=>k.value===c.type))return null
+    if(c.v===3)return c.type==='layout'&&fields(c,['v','type','root'])&&uniqueJSONKeys(raw)&&validLayout(c.root)?c as ArticleLayoutCard:null
     if(c.v===2){
       if(c.title!==undefined&&!text(c.title,200))return null
       if(c.type==='callout'){
@@ -54,7 +105,7 @@ export function parseArticleCard(raw:string):ArticleCard|null {
       }else return null
       return c as ArticlePanelCard
     }
-    if(c.v!==1||isArticlePanel(String(c.type)))return null
+    if(c.v!==1||isArticlePanel(String(c.type))||c.type==='layout')return null
     if(isInternalArticleCard(c.type)){
       if(!internalID(c.ref_id)||c.url!==internalArticleCardURL(c.type,c.ref_id)||Object.keys(c).some(k=>!['v','type','url','ref_id'].includes(k)))return null
       return c as ArticleCardV1
@@ -85,7 +136,12 @@ export function parseArticleReference(title:unknown,href:unknown):ArticleCardV1|
 }
 export function articleCardMarkdown(card:ArticleCard){return '```painter-card\n'+JSON.stringify(card)+'\n```'}
 export function articleReferenceTitle(card:ArticleCard){return articleReferencePrefix+encodeArticleCard(JSON.stringify(card))}
-export function articleReferenceMarkdown(card:ArticleCard,label=card.title||labels[card.type]){if(card.v!==1||card.type!=='link')return articleCardMarkdown(card);return '['+label.replace(/[\\`*_{}\[\]<>()#+.!|&~-]/g,'\\$&')+'](<'+card.url.replace(/</g,'%3C').replace(/>/g,'%3E')+'> "'+articleReferenceTitle(card)+'")'}
+export function articleCardTitle(card:ArticleCard):string {
+  if(card.v!==3)return card.title||labels[card.type]
+  const find=(nodes:ArticleLayoutNode[]):string=>{for(const node of nodes){if(node.kind==='text'&&node.role==='title')return node.text;if('children' in node){const title=find(node.children);if(title)return title}}return ''}
+  return find(card.root.children)||labels.layout
+}
+export function articleReferenceMarkdown(card:ArticleCard,label=articleCardTitle(card)){if(card.v!==1||card.type!=='link')return articleCardMarkdown(card);return '['+label.replace(/[\\`*_{}\[\]<>()#+.!|&~-]/g,'\\$&')+'](<'+card.url.replace(/</g,'%3C').replace(/>/g,'%3E')+'> "'+articleReferenceTitle(card)+'")'}
 
 const span=(name:string,value:string):DOMOutputSpec=>['span',{class:name},value]
 function detailSpec(card:ArticleCardV1):DOMOutputSpec[]{
@@ -100,7 +156,7 @@ function detailSpec(card:ArticleCardV1):DOMOutputSpec[]{
   return children
 }
 export function articleCardSpec(card:ArticleCard):DOMOutputSpec {
-  if(card.v===2)return panelSpec(card)
+  if(card.v!==1)return layoutSpec(card.v===2?compileArticlePanel(card):card.root,card.type)
   if(isInternalArticleCard(card.type))return ['a',{class:'content-card content-card--'+card.type,href:card.url,'data-internal-card-state':'pending'},['span',{class:'content-card__body'},span('content-card__title',labels[card.type]+'引用'),span('content-card__description','正在读取公开内容…')]]
   const children:DOMOutputSpec[]=[]
   if(card.image_url)children.push(['img',{class:'content-card__image',src:card.image_url,alt:'',loading:'lazy',referrerpolicy:'no-referrer'}])
@@ -113,20 +169,30 @@ function panelParagraph(name:string,value:string):DOMOutputSpec {
   lines.forEach((line,index)=>{if(index)children.push(['br']);if(line)children.push(line)})
   return ['p',{class:'content-panel__'+name},...children]
 }
-function panelSpec(card:ArticlePanelCard):DOMOutputSpec {
-  const children:DOMOutputSpec[]=[]
-  if(card.title)children.push(panelParagraph('title',card.title))
-  if(card.type==='callout')children.push(panelParagraph('body',card.body))
+export function compileArticlePanel(card:ArticlePanelCard):ArticleLayoutPanel {
+  const children:ArticleLayoutNode[]=[]
+  const paragraph=(role:ArticleTextRole,text:string):ArticleLayoutText=>({kind:'text',role,text})
+  if(card.title)children.push(paragraph('title',card.title))
+  if(card.type==='callout')children.push(paragraph('body',card.body))
   else{
-    const items:DOMOutputSpec[]=(card.type==='metrics'?card.metrics:card.entries).map(item=>{
-      const fields:DOMOutputSpec[]=[]
-      if('value' in item){fields.push(panelParagraph('label',item.label),panelParagraph('value',item.value));if(item.detail)fields.push(panelParagraph('detail',item.detail));if(item.source)fields.push(['a',{class:'content-panel__source',href:item.source.url,target:'_blank',rel:'noopener noreferrer'},item.source.label])}
-      else fields.push(panelParagraph('label',item.title),panelParagraph('body',item.body))
-      return ['div',{class:'content-panel__item'},...fields]
+    const items:ArticleLayoutStack[]=(card.type==='metrics'?card.metrics:card.entries).map(item=>{
+      const fields:ArticleLayoutNode[]=[]
+      if('value' in item){fields.push(paragraph('label',item.label),paragraph('value',item.value));if(item.detail)fields.push(paragraph('detail',item.detail));if(item.source)fields.push({kind:'link',text:item.source.label,url:item.source.url})}
+      else fields.push(paragraph('label',item.title),paragraph('body',item.body))
+      return {kind:'stack',children:fields}
     })
-    children.push(['div',{class:'content-panel__grid'},...items])
+    children.push({kind:'grid',children:items})
   }
-  return ['div',{class:'content-panel content-panel--'+card.type+(card.type==='callout'?' content-panel--'+card.tone:'')},...children]
+  return {kind:'panel',...(card.type==='callout'?{tone:card.tone}:{}),children}
+}
+function layoutSpec(root:ArticleLayoutPanel,preset:ArticlePanelType|'layout'):DOMOutputSpec {
+  const nodeSpec=(node:ArticleLayoutNode,gridItem=false):DOMOutputSpec=>{
+    if(node.kind==='text')return panelParagraph(node.role,node.text)
+    if(node.kind==='link')return ['a',{class:'content-panel__source',href:node.url,target:'_blank',rel:'noopener noreferrer'},node.text]
+    if(node.kind==='image')return ['img',{class:'content-panel__image',src:node.src,alt:node.alt,loading:'lazy'}]
+    return ['div',{class:node.kind==='grid'?'content-panel__grid':gridItem?'content-panel__item':'content-panel__stack'},...node.children.map(child=>nodeSpec(child,node.kind==='grid'))]
+  }
+  return ['div',{class:'content-panel content-panel--'+preset+(root.tone?' content-panel--'+root.tone:'')},...root.children.map(node=>nodeSpec(node))]
 }
 
 export const ArticleCardNode=TiptapNode.create<{onEdit?:(position:number)=>void}>({
@@ -141,9 +207,9 @@ export const ArticleCardNode=TiptapNode.create<{onEdit?:(position:number)=>void}
   parseMarkdown(token,helpers){if(token.lang!=='painter-card'||typeof token.text!=='string'||!parseArticleCard(token.text))return [];return helpers.createNode('articleCard',{snapshot:token.text})},
   renderMarkdown(node){return '```painter-card\n'+String(node.attrs?.snapshot||'')+'\n```'},
   addNodeView(){return ({node,editor,getPos})=>{
-    const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'')+(card?.v===2?' article-card-node--panel':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
+    const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'')+(card&&card.v!==1?' article-card-node--panel':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
     if(card)wrapper.append(DOMSerializer.renderSpec(document,articleCardSpec(card)).dom)
-    const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent='编辑卡片';edit.setAttribute('aria-label','编辑'+(card?.title||'内容')+'卡片');edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
+    const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent='编辑卡片';edit.setAttribute('aria-label','编辑'+(card?articleCardTitle(card):'内容')+'卡片');edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
     wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card,.content-panel'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
     // DocumentEditor rescans through initArticleCards after initial mount and every document update.
     return {dom:wrapper,stopEvent:event=>event.target===edit,ignoreMutation:()=>true}

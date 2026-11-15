@@ -1102,6 +1102,9 @@ func (a *App) previewMarkdown(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	result, e := a.Write(r, []string{"author", "owner"}, false, false, func(tx pgx.Tx, p Principal) (any, error) {
+		if err := contentLockRefs(r.Context(), tx, p, draftInput{MediaIDs: rendered.MediaIDs}); err != nil {
+			return nil, err
+		}
 		// Reuse the writer transaction; a second pool acquisition can deadlock
 		// concurrent previews when each already holds a transaction connection.
 		expanded, err := a.expandInternalContentCards(r.Context(), tx, rendered.HTML)

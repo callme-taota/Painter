@@ -26,7 +26,7 @@ import (
 	xhtml "golang.org/x/net/html"
 )
 
-const RendererVersion = "goldmark-gfm-v1;painter-cards-v1;painter-panels-v2;unicode-nfkc-fold-nfkc-v1"
+const RendererVersion = "goldmark-gfm-v1;painter-cards-v1;painter-panels-v2;layout-v3;unicode-nfkc-fold-nfkc-v1"
 
 type TOCEntry struct {
 	ID    string `json:"id"`
@@ -91,9 +91,10 @@ func RenderMarkdown(markdown string) (Rendered, error) {
 	policy.AllowElements("input")
 	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^[a-zA-Z0-9_ -]+$`)).OnElements("span", "pre", "code")
 	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^content-(?:card|link)(?:__[a-z]+|--[a-z_]+)?(?: content-card--[a-z_]+)?$`)).OnElements("a", "img")
-	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^(?:content-panel content-panel--callout content-panel--(?:note|insight|warning)|content-panel content-panel--(?:metrics|summary)|content-panel__(?:grid|item))$`)).OnElements("div")
+	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^(?:content-panel content-panel--callout content-panel--(?:note|insight|warning)|content-panel content-panel--(?:metrics|summary)|content-panel content-panel--layout(?: content-panel--(?:note|insight|warning))?|content-panel__(?:grid|item|stack))$`)).OnElements("div")
 	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^content-panel__(?:title|body|label|value|detail)$`)).OnElements("p")
 	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^content-panel__source$`)).OnElements("a")
+	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^content-panel__image$`)).OnElements("img")
 	policy.AllowAttrs("loading").Matching(regexp.MustCompile(`^lazy$`)).OnElements("img")
 	policy.AllowAttrs("referrerpolicy").Matching(regexp.MustCompile(`^no-referrer$`)).OnElements("img")
 	policy.AllowAttrs("target").Matching(regexp.MustCompile(`^_blank$`)).OnElements("a")

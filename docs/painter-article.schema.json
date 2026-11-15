@@ -556,6 +556,9 @@
           "$ref": "#/$defs/summaryCard"
         },
         {
+          "$ref": "#/$defs/layoutCard"
+        },
+        {
           "$ref": "#/$defs/githubCard"
         },
         {
@@ -611,6 +614,270 @@
           "$ref": "#/$defs/card"
         }
       }
+    },
+    "layoutText": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "role",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "role": {
+              "const": "title"
+            },
+            "text": {
+              "$ref": "#/$defs/title"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "role",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "role": {
+              "const": "label"
+            },
+            "text": {
+              "$ref": "#/$defs/label"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "role",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "role": {
+              "const": "value"
+            },
+            "text": {
+              "$ref": "#/$defs/value"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "role",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "role": {
+              "const": "body"
+            },
+            "text": {
+              "$ref": "#/$defs/body"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "role",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "role": {
+              "const": "detail"
+            },
+            "text": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/detail"
+                },
+                {
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "layoutLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "text",
+        "url"
+      ],
+      "properties": {
+        "kind": {
+          "const": "link"
+        },
+        "text": {
+          "$ref": "#/$defs/label"
+        },
+        "url": {
+          "$ref": "#/$defs/httpsURL"
+        }
+      }
+    },
+    "layoutImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "src",
+        "alt"
+      ],
+      "properties": {
+        "kind": {
+          "const": "image"
+        },
+        "src": {
+          "$ref": "#/$defs/mediaURL"
+        },
+        "alt": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        }
+      }
+    },
+    "layoutStack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "children"
+      ],
+      "properties": {
+        "kind": {
+          "const": "stack"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/layoutChild"
+          }
+        }
+      }
+    },
+    "layoutGrid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "children"
+      ],
+      "properties": {
+        "kind": {
+          "const": "grid"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/layoutStack"
+          }
+        }
+      }
+    },
+    "layoutChild": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/layoutText"
+        },
+        {
+          "$ref": "#/$defs/layoutLink"
+        },
+        {
+          "$ref": "#/$defs/layoutImage"
+        },
+        {
+          "$ref": "#/$defs/layoutStack"
+        },
+        {
+          "$ref": "#/$defs/layoutGrid"
+        }
+      ]
+    },
+    "layoutPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "children"
+      ],
+      "properties": {
+        "kind": {
+          "const": "panel"
+        },
+        "tone": {
+          "enum": [
+            "note",
+            "insight",
+            "warning"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/layoutChild"
+          }
+        }
+      }
+    },
+    "layoutCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "root"
+      ],
+      "properties": {
+        "v": {
+          "const": 3
+        },
+        "type": {
+          "const": "layout"
+        },
+        "root": {
+          "$ref": "#/$defs/layoutPanel"
+        }
+      },
+      "$comment": "Controlled Painter component tree, not the A2UI wire protocol. Server enforces at most 64 nodes, depth 6 counting the root as 1, 6 images, and 8192 encoded UTF-8 bytes. Panels are root-only; grid children are stacks. All text is literal, not HTML or Markdown. No arbitrary styles, scripts, actions, bindings, or network requests."
     }
   },
   "$comment": "The server enforces a 1048576-byte UTF-8 input limit and the same compiled-Markdown byte limit; at most 128 cards including fenced and inline cards inside Markdown; at most 8192 bytes per card; exact JSON fields, no duplicate keys/null, depth <= 24; public URL safety; internal ID/url equality; image authorization. JSON Schema character lengths do not substitute for byte limits. Import never publishes or changes tags, cover, dates, or author."

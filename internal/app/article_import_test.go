@@ -44,10 +44,10 @@ func TestArticleImportEmbeddedFixtureAndRendererParity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if compiled.BlockCount != 6 || compiled.CardCount != 3 || len(compiled.MediaIDs) != 0 || !strings.Contains(compiled.Title, "虚构") || !strings.Contains(compiled.Summary, "虚构") {
+	if compiled.BlockCount != 7 || compiled.CardCount != 4 || len(compiled.MediaIDs) != 0 || !strings.Contains(compiled.Title, "虚构") || !strings.Contains(compiled.Summary, "虚构") {
 		t.Fatal("example contract lost", compiled)
 	}
-	for _, want := range []string{"<table>", "content-panel--callout", "content-panel--metrics", "content-panel--summary", "example.com/research-notes", "2026-10-01", "2026-10-14", "12 条", "待核验"} {
+	for _, want := range []string{"<table>", "content-panel--callout", "content-panel--metrics", "content-panel--summary", "content-panel--layout", "下一步如何整理（组合示例）", "example.com/research-notes", "2026-10-01", "2026-10-14", "12 条", "待核验"} {
 		if !strings.Contains(compiled.HTML, want) {
 			t.Errorf("embedded example missing %q: %s", want, compiled.HTML)
 		}

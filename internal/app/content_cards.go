@@ -47,6 +47,7 @@ type contentCard struct {
 	Body           string              `json:"body,omitempty"`
 	Metrics        []ContentCardMetric `json:"metrics,omitempty"`
 	Entries        []ContentCardEntry  `json:"entries,omitempty"`
+	Root           *ContentLayoutNode  `json:"root,omitempty"`
 }
 
 type contentCardDefinition struct{ Label string }
@@ -116,10 +117,13 @@ func contentCardImage(c contentCard) (string, error) {
 }
 
 func validateContentCard(c contentCard) (string, error) {
+	if c.V == 3 && c.Type == "layout" {
+		return "", validateContentLayout(c)
+	}
 	if c.V == 2 && contentPanelType(c.Type) {
 		return "", validateContentPanel(c)
 	}
-	if c.Tone != "" || c.Body != "" || c.Metrics != nil || c.Entries != nil {
+	if c.Root != nil || c.Tone != "" || c.Body != "" || c.Metrics != nil || c.Entries != nil {
 		return "", contentCardInvalid("此版本不支持内容面板字段")
 	}
 	if contentCardIsInternal(c.Type) {
@@ -195,8 +199,13 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 		return c, false, contentCardInvalid("需要一个 JSON 对象")
 	}
 	_, legacyType := contentCardRegistry[identity.Type]
-	if !(identity.V == 1 && legacyType || identity.V == 2 && contentPanelType(identity.Type)) {
+	if !(identity.V == 1 && legacyType || identity.V == 2 && contentPanelType(identity.Type) || identity.V == 3 && identity.Type == "layout") {
 		return c, false, nil
+	}
+	if identity.V == 3 {
+		if e := contentLayoutFields(raw); e != nil {
+			return c, true, e
+		}
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
@@ -207,14 +216,14 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 		if e := contentPanelFields(raw, c.Type); e != nil {
 			return c, true, e
 		}
-	} else {
+	} else if c.V == 1 {
 		// Adding a new version must not make its fields valid on v1 cards,
 		// including explicitly empty or null values.
 		var fields map[string]json.RawMessage
 		_ = json.Unmarshal(raw, &fields)
 		for key := range fields {
 			switch strings.ToLower(key) {
-			case "tone", "body", "metrics", "entries":
+			case "tone", "body", "metrics", "entries", "root":
 				return c, true, contentCardInvalid("此版本不支持内容面板字段")
 			}
 		}
@@ -302,6 +311,9 @@ func prepareContentCards(doc ast.Node, source []byte, media map[string]bool) err
 		if id != "" {
 			media[id] = true
 		}
+		if c.Root != nil {
+			collectContentLayoutMedia(c.Root, media)
+		}
 		var next ast.Node = &contentCardBlockNode{Card: c}
 		if inline {
 			next = &contentCardInlineNode{Card: c}
@@ -356,6 +368,10 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 		return ast.WalkContinue, nil
 	}
 	c := node.(*contentCardBlockNode).Card
+	if c.V == 3 {
+		_, e := w.WriteString(contentLayoutHTML(c.Root, ""))
+		return ast.WalkSkipChildren, e
+	}
 	if c.V == 2 {
 		_, e := w.WriteString(contentPanelHTML(c))
 		return ast.WalkSkipChildren, e

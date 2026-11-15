@@ -7,6 +7,7 @@ Painter 可把 AI 整理结果或其他工具导出的 JSON 编译成普通文�
 - [完整 JSON Schema](painter-article.schema.json)：JSON Schema Draft 2020-12，所有对象拒绝未知字段。
 - [可导入示例](examples/painter-article.json)：完全虚构的阅读记录，展示 Markdown、提示、指标和摘要卡片。
 - [可直接复制的 AI 提示词](prompts/painter-article-export.md)：用于把原材料整理成此格式。
+- [组合卡片与渲染管线](CONTENT_RENDER_PIPELINE.md)：组件、模板、兼容策略和扩展方式。
 
 ## 在编辑器中使用
 
@@ -55,7 +56,49 @@ Painter 可把 AI 整理结果或其他工具导出的 JSON 编译成普通文�
 {"type": "card", "card": {"v": 2, "type": "callout", "tone": "note", "body": "纯文本说明"}}
 ```
 
-Markdown 区块用于标题、段落、列表、引用、真实表格、来源说明和代码示例。卡片用于已有内容的语义归组，不接受样式、布局、脚本或组件代码。`version: 1` 的导入文件可以包含 `v: 2` 的卡片；二者是独立版本。
+Markdown 区块用于标题、段落、列表、引用、真实表格、来源说明和代码示例。卡片用于已有内容的语义归组；v3 允许下文列出的受控组件布局，不接受任意样式、脚本或组件代码。`version: 1` 的导入文件可以包含 `v: 1`、`v: 2` 或 `v: 3` 的卡片；导入文件与卡片版本互相独立。
+
+## v3 组合卡片
+
+需要把数值、说明、来源等组合在同一张卡片里时，使用 `layout`，无需新增一种业务卡片类型：
+
+```json
+{
+  "v": 3,
+  "type": "layout",
+  "root": {
+    "kind": "panel",
+    "children": [
+      {"kind": "text", "role": "title", "text": "整理进度（虚构示例）"},
+      {"kind": "grid", "children": [
+        {"kind": "stack", "children": [
+          {"kind": "text", "role": "label", "text": "待核验"},
+          {"kind": "text", "role": "value", "text": "4 条"}
+        ]},
+        {"kind": "stack", "children": [
+          {"kind": "text", "role": "label", "text": "说明"},
+          {"kind": "text", "role": "body", "text": "回到原材料核对，保留信息缺口。"}
+        ]}
+      ]}
+    ]
+  }
+}
+```
+
+| 节点 | 字段与规则 |
+| --- | --- |
+| `panel` | 仅允许根节点；`children` 必填，1–12 项；可选 `tone` 为 `note`、`insight`、`warning`，省略时为普通表面 |
+| `grid` | `children` 必填，1–6 个 `stack`；列数由页面宽度自动决定，手机采用单列 |
+| `stack` | `children` 必填，1–12 项，按阅读顺序排列 |
+| `text` | `role`、`text` 必填；角色为 `title`、`label`、`value`、`body`、`detail`；文字必须非空白 |
+| `link` | `text`、`url` 必填；文字最多 120 字符，URL 沿用公开 HTTPS 校验 |
+| `image` | `src`、`alt` 必填；`src` 只能是已经上传的 `/media/真实编号`；`alt` 最多 200 字符，可为空 |
+
+`panel` 和 `stack` 可以包含 `text`、`link`、`image`、`grid`、`stack`，不能包含另一个 `panel`。文本角色长度分别为 200、120、100、2000、500 字符，只有 `body`、`detail` 可以换行。角色控制站点中的文字样式，不会生成文章标题或目录项。
+
+每张组合卡片最多 64 个节点、6 层（根节点算第 1 层）、6 张图片，仍受 8 KiB 快照上限约束。所有层级拒绝未知字段、重复字段和 `null`。没有 `style`、`class`、HTML、事件、函数、数据绑定、远程请求或自动发布能力。
+
+这是 Painter 的轻量组件树，不是 A2UI 消息协议；不能直接导入任意 A2UI 消息。v2 的提示、指标与摘要模板通过相同组件渲染器显示，原有数据继续有效。普通作者可以继续使用这些语义表单，组合卡片的 JSON 编辑位于文档编辑器的卡片面板中。
 
 ## v2 受控卡片
 
@@ -150,6 +193,7 @@ Markdown 区块用于标题、段落、列表、引用、真实表格、来源�
 | 全部卡片 | 128，包括 Markdown 中明确的 `painter-card` 围栏和行内卡片引用 |
 | 每张卡片的 JSON 快照 | 8 KiB（8192 字节） |
 | JSON 嵌套深度 | 上限 24，根对象深度为 0；按当前协议直接组织对象即可 |
+| v3 组件树 | 64 个节点、6 层（根为 1）、6 张已上传图片 |
 
 字段上限按 Unicode 字符计数，网址、快照和文件大小另按 UTF-8 字节计数；多字节文字与 JSON 转义都会影响编码大小。即使各字段单独合规，整个文件或一张多条目卡片仍可能超限。
 

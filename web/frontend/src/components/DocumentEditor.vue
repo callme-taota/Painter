@@ -43,6 +43,7 @@ const commands=[
   {label:'提示',hint:'说明、判断或注意事项',search:'callout note insight warning tishi',run:()=>{openCards('callout');return true}},
   {label:'指标',hint:'数值、口径与来源',search:'metrics number data zhibiao',run:()=>{openCards('metrics');return true}},
   {label:'摘要组',hint:'并列要点与结论',search:'summary group zhaiyao',run:()=>{openCards('summary');return true}},
+  {label:'组合卡片',hint:'组合文字、指标、来源与图片',search:'layout compose zuhe',run:()=>{openCards('layout');return true}},
   {label:'GitHub 仓库',hint:'公开仓库卡片',search:'github repository card kapian',run:()=>{openCards('github');return true}},
   {label:'Steam 游戏',hint:'商店游戏卡片',search:'steam game card youxi',run:()=>{openCards('steam');return true}},
   {label:'Apple Music',hint:'专辑或歌单卡片',search:'apple music album playlist card yinyue',run:()=>{openCards('apple_music');return true}},
