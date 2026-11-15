@@ -33,7 +33,7 @@ export function initCreationControls() {
     menu.addEventListener('toggle', () => {
       if (!menu.open) return
       document.querySelectorAll<HTMLDetailsElement>('.floating-controls details[open]').forEach(other => {
-        if (other !== menu) other.open = false
+        if (other !== menu && !other.contains(menu) && !menu.contains(other)) other.open = false
       })
     })
     document.addEventListener('click', event => {

@@ -2,7 +2,7 @@ import './liquidGlass.css'
 
 const SVG_NS='http://www.w3.org/2000/svg'
 const XLINK_NS='http://www.w3.org/1999/xlink'
-const targets='.site-header,.dock-glass,[data-search-glass]'
+const targets='.site-header,.site-dock>details>summary.dock-glass,.site-dock>button.dock-glass,[data-search-glass]'
 const active=new WeakMap<HTMLElement,GlassSurface>()
 const textures=new Map<string,string>()
 let serial=0

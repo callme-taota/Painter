@@ -2,7 +2,7 @@ type Theme='light'|'dark'|'system'
 export function initTheme(){
  const root=document.documentElement,system=matchMedia('(prefers-color-scheme:dark)'),panel=document.querySelector<HTMLDetailsElement>('.floating-theme'),trigger=panel?.querySelector<HTMLElement>('summary')
  const read=():Theme=>{try{const v=localStorage.getItem('painter-theme');return v==='light'||v==='dark'?v:'system'}catch{return 'system'}}
- const apply=()=>{const chosen=read();root.dataset.theme=chosen==='system'?(system.matches?'dark':'light'):chosen;document.querySelectorAll<HTMLButtonElement>('[data-theme-option]').forEach(el=>{const checked=el.dataset.themeOption===chosen;el.setAttribute('aria-checked',String(checked));el.tabIndex=checked?0:-1});document.querySelectorAll('[data-solid-toggle]').forEach(el=>el.setAttribute('aria-pressed',String(root.classList.contains('reduce-transparency'))))}
+ const apply=()=>{const chosen=read();root.dataset.theme=chosen==='system'?(system.matches?'dark':'light'):chosen;const chrome=document.querySelector<HTMLMetaElement>('meta[name=theme-color]');if(chrome)chrome.content=root.dataset.theme==='dark'?'#09090b':'#ffffff';document.querySelectorAll<HTMLButtonElement>('[data-theme-option]').forEach(el=>{const checked=el.dataset.themeOption===chosen;el.setAttribute('aria-checked',String(checked));el.tabIndex=checked?0:-1});document.querySelectorAll('[data-solid-toggle]').forEach(el=>el.setAttribute('aria-pressed',String(root.classList.contains('reduce-transparency'))))}
  try{root.classList.toggle('reduce-transparency',localStorage.getItem('painter-solid')==='1')}catch{}
  apply();system.addEventListener('change',apply)
  const choices=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-theme-option]'))

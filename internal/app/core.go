@@ -223,6 +223,7 @@ func New(ctx context.Context, c Config) (*App, error) {
 	a.RegisterFriends()
 	a.RegisterAuthorProfiles()
 	a.RegisterSeries()
+	a.RegisterProducts()
 	a.RegisterSharing(a.PublicSeriesSummary)
 	return a, nil
 }

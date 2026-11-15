@@ -1,0 +1,2 @@
+/* Explicit layout rules on dock controls must not reveal unavailable actions. */
+[data-pwa-install][hidden],[data-app-back][hidden]{display:none!important}

@@ -23,6 +23,7 @@ type webPage struct {
 	Kind, Title, Description, Canonical, JS, Next, TopicParam, ReturnTo, Error, SearchID, PreviewImage, ViewerID string
 	ScriptNonce                                                                                                  string
 	Site, Post, User, Featured, FriendSettings                                                                   map[string]any
+	ProductStats                                                                                                 map[string]any
 	Items, Categories, Tags, Topics, Related                                                                     []map[string]any
 	Series                                                                                                       []map[string]any
 	CSS                                                                                                          []string
@@ -156,6 +157,7 @@ func webNext(r *http.Request, result map[string]any) string {
 	return r.URL.Path + "?" + q.Encode()
 }
 func (a *App) RegisterWeb() {
+	a.registerPWA()
 	templates := template.Must(template.New("page").Funcs(template.FuncMap{"str": webString, "hasTag": func(q url.Values, id any) bool {
 		for _, v := range q["tag_id"] {
 			if v == webString(id) {
@@ -215,7 +217,9 @@ func (a *App) RegisterWeb() {
 				p.Description = webString(p.Site["tagline"])
 			}
 		}
-		p.Canonical = strings.TrimRight(a.Config.PublicBaseURL, "/") + r.URL.Path
+		if p.Canonical == "" {
+			p.Canonical = strings.TrimRight(a.Config.PublicBaseURL, "/") + r.URL.Path
+		}
 		if p.Kind == "search" || (p.Kind == "author" && r.URL.Query().Get("q") != "") {
 			p.Canonical += "?q=" + url.QueryEscape(r.URL.Query().Get("q"))
 		}
@@ -255,6 +259,10 @@ func (a *App) RegisterWeb() {
 		if code == 404 {
 			title = "这篇内容还没有公开"
 			message = "它可能还在写作中，或作者已撤回。"
+			if strings.HasPrefix(r.URL.Path, "/products") {
+				title = "这个产品尚未公开"
+				message = "它可能还在整理中，或已停止展示。"
+			}
 		}
 		render(w, r, webPage{Kind: "error", Status: code, Title: title, Error: message, NoIndex: true})
 	}
@@ -297,6 +305,65 @@ func (a *App) RegisterWeb() {
 			return
 		}
 		render(w, r, webPage{Kind: "series-list", Title: "专栏", Description: "把文章写成连续的章节，按自己的节奏读完一个主题。", Items: webMaps(data["items"]), Next: webNext(r, data)})
+	})
+	a.Mux.HandleFunc("GET /products", func(w http.ResponseWriter, r *http.Request) {
+		data, err := a.PublicProducts(r.Context(), r.URL.Query())
+		if err != nil {
+			failure(w, r, err)
+			return
+		}
+		items := webMaps(data["items"])
+		p := webPage{Kind: "products", Title: "产品", Items: items, ProductStats: data, Query: r.URL.Query(), NoIndex: r.URL.Query().Get("q") != "" || r.URL.Query().Get("platform") != "" || r.URL.Query().Get("state") != ""}
+		slug := r.URL.Query().Get("product")
+		if slug == "" && len(items) > 0 {
+			slug = webString(items[0]["slug"])
+		}
+		if slug != "" {
+			selected := false
+			for _, item := range items {
+				if webString(item["slug"]) == slug {
+					selected = true
+					break
+				}
+			}
+			if !selected {
+				failure(w, r, NotFound())
+				return
+			}
+			p.Post, err = a.PublicProduct(r.Context(), slug)
+			if err != nil {
+				failure(w, r, err)
+				return
+			}
+			p.HTML = template.HTML(webString(p.Post["sanitized_html"]))
+			p.PreviewImage = webString(p.Post["cover_url"])
+			if p.PreviewImage == "" {
+				p.PreviewImage = webString(p.Post["icon_url"])
+			}
+			if strings.HasPrefix(p.PreviewImage, "/") {
+				p.PreviewImage = strings.TrimRight(a.Config.PublicBaseURL, "/") + p.PreviewImage
+			}
+			if r.URL.Query().Get("product") != "" {
+				p.Canonical = strings.TrimRight(a.Config.PublicBaseURL, "/") + "/products/" + slug
+			}
+		}
+		render(w, r, p)
+	})
+	a.Mux.HandleFunc("GET /products/{slug}", func(w http.ResponseWriter, r *http.Request) {
+		data, err := a.PublicProduct(r.Context(), r.PathValue("slug"))
+		if err != nil {
+			failure(w, r, err)
+			return
+		}
+		preview := webString(data["cover_url"])
+		if preview == "" {
+			preview = webString(data["icon_url"])
+		}
+		if strings.HasPrefix(preview, "/") {
+			preview = strings.TrimRight(a.Config.PublicBaseURL, "/") + preview
+		}
+		ld, _ := json.Marshal(map[string]any{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": data["name"], "description": data["summary"], "url": strings.TrimRight(a.Config.PublicBaseURL, "/") + "/products/" + webString(data["slug"])})
+		render(w, r, webPage{Kind: "product", Title: webString(data["name"]), Description: webString(data["summary"]), Post: data, HTML: template.HTML(webString(data["sanitized_html"])), PreviewImage: preview, JSONLD: template.JS(ld)})
 	})
 	a.Mux.HandleFunc("GET /series/{id}", func(w http.ResponseWriter, r *http.Request) {
 		data, err := a.PublicSeriesDetail(r.Context(), r.PathValue("id"))
@@ -544,7 +611,7 @@ func (a *App) RegisterWeb() {
 	a.Mux.HandleFunc("GET /register", authPage)
 	shell := func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimRight(r.URL.Path, "/")
-		known := map[string]bool{"/me": true, "/me/bookmarks": true, "/me/following": true, "/me/followers": true, "/me/history": true, "/me/sessions": true, "/me/media": true, "/studio": true, "/studio/posts": true, "/studio/posts/new": true, "/studio/moments": true, "/studio/series": true, "/studio/home": true, "/studio/settings": true, "/studio/phrases": true, "/studio/friends": true, "/studio/taxonomy": true, "/studio/members": true, "/studio/comments": true, "/studio/analytics": true, "/studio/operations": true}
+		known := map[string]bool{"/me": true, "/me/bookmarks": true, "/me/following": true, "/me/followers": true, "/me/history": true, "/me/sessions": true, "/me/media": true, "/studio": true, "/studio/posts": true, "/studio/posts/new": true, "/studio/moments": true, "/studio/series": true, "/studio/products": true, "/studio/home": true, "/studio/settings": true, "/studio/phrases": true, "/studio/friends": true, "/studio/taxonomy": true, "/studio/members": true, "/studio/comments": true, "/studio/analytics": true, "/studio/operations": true}
 		if !known[path] && !(strings.HasPrefix(path, "/studio/posts/") && positiveID(strings.TrimPrefix(path, "/studio/posts/"))) {
 			failure(w, r, NotFound())
 			return
@@ -634,7 +701,7 @@ func (a *App) RegisterWeb() {
 			NS      string   `xml:"xmlns,attr"`
 			URLs    []loc    `xml:"url"`
 		}{NS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
-		for _, path := range []string{"/", "/posts", "/series", "/moments", "/about"} {
+		for _, path := range []string{"/", "/posts", "/series", "/products", "/moments", "/about"} {
 			out.URLs = append(out.URLs, loc{a.Config.PublicBaseURL + path})
 		}
 		var gamesEnabled bool
@@ -652,6 +719,14 @@ func (a *App) RegisterWeb() {
 		}
 		if friendSettings["enabled"] == true {
 			out.URLs = append(out.URLs, loc{a.Config.PublicBaseURL + "/friends"})
+		}
+		products, err := a.PublicProducts(r.Context(), url.Values{})
+		if err != nil {
+			http.Error(w, "Sitemap unavailable", 503)
+			return
+		}
+		for _, product := range webMaps(products["items"]) {
+			out.URLs = append(out.URLs, loc{a.Config.PublicBaseURL + "/products/" + webString(product["slug"])})
 		}
 		q := url.Values{"limit": {"50"}}
 		for pages := 0; pages < 1000; pages++ {

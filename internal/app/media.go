@@ -31,7 +31,7 @@ func (a *App) RegisterMedia() {
 }
 func (a *App) mediaPath(key string) string { return filepath.Join(a.Config.MediaDir, "objects", key) }
 func mediaRefsSQL() string {
-	return `EXISTS(SELECT 1 FROM post_draft_media_refs WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM post_revision_media_refs WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM users WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM site_profile WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM author_page_profiles WHERE background_media_id=m.id) OR EXISTS(SELECT 1 FROM moment_images WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM homepage_items WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM series WHERE cover_media_id=m.id AND deleted_at_ms IS NULL)`
+	return `EXISTS(SELECT 1 FROM post_draft_media_refs WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM post_revision_media_refs WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM users WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM site_profile WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM author_page_profiles WHERE background_media_id=m.id) OR EXISTS(SELECT 1 FROM moment_images WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM homepage_items WHERE media_id=m.id) OR EXISTS(SELECT 1 FROM series WHERE cover_media_id=m.id AND deleted_at_ms IS NULL) OR EXISTS(SELECT 1 FROM product_media WHERE media_id=m.id)`
 }
 
 // Upload bodies may arrive slowly through a tunnel. The ordinary server's
@@ -310,7 +310,7 @@ func (a *App) mediaDelete(w http.ResponseWriter, r *http.Request) error {
 			return nil, e
 		}
 		if refs {
-			return nil, E(409, "IN_USE", "媒体仍被文章、专栏、动态、首页、头像或个人主页引用")
+			return nil, E(409, "IN_USE", "媒体仍被文章、专栏、产品、动态、首页、头像或个人主页引用")
 		}
 		if _, e := tx.Exec(r.Context(), `UPDATE media_assets SET state='deleting',updated_at_ms=$2 WHERE id=$1`, id, NowMillis()); e != nil {
 			return nil, e
@@ -357,7 +357,7 @@ func (a *App) mediaRead(w http.ResponseWriter, r *http.Request) error {
 	var key, mime string
 	var created int64
 	var permitted bool
-	e := a.Pool.QueryRow(r.Context(), `SELECT m.storage_key,m.mime_type,m.created_at_ms, (EXISTS(SELECT 1 FROM post_revision_media_refs x JOIN public_posts pp ON pp.revision_id=x.revision_id WHERE x.media_id=m.id) OR EXISTS(SELECT 1 FROM moment_images x JOIN public_moments mm ON mm.id=x.moment_id WHERE x.media_id=m.id AND x.scope='public') OR EXISTS(SELECT 1 FROM homepage_items hi CROSS JOIN homepage_settings hs WHERE hi.media_id=m.id AND hi.visible AND hs.id=1 AND (hs.config->'sections'->hi.kind->>'enabled')::boolean AND (hi.kind='steam' OR (hs.config->'sections'->hi.kind->>'limit')::integer>0)) OR EXISTS(SELECT 1 FROM users WHERE avatar_media_id=m.id AND disabled_at_ms IS NULL) OR EXISTS(SELECT 1 FROM site_profile WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM author_page_profiles ap JOIN users au ON au.id=ap.user_id WHERE ap.background_media_id=m.id AND au.disabled_at_ms IS NULL) OR EXISTS(SELECT 1 FROM series ss WHERE ss.cover_media_id=m.id AND ss.status='published' AND ss.deleted_at_ms IS NULL) OR m.owner_user_id=$2 OR $3='owner' OR EXISTS(SELECT 1 FROM moment_images x JOIN moments mm ON mm.id=x.moment_id WHERE x.media_id=m.id AND mm.author_user_id=$2) OR EXISTS(SELECT 1 FROM post_draft_media_refs x JOIN posts p ON p.id=x.post_id WHERE x.media_id=m.id AND p.author_user_id=$2) OR EXISTS(SELECT 1 FROM post_revision_media_refs x JOIN post_revisions rr ON rr.id=x.revision_id JOIN posts p ON p.id=rr.post_id WHERE x.media_id=m.id AND p.author_user_id=$2)) FROM media_assets m WHERE m.id=$1 AND m.state='ready'`, id, uid, p.Role).Scan(&key, &mime, &created, &permitted)
+	e := a.Pool.QueryRow(r.Context(), `SELECT m.storage_key,m.mime_type,m.created_at_ms, (EXISTS(SELECT 1 FROM post_revision_media_refs x JOIN public_posts pp ON pp.revision_id=x.revision_id WHERE x.media_id=m.id) OR EXISTS(SELECT 1 FROM moment_images x JOIN public_moments mm ON mm.id=x.moment_id WHERE x.media_id=m.id AND x.scope='public') OR EXISTS(SELECT 1 FROM homepage_items hi CROSS JOIN homepage_settings hs WHERE hi.media_id=m.id AND hi.visible AND hs.id=1 AND (hs.config->'sections'->hi.kind->>'enabled')::boolean AND (hi.kind='steam' OR (hs.config->'sections'->hi.kind->>'limit')::integer>0)) OR EXISTS(SELECT 1 FROM users WHERE avatar_media_id=m.id AND disabled_at_ms IS NULL) OR EXISTS(SELECT 1 FROM site_profile WHERE avatar_media_id=m.id) OR EXISTS(SELECT 1 FROM author_page_profiles ap JOIN users au ON au.id=ap.user_id WHERE ap.background_media_id=m.id AND au.disabled_at_ms IS NULL) OR EXISTS(SELECT 1 FROM series ss WHERE ss.cover_media_id=m.id AND ss.status='published' AND ss.deleted_at_ms IS NULL) OR EXISTS(SELECT 1 FROM product_media pm JOIN products pp ON pp.id=pm.product_id WHERE pm.media_id=m.id AND pp.published AND pp.deleted_at_ms IS NULL) OR m.owner_user_id=$2 OR $3='owner' OR EXISTS(SELECT 1 FROM moment_images x JOIN moments mm ON mm.id=x.moment_id WHERE x.media_id=m.id AND mm.author_user_id=$2) OR EXISTS(SELECT 1 FROM post_draft_media_refs x JOIN posts p ON p.id=x.post_id WHERE x.media_id=m.id AND p.author_user_id=$2) OR EXISTS(SELECT 1 FROM post_revision_media_refs x JOIN post_revisions rr ON rr.id=x.revision_id JOIN posts p ON p.id=rr.post_id WHERE x.media_id=m.id AND p.author_user_id=$2)) FROM media_assets m WHERE m.id=$1 AND m.state='ready'`, id, uid, p.Role).Scan(&key, &mime, &created, &permitted)
 	if e == pgx.ErrNoRows {
 		return NotFound()
 	}

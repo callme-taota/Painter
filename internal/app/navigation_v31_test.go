@@ -78,12 +78,17 @@ func v31NavigationLinks(root *nethtml.Node) []*nethtml.Node {
 	})
 }
 
-func v31AssertBrowseLinks(t *testing.T, root *nethtml.Node) {
+func v31AssertBrowseLinks(t *testing.T, root *nethtml.Node, kind string) {
 	t.Helper()
-	want := map[string]string{"/posts": "文章", "/moments": "动态", "/phrases": "片语", "/series": "专栏"}
+	want := map[string]string{"/": "首页", "/products": "产品", "/posts": "文章", "/series": "专栏", "/moments": "动态", "/phrases": "片语", "/games": "游戏墙"}
+	current := map[string]string{
+		"home": "/", "products": "/products", "product": "/products",
+		"posts": "/posts", "article": "/posts", "series-list": "/series", "series": "/series",
+		"moments": "/moments", "moment": "/moments", "phrases": "/phrases", "games": "/games",
+	}[kind]
 	links := v31NavigationLinks(root)
 	if len(links) != len(want) {
-		t.Fatalf("public browsing should expose four native links, got %d", len(links))
+		t.Fatalf("public browsing should expose seven native links, got %d", len(links))
 	}
 	for _, link := range links {
 		href := friendWebAttr(link, "href")
@@ -97,13 +102,82 @@ func v31AssertBrowseLinks(t *testing.T, root *nethtml.Node) {
 		if friendWebAttr(link, "target") != "" || friendWebHasAttr(link, "download") || friendWebAttr(link, "role") == "button" {
 			t.Errorf("%s lost native same-tab navigation semantics", href)
 		}
+		if friendWebHasAttr(link, "hidden") || friendWebAttr(link, "aria-hidden") == "true" || friendWebAttr(link, "tabindex") == "-1" {
+			t.Errorf("%s cannot be reached through the native disclosure", href)
+		}
+		if (friendWebAttr(link, "aria-current") == "page") != (href == current) {
+			t.Errorf("%s: browsing destination %s has incorrect current-page state", kind, href)
+		}
 		delete(want, href)
 	}
 }
 
+// The same native disclosures serve every viewport. Configured page tools and
+// install actions stay inside More rather than adding permanent Dock controls.
+func v31AssertCompactDock(t *testing.T, dock *nethtml.Node) (browse, more *nethtml.Node) {
+	t.Helper()
+	browse = v31NavigationClass(t, dock, "dock-browse")
+	more = v31NavigationClass(t, dock, "dock-more")
+	for _, menu := range []struct {
+		node  *nethtml.Node
+		label string
+	}{{browse, "浏览内容"}, {more, "更多操作"}} {
+		if menu.node.Data != "details" || menu.node.Parent != dock || friendWebHasAttr(menu.node, "open") {
+			t.Fatal("Browse and More must be closed native disclosures at the Dock root")
+		}
+		var summary *nethtml.Node
+		for child := menu.node.FirstChild; child != nil; child = child.NextSibling {
+			if child.Type == nethtml.ElementNode {
+				summary = child
+				break
+			}
+		}
+		if summary == nil || summary.Data != "summary" || friendWebAttr(summary, "aria-label") != menu.label {
+			t.Fatalf("Dock disclosure must retain its native accessible summary %q", menu.label)
+		}
+	}
+	back := friendWebNodes(dock, func(node *nethtml.Node) bool {
+		return node.Type == nethtml.ElementNode && friendWebHasAttr(node, "data-app-back")
+	})
+	if len(back) != 1 || back[0].Parent != dock || back[0].Data != "button" || friendWebAttr(back[0], "type") != "button" || !friendWebHasAttr(back[0], "hidden") || friendWebAttr(back[0], "aria-label") == "" {
+		t.Fatal("app Back must be a single accessible, initially hidden contextual button")
+	}
+	for child := dock.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type != nethtml.ElementNode || child == browse || child == more || child == back[0] {
+			continue
+		}
+		if len(friendWebNodes(child, func(node *nethtml.Node) bool {
+			return node.Type == nethtml.ElementNode && slices.Contains([]string{"a", "button", "details", "summary", "input", "select"}, node.Data)
+		})) != 0 {
+			t.Error("Dock root contains permanent controls beyond Browse, More and contextual app Back")
+		}
+	}
+	if len(friendWebClass(dock, "dock-navigation")) != 0 {
+		t.Error("a second permanent browsing rail duplicates the compact Browse control")
+	}
+	navs := friendWebNodes(browse, func(node *nethtml.Node) bool {
+		return node.Type == nethtml.ElementNode && node.Data == "nav" && friendWebAttr(node, "aria-label") == "内容导航"
+	})
+	if len(navs) != 1 {
+		t.Error("Browse must contain a named native content navigation region")
+	}
+	for _, attribute := range []string{"data-pwa-install", "data-pwa-help"} {
+		buttons := friendWebNodes(dock, func(node *nethtml.Node) bool {
+			return node.Type == nethtml.ElementNode && friendWebHasAttr(node, attribute)
+		})
+		if len(buttons) != 1 || buttons[0].Data != "button" || len(friendWebNodes(more, func(node *nethtml.Node) bool { return node == buttons[0] })) != 1 {
+			t.Fatalf("%s must be a single action reachable through More", attribute)
+		}
+		if attribute == "data-pwa-install" && !friendWebHasAttr(buttons[0], "hidden") {
+			t.Error("install action must remain hidden until browser support is known")
+		}
+	}
+	return browse, more
+}
+
 func TestV31HeaderAndDockKeepNativePublicNavigation(t *testing.T) {
 	templates := v31NavigationTemplates(t)
-	for _, kind := range []string{"home", "article", "posts", "moments", "moment", "phrases", "games", "about", "search", "error"} {
+	for _, kind := range []string{"home", "products", "product", "article", "posts", "series-list", "series", "moments", "moment", "phrases", "games", "about", "search", "error"} {
 		t.Run(kind, func(t *testing.T) {
 			doc := v31NavigationDocument(t, templates, v31NavigationPage(kind, defaultFloatingControls(), false, true))
 			header := v31NavigationClass(t, doc, "site-header")
@@ -131,14 +205,10 @@ func TestV31HeaderAndDockKeepNativePublicNavigation(t *testing.T) {
 			}
 
 			dock := v31NavigationClass(t, doc, "site-dock")
-			v31AssertBrowseLinks(t, v31NavigationClass(t, dock, "dock-navigation"))
-			// Both variants are SSR links. Responsive visibility and 44px targets
-			// belong to browser checks, not template/CSS implementation assertions.
-			browse := v31NavigationClass(t, dock, "dock-browse")
-			if browse.Data != "details" {
-				t.Error("compact browsing requires a native disclosure without JavaScript")
-			}
-			v31AssertBrowseLinks(t, browse)
+			browse, _ := v31AssertCompactDock(t, dock)
+			// Responsive placement and 44px targets belong to browser checks;
+			// these links remain reachable with native details and no JavaScript.
+			v31AssertBrowseLinks(t, browse, kind)
 		})
 	}
 }
@@ -162,11 +232,11 @@ func TestV31EmptyToolsPreservePublicBrowsing(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				doc := v31NavigationDocument(t, templates, v31NavigationPage(kind, controls, creator, true))
 				dock := v31NavigationClass(t, doc, "site-dock")
-				v31AssertBrowseLinks(t, v31NavigationClass(t, dock, "dock-navigation"))
-				v31AssertBrowseLinks(t, v31NavigationClass(t, dock, "dock-browse"))
+				browse, _ := v31AssertCompactDock(t, dock)
+				v31AssertBrowseLinks(t, browse, kind)
 				tools := v31NavigationClass(t, dock, "dock-tools")
 				if len(friendWebNodes(tools, func(node *nethtml.Node) bool {
-					return node.Type == nethtml.ElementNode && slices.Contains([]string{"a", "button", "summary", "input"}, node.Data)
+					return node.Type == nethtml.ElementNode && slices.Contains([]string{"a", "button", "summary", "input"}, node.Data) && !friendWebHasAttr(node, "data-pwa-install") && !friendWebHasAttr(node, "data-pwa-help")
 				})) != 0 {
 					t.Error("an explicit empty array must hide configured tools")
 				}

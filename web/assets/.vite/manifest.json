@@ -84,8 +84,8 @@
     "file": "shadcn-theme-COuY9qAF.css",
     "src": "_shadcn-theme-COuY9qAF.css"
   },
-  "_shadcn-theme-bY7Nbq2X.js": {
-    "file": "chunks/shadcn-theme-bY7Nbq2X.js",
+  "_shadcn-theme-CyFDgfb_.js": {
+    "file": "chunks/shadcn-theme-CyFDgfb_.js",
     "name": "shadcn-theme",
     "css": [
       "shadcn-theme-COuY9qAF.css"
@@ -250,12 +250,12 @@
     ]
   },
   "src/public.ts": {
-    "file": "public-Bt2zm9-k.js",
+    "file": "public-gj76txZj.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
     "imports": [
-      "_shadcn-theme-bY7Nbq2X.js",
+      "_shadcn-theme-CyFDgfb_.js",
       "_infiniteScroll-CcHvAPba.js",
       "_contentCards-8wrfEMC7.js",
       "_postLike-C1m3jQXW.js",
@@ -282,17 +282,17 @@
       "src/homeShowcase.ts"
     ],
     "css": [
-      "public-BqDhhg9M.css",
+      "public-W8qXsCCL.css",
       "sharing-COMRoiPd.css"
     ]
   },
   "src/setup.ts": {
-    "file": "setup-XPubDzgG.js",
+    "file": "setup-Cor4qVj3.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
     "imports": [
-      "_shadcn-theme-bY7Nbq2X.js",
+      "_shadcn-theme-CyFDgfb_.js",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "__plugin-vue_export-helper-DNkIjL55.js"
@@ -311,12 +311,12 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-DXFENIu6.js",
+    "file": "studio-BFVzmkNb.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
     "imports": [
-      "_shadcn-theme-bY7Nbq2X.js",
+      "_shadcn-theme-CyFDgfb_.js",
       "src/public.ts",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
       "_confirm-B86amM10.js",
@@ -335,7 +335,7 @@
       "src/components/MarkdownEditor.vue"
     ],
     "css": [
-      "studio-BZpy_USo.css",
+      "studio-Bxc1xztK.css",
       "sharing-COMRoiPd.css"
     ]
   }

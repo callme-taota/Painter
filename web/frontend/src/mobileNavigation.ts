@@ -12,14 +12,13 @@ export function initMobileNavigation(){
  registerMobileOverlay(dialog)
  document.documentElement.classList.add('mobile-chrome-ready')
  function layout(){
-  if(query.matches){if(tools)slot.append(tools)}
+  if(query.matches){dock!.querySelectorAll<HTMLDetailsElement>('details[open]').forEach(menu=>menu.open=false);if(tools)slot.append(tools)}
   else{if(dialog!.open)dialog!.close();if(tools)placeholder.after(tools)}
  }
  trigger.addEventListener('click',event=>{event.preventDefault();if(!dialog.open){dialog.returnValue='';dialog.showModal()}})
  dialog.querySelector('[data-mobile-more-close]')?.addEventListener('click',()=>dialog.close())
  dialog.addEventListener('click',event=>{
   if(event.target===dialog){const box=dialog.getBoundingClientRect();const e=event as MouseEvent;if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)dialog.close()}
-  if((event.target as HTMLElement).closest('[data-floating-action=top],[data-floating-action=bottom]'))dialog.close()
  })
  const reading=document.querySelector<HTMLElement>('[data-article-toc] [data-article-toc-scroll]')
  if(reading){

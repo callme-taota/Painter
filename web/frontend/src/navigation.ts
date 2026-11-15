@@ -17,6 +17,7 @@ export function navigation(role:string):NavigationGroup[]{
    {id:'operations',label:'存储与任务',url:'/studio/operations',roles:owner}]},
   {id:'site',label:'站点管理',icon:'settings',children:[
    {id:'home',label:'首页内容',url:'/studio/home',roles:owner},
+   {id:'products',label:'产品',url:'/studio/products',roles:owner},
    {id:'site-profile',label:'网站信息',url:'/studio/settings#site',section:'site',roles:owner},
    {id:'site-features',label:'功能与通知',url:'/studio/settings#features',section:'features',roles:owner},
    {id:'site-security',label:'登录安全',url:'/studio/settings#security',section:'security',roles:owner},

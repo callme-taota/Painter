@@ -1,0 +1,40 @@
+/* Browse and More stay stable as the publication grows. */
+.site-dock.dock-compact { gap:12px; }
+.site-dock.dock-compact>.dock-browse,.site-dock.dock-compact>.dock-more { display:block;position:relative; }
+.dock-compact .dock-popover { min-width:190px;max-height:calc(100dvh - 24px);overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--muted) transparent; }
+.dock-compact .dock-popover>a[aria-current=page] { background:var(--subtle);color:var(--ink);font-weight:500; }
+.site-dock.dock-compact .dock-menu-panel { width:264px;padding:8px 12px; }
+.dock-compact .dock-menu-panel .dock-tools { display:flex;flex-direction:column;align-items:stretch;width:auto;gap:0; }
+.dock-compact .dock-menu-panel .dock-tools>details { position:static; }
+.site-dock .dock-menu-panel :is(a,button,summary).dock-glass,.dock-menu-row {
+ display:flex;align-items:center;justify-content:flex-start;gap:12px;
+ width:100%;height:auto;min-height:44px;padding:10px 8px;margin:0;
+ border:0;border-radius:var(--radius-control);background:transparent;color:var(--ink);
+ font:400 14px/22px var(--font-ui);text-align:left;list-style:none;text-decoration:none;
+ box-shadow:none;transform:none;
+}
+.site-dock .dock-menu-panel .dock-glass>.liquid-glass-optics { display:none; }
+.site-dock .dock-menu-panel [data-dock-label]::after {
+ content:attr(data-dock-label);position:static;opacity:1;visibility:visible;transform:none;
+ padding:0;border-radius:0;background:transparent;box-shadow:none;color:inherit;font:inherit;
+}
+.site-dock .dock-menu-panel .dock-glass .icon,.dock-menu-row .icon { width:18px;height:18px;flex:none;color:var(--muted); }
+.site-dock .dock-menu-panel :is(a,button,summary).dock-glass:hover,.dock-menu-row:hover { background:var(--subtle);color:var(--ink);transform:none; }
+.site-dock .dock-menu-panel :is(.theme-popover,.create-popover) { position:static;inset:auto;transform:none;max-width:none;width:auto;max-height:none;padding:4px 8px 12px;margin:0;border:0;box-shadow:none;background:transparent;overflow:visible; }
+.site-dock .dock-menu-panel .theme-choices { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px; }
+.site-dock .dock-menu-panel .theme-choices button { display:flex;align-items:center;justify-content:center;gap:0;min-height:36px;padding:8px 3px;font-size:12px; }
+.site-dock .dock-menu-panel .theme-choices .icon,.site-dock .dock-menu-panel .theme-check { display:none; }
+.site-dock .dock-menu-panel .solid-option { width:100%;min-height:40px;padding:8px 4px;font-size:13px; }
+.site-dock .dock-menu-panel .create-popover a { display:flex;gap:10px;align-items:center;min-height:40px;padding:8px;font-size:14px; }
+.site-dock .dock-menu-panel .floating-like { flex-direction:row; }
+.site-dock .dock-menu-panel [data-like-count] { margin-left:auto; }
+.dock-menu-row { cursor:pointer; }
+.dock-menu-row:focus-visible { outline:2px solid var(--link);outline-offset:2px; }
+@media(max-width:720px) {
+ .dock-compact .dock-popover { max-width:calc(100vw - 76px); }
+ .mobile-sheet .dock-tools .dock-menu-row { min-height:50px;padding:10px 0;font-size:16px; }
+ .mobile-sheet .dock-tools .dock-menu-row .icon { width:21px;height:21px; }
+}
+
+.home-products-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin:0 0 16px;color:var(--muted);font:400 14px/22px var(--font-ui)}
+.home-products-link:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
