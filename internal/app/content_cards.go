@@ -34,6 +34,7 @@ type contentCardStats struct {
 type contentCard struct {
 	V              int                 `json:"v"`
 	Type           string              `json:"type"`
+	Display        string              `json:"display,omitempty"`
 	URL            string              `json:"url,omitempty"`
 	Title          string              `json:"title,omitempty"`
 	RefID          string              `json:"ref_id,omitempty"`
@@ -117,6 +118,9 @@ func contentCardImage(c contentCard) (string, error) {
 }
 
 func validateContentCard(c contentCard) (string, error) {
+	if c.Display != "" && (c.V != 1 || c.Type != "link" || c.Display != "card" && c.Display != "title") {
+		return "", contentCardInvalid("只有 v1 网页 link 支持 card 或 title 呈现方式")
+	}
 	if c.V == 3 && c.Type == "layout" {
 		return "", validateContentLayout(c)
 	}
@@ -202,6 +206,9 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 	if !(identity.V == 1 && legacyType || identity.V == 2 && contentPanelType(identity.Type) || identity.V == 3 && identity.Type == "layout") {
 		return c, false, nil
 	}
+	if e := contentCardDisplayFields(raw, identity.V, identity.Type); e != nil {
+		return c, true, e
+	}
 	if identity.V == 3 {
 		if e := contentLayoutFields(raw); e != nil {
 			return c, true, e
@@ -239,6 +246,29 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 	}
 	_, e := validateContentCard(c)
 	return c, true, e
+}
+
+// Old snapshots without display retain their existing decoding behavior. A new
+// presentation field is exact and unambiguous, including when explicitly empty.
+func contentCardDisplayFields(raw []byte, version int, kind string) error {
+	var fields map[string]json.RawMessage
+	_ = json.Unmarshal(raw, &fields)
+	for key, value := range fields {
+		if !strings.EqualFold(key, "display") {
+			continue
+		}
+		var display string
+		if key != "display" || version != 1 || kind != "link" || json.Unmarshal(value, &display) != nil || display != "card" && display != "title" {
+			return contentCardInvalid("只有 v1 网页 link 支持 display: card 或 title")
+		}
+		if err := strictContentLayoutJSON(raw); err != nil {
+			return contentCardInvalid("呈现方式需要严格 JSON，不能包含重复字段或 null")
+		}
+		if _, err := contentPanelObject(raw, "v", "type", "display", "url", "title", "description", "subtitle", "image_url", "stats", "metadata_source", "resolved_at"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 var contentCardBlockKind = ast.NewNodeKind("PainterCardBlock")
@@ -304,7 +334,7 @@ func prepareContentCards(doc ast.Node, source []byte, media map[string]bool) err
 		if len(changes) >= 128 {
 			return ast.WalkStop, contentCardInvalid("每篇文章最多128张卡片")
 		}
-		if inline && (c.Type != "link" || string(n.(*ast.Link).Destination) != c.URL) {
+		if inline && (c.Type != "link" || c.Display == "title" || string(n.(*ast.Link).Destination) != c.URL) {
 			return ast.WalkStop, contentCardInvalid("行内引用须为同一网址的 link 卡片")
 		}
 		id, _ := contentCardImage(c)
@@ -380,6 +410,10 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 		_, e := w.WriteString(contentCardInternalPlaceholder(c))
 		return ast.WalkSkipChildren, e
 	}
+	if c.Type == "link" && c.Display == "title" {
+		_, e := w.WriteString(contentLinkRowHTML(c))
+		return ast.WalkSkipChildren, e
+	}
 	markup := `<a class="content-card content-card--` + c.Type + `" href="` + stdhtml.EscapeString(c.URL) + `" target="_blank" rel="noopener noreferrer">`
 	if c.ImageURL != "" {
 		markup += `<img class="content-card__image" src="` + stdhtml.EscapeString(c.ImageURL) + `" alt="" loading="lazy" referrerpolicy="no-referrer" />`
@@ -387,6 +421,18 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 	markup += `<span class="content-card__body">` + contentCardSpan("content-card__eyebrow", contentCardRegistry[c.Type].Label) + contentCardDetails(c) + `</span></a>` + "\n"
 	_, e := w.WriteString(markup)
 	return ast.WalkSkipChildren, e
+}
+
+const contentLinkRowIconPath = "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+const contentLinkRowArrowPath = "M7 17 17 7M7 7h10v10"
+
+func contentLinkRowSVG(class, path string) string {
+	return `<svg class="` + class + `" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="` + path + `"></path></svg>`
+}
+
+func contentLinkRowHTML(c contentCard) string {
+	destination, _ := url.Parse(c.URL)
+	return `<a class="content-link-row" href="` + stdhtml.EscapeString(c.URL) + `" target="_blank" rel="noopener noreferrer">` + contentLinkRowSVG("content-link-row__icon", contentLinkRowIconPath) + contentCardSpan("content-link-row__title", c.Title) + ` ` + contentCardSpan("content-link-row__host", destination.Hostname()) + contentLinkRowSVG("content-link-row__arrow", contentLinkRowArrowPath) + `</a>` + "\n"
 }
 func renderContentCardInline(w util.BufWriter, _ []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	c := node.(*contentCardInlineNode).Card

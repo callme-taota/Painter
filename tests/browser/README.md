@@ -86,6 +86,21 @@ OWNER_STATE_FILE=/private/isolated-owner-state.json \
 node tests/browser/editor-toast.cjs
 ```
 
+## 网页链接的三种呈现
+
+`node tests/browser/article-links-unit.mjs` 验证行内、卡片、单行标题的协议、Markdown 往返和源码定位；不连接服务。需要 Node 24 与前端锁定依赖。
+
+`link-displays.cjs` 使用真实编辑器创建合成内容并保存、发布，核对预览和 SSR。只可针对可丢弃实例，必须显式设置 `PAINTER_QA_ISOLATED=1`、回环 `PAINTER_QA_URL` 及该候选站长的私有 `OWNER_STATE_FILE`。它会创建测试文章，不得复用正式站点；网页元数据手动提供，不向供应商请求。
+
+```bash
+PLAYWRIGHT_MODULE=/private/node_modules/playwright \
+CHROMIUM_EXECUTABLE=/path/to/chromium \
+PAINTER_QA_URL=http://127.0.0.1:18516 \
+PAINTER_QA_ISOLATED=1 \
+OWNER_STATE_FILE=/private/isolated-owner-state.json \
+node tests/browser/link-displays.cjs
+```
+
 ## V50 连续列表与搜索
 
 `v50-continuous-reading.cjs` 和 `v50-infinite-recovery.cjs` 固定只访问可丢弃实例 `http://127.0.0.1:18094`。设置 `OWNER_STATE_FILE` 为该实例已有的站长会话，`PLAYWRIGHT_MODULE` 为 Playwright 模块位置，可选 `CHROMIUM_EXECUTABLE` 与 `ARTIFACT_DIR`。会话和账号文件必须放在 Git 外。前者会创建明确标注 UX50 的未公开草稿并保存历史版本；后者只读，不可复用正式实例或正式账号。

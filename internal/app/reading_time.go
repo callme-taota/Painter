@@ -53,7 +53,7 @@ func articleReadingText(markup string) string {
 					}
 					// Chroma line numbers and card URL captions are presentation,
 					// rather than article words. Syntax-highlight spans stay inline.
-					if class == "ln" || class == "lnt" || class == "lntd" || class == "content-card__url" {
+					if class == "ln" || class == "lnt" || class == "lntd" || class == "content-card__url" || class == "content-link-row__host" {
 						return
 					}
 					// These spans are separate displayed card fields, even where

@@ -7,7 +7,7 @@ import './articleCards.css'
 export type ArticleReferenceType='github'|'steam'|'apple_music'|'link'|'moment'|'phrase'
 export type ArticlePanelType='callout'|'metrics'|'summary'
 export type ArticleCardType=ArticleReferenceType|ArticlePanelType|'layout'
-export type ArticleCardV1={v:1;type:ArticleReferenceType;url:string;title?:string;ref_id?:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string}
+export type ArticleCardV1={v:1;type:ArticleReferenceType;url:string;title?:string;ref_id?:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string;display?:'card'|'title'}
 export type ArticleCardSource={label:string;url:string}
 export type ArticleCardMetric={label:string;value:string;detail?:string;source?:ArticleCardSource}
 export type ArticleCardEntry={title:string;body:string}
@@ -34,6 +34,7 @@ function text(value:unknown,max:number,required=false):value is string{return ty
 function bodyText(value:unknown,max:number,required=true):value is string{return typeof value==='string'&&[...value].length<=max&&(!required||!!value.trim())&&!/[\u0000-\u0009\u000b\u000c\u000e-\u001f\u007f-\u009f]/.test(value)}
 function object(value:unknown):value is Record<string,any>{return !!value&&typeof value==='object'&&!Array.isArray(value)}
 function fields(value:Record<string,unknown>,keys:string[]){return Object.keys(value).every(key=>keys.includes(key))}
+function nonNullJSON(value:unknown):boolean {if(value===null)return false;if(Array.isArray(value))return value.every(nonNullJSON);return !object(value)||Object.values(value).every(nonNullJSON)}
 function publicURL(value:unknown):URL|null {
   if(typeof value!=='string'||!value.startsWith('https://')||new TextEncoder().encode(value).length>2048||/[\s\\\u0000-\u001f\u007f]/.test(value)||/%(?:0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)||/[:%]/.test(value.split('/')[2]||''))return null
   try{const u=new URL(value);if(u.protocol!=='https:'||u.username||u.password||u.port||!/\./.test(u.hostname)||/^(?:localhost|127\.|0\.|10\.|169\.254\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(u.hostname)||/\.(?:localhost|local|internal)$/.test(u.hostname)||u.hostname.endsWith('.'))return null;return u}catch{return null}
@@ -106,13 +107,14 @@ export function parseArticleCard(raw:string):ArticleCard|null {
       return c as ArticlePanelCard
     }
     if(c.v!==1||isArticlePanel(String(c.type))||c.type==='layout')return null
+    if(c.type==='link'&&Object.hasOwn(c,'display')&&(!uniqueJSONKeys(raw)||!nonNullJSON(c)))return null
     if(isInternalArticleCard(c.type)){
       if(!internalID(c.ref_id)||c.url!==internalArticleCardURL(c.type,c.ref_id)||Object.keys(c).some(k=>!['v','type','url','ref_id'].includes(k)))return null
       return c as ArticleCardV1
     }
     const u=publicURL(c.url)
     if(!u||!text(c.title,200,true)||!text(c.description??'',1000)||!text(c.subtitle??'',200))return null
-    if(Object.keys(c).some(k=>!['v','type','url','title','description','subtitle','image_url','stats','metadata_source','resolved_at'].includes(k)))return null
+    if(Object.keys(c).some(k=>!['v','type','url','title','description','subtitle','image_url','stats','metadata_source','resolved_at','display'].includes(k))||c.display!==undefined&&(c.type!=='link'||!['card','title'].includes(c.display)))return null
     if(c.type==='github'&&(u.host!=='github.com'||u.search||u.hash||!/^\/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\/?$/.test(u.pathname)))return null
     if(c.type==='steam'&&(u.host!=='store.steampowered.com'||!/^\/app\/[1-9][0-9]{0,9}(?:\/[^/]*)?\/?$/.test(u.pathname)))return null
     if(c.type==='apple_music'&&(u.host!=='music.apple.com'||!/^\/[a-zA-Z]{2}\/(?:album\/(?:[^/]+\/)?[1-9][0-9]{0,19}|playlist\/(?:[^/]+\/)?pl\.[A-Za-z0-9_.-]+)\/?$/.test(u.pathname)))return null
@@ -132,10 +134,11 @@ function decodeArticleCard(value:string){if(!/^[A-Za-z0-9_-]+$/.test(value)||val
 export function parseArticleReference(title:unknown,href:unknown):ArticleCardV1|null {
   if(typeof title!=='string'||!title.startsWith(articleReferencePrefix))return null
   const card=parseArticleCard(decodeArticleCard(title.slice(articleReferencePrefix.length)))
-  return card?.v===1&&card.type==='link'&&card.url===href?card:null
+  return card?.v===1&&card.type==='link'&&card.display!=='title'&&card.url===href?card:null
 }
 export function articleCardMarkdown(card:ArticleCard){return '```painter-card\n'+JSON.stringify(card)+'\n```'}
-export function articleReferenceTitle(card:ArticleCard){return articleReferencePrefix+encodeArticleCard(JSON.stringify(card))}
+export function articleReferenceTitle(card:ArticleCard){if(card.v===1&&card.type==='link'){const {display,...inline}=card;return articleReferencePrefix+encodeArticleCard(JSON.stringify(inline))}return articleReferencePrefix+encodeArticleCard(JSON.stringify(card))}
+export function articleLinkSnapshot(href:unknown,label:string,title?:unknown):ArticleCardV1|null {if(typeof title==='string'&&title.startsWith('painter:'))return null;const card=parseArticleCard(JSON.stringify({v:1,type:'link',url:href,title:label.trim()||(typeof href==='string'?publicURL(href)?.hostname:'')||'',metadata_source:'author'}));return card?.v===1&&card.type==='link'?card:null}
 export function articleCardTitle(card:ArticleCard):string {
   if(card.v!==3)return card.title||labels[card.type]
   const find=(nodes:ArticleLayoutNode[]):string=>{for(const node of nodes){if(node.kind==='text'&&node.role==='title')return node.text;if('children' in node){const title=find(node.children);if(title)return title}}return ''}
@@ -158,6 +161,10 @@ function detailSpec(card:ArticleCardV1):DOMOutputSpec[]{
 export function articleCardSpec(card:ArticleCard):DOMOutputSpec {
   if(card.v!==1)return layoutSpec(card.v===2?compileArticlePanel(card):card.root,card.type)
   if(isInternalArticleCard(card.type))return ['a',{class:'content-card content-card--'+card.type,href:card.url,'data-internal-card-state':'pending'},['span',{class:'content-card__body'},span('content-card__title',labels[card.type]+'引用'),span('content-card__description','正在读取公开内容…')]]
+  if(card.type==='link'&&card.display==='title'){
+    const svg=(name:string,path:string):DOMOutputSpec=>['http://www.w3.org/2000/svg svg',{class:name,width:'18',height:'18',viewBox:'0 0 24 24',focusable:'false',fill:'none',stroke:'currentColor','stroke-width':'1.65','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'},['http://www.w3.org/2000/svg path',{d:path}]]
+    return ['a',{class:'content-link-row',href:card.url,target:'_blank',rel:'noopener noreferrer'},svg('content-link-row__icon','M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'),span('content-link-row__title',card.title||labels.link),span('content-link-row__host',new URL(card.url).hostname),svg('content-link-row__arrow','M7 17 17 7M7 7h10v10')]
+  }
   const children:DOMOutputSpec[]=[]
   if(card.image_url)children.push(['img',{class:'content-card__image',src:card.image_url,alt:'',loading:'lazy',referrerpolicy:'no-referrer'}])
   children.push(['span',{class:'content-card__body'},span('content-card__eyebrow',labels[card.type]),...detailSpec(card)])
@@ -207,10 +214,10 @@ export const ArticleCardNode=TiptapNode.create<{onEdit?:(position:number)=>void}
   parseMarkdown(token,helpers){if(token.lang!=='painter-card'||typeof token.text!=='string'||!parseArticleCard(token.text))return [];return helpers.createNode('articleCard',{snapshot:token.text})},
   renderMarkdown(node){return '```painter-card\n'+String(node.attrs?.snapshot||'')+'\n```'},
   addNodeView(){return ({node,editor,getPos})=>{
-    const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'')+(card&&card.v!==1?' article-card-node--panel':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
+    const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'')+(card&&card.v!==1?' article-card-node--panel':'')+(card?.v===1&&card.type==='link'&&card.display==='title'?' article-card-node--link-title':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
     if(card)wrapper.append(DOMSerializer.renderSpec(document,articleCardSpec(card)).dom)
     const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent='编辑卡片';edit.setAttribute('aria-label','编辑'+(card?articleCardTitle(card):'内容')+'卡片');edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
-    wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card,.content-panel'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
+    wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card,a.content-link-row,.content-panel'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
     // DocumentEditor rescans through initArticleCards after initial mount and every document update.
     return {dom:wrapper,stopEvent:event=>event.target===edit,ignoreMutation:()=>true}
   }},

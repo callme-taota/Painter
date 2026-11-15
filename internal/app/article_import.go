@@ -115,7 +115,7 @@ func validateImportedCard(raw []byte) (contentCard, error) {
 		return card, articleImportInvalid("卡片缺失或类型、版本不受支持")
 	}
 	if card.V == 1 {
-		if _, err = contentPanelObject(raw, "v", "type", "url", "title", "ref_id", "description", "subtitle", "image_url", "stats", "metadata_source", "resolved_at"); err != nil {
+		if _, err = contentPanelObject(raw, "v", "type", "display", "url", "title", "ref_id", "description", "subtitle", "image_url", "stats", "metadata_source", "resolved_at"); err != nil {
 			return card, err
 		}
 		var fields map[string]json.RawMessage
@@ -188,7 +188,7 @@ func inspectArticleImportMarkdown(markdown string) (int, error) {
 			if err != nil {
 				return ast.WalkStop, err
 			}
-			if card.Type != "link" || card.V != 1 || string(node.Destination) != card.URL {
+			if card.Type != "link" || card.V != 1 || card.Display == "title" || string(node.Destination) != card.URL {
 				return ast.WalkStop, articleImportInvalid("行内引用须为同一网址的 link 卡片")
 			}
 			cards++

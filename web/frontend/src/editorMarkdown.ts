@@ -1,15 +1,38 @@
-import { marked } from 'marked'
-import {parseArticleCard} from './articleCards'
+import {marked,type Token,type Tokens} from 'marked'
+import {parseArticleCard,parseArticleReference,articleLinkSnapshot,type ArticleCard} from './articleCards'
 
-// Use the Markdown token stream, so a sample fence inside a larger code block
-// can never be mistaken for the card the author intends to edit.
-export function markdownCardAt(source:string,position:number){
+// Advance through every sibling's raw text, including code samples. Only edit
+// a child stream that maps to one exact contiguous span of its parent's source.
+type InlineLabelToken={type:string;text?:string;tokens?:InlineLabelToken[]}
+type SourceToken=Token|Tokens.ListItem
+type MarkdownCardSelection={from:number;to:number;card:ArticleCard;inline:boolean;label:string}
+function linkLabel(tokens:InlineLabelToken[]):string{return tokens.map(token=>token.tokens?linkLabel(token.tokens):token.type==='br'?' ':token.text||'').join('')}
+function inlineCardAt(token:SourceToken,offset:number,position:number):MarkdownCardSelection|null {
+ if(['code','codespan','html','image'].includes(token.type))return null
+ if(token.type==='link'&&'href'in token&&typeof token.href==='string'&&'text'in token&&typeof token.text==='string'){
+  const title='title'in token&&typeof token.title==='string'?token.title:undefined,label='tokens'in token&&Array.isArray(token.tokens)?linkLabel(token.tokens):token.text
+  const card=parseArticleReference(title,token.href)||articleLinkSnapshot(token.href,label,title)
+  return card?{from:offset,to:offset+token.raw.length,card,inline:true,label}:null
+ }
+ const children='tokens'in token&&Array.isArray(token.tokens)?token.tokens:'items'in token&&Array.isArray(token.items)?token.items:undefined
+ if(!children?.length||children.some(child=>typeof child.raw!=='string'))return null
+ const raw=children.map(child=>child.raw).join(''),start=token.raw.indexOf(raw)
+ if(!raw||start<0||token.raw.indexOf(raw,start+1)>=0)return null
+ let cursor=offset+start
+ for(const child of children){
+  const end=cursor+child.raw.length
+  if(position>=cursor&&position<=end){const found=inlineCardAt(child,cursor,position);if(found)return found}
+  cursor=end
+ }
+ return null
+}
+export function markdownCardAt(source:string,position:number):MarkdownCardSelection|null {
  let offset=0
  for(const token of marked.lexer(source,{gfm:true,breaks:false})){
   const end=offset+token.raw.length
-  if(position>=offset&&position<=end&&token.type==='code'&&token.lang==='painter-card'){
-   const card=parseArticleCard(token.text)
-   if(card)return {from:offset,to:end,card}
+  if(position>=offset&&position<=end){
+   if(token.type==='code'&&token.lang==='painter-card'){const card=parseArticleCard(token.text);if(card)return {from:offset,to:end,card,inline:false,label:''}}
+   const found=inlineCardAt(token,offset,position);if(found)return found
   }
   offset=end
  }

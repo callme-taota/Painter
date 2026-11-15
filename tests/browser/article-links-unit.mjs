@@ -1,0 +1,50 @@
+// Pure Markdown and controlled-link contract checks; no browser, service or provider.
+import assert from 'node:assert/strict'
+import {registerHooks,createRequire} from 'node:module'
+import {pathToFileURL} from 'node:url'
+registerHooks({resolve(specifier,context,next){if(specifier==='./articleCards'&&context.parentURL?.endsWith('/editorMarkdown.ts'))return {url:new URL('./articleCards.ts',context.parentURL).href,shortCircuit:true};return next(specifier,context)},load(url,context,next){if(url.endsWith('.css'))return {format:'module',source:'',shortCircuit:true};return next(url,context)}})
+const require=createRequire(new URL('../../web/frontend/package.json',import.meta.url))
+const {MarkdownManager}=await import(pathToFileURL(require.resolve('@tiptap/markdown')))
+const {StarterKit}=await import(pathToFileURL(require.resolve('@tiptap/starter-kit')))
+const {ArticleCardNode,ArticleReferenceLink,articleCardMarkdown,articleReferenceMarkdown,parseArticleCard,parseArticleReference,articleCardSpec,articleReferenceTitle,articleReferencePrefix,encodeArticleCard,articleLinkSnapshot}=await import('../../web/frontend/src/articleCards.ts')
+const {markdownCardAt}=await import('../../web/frontend/src/editorMarkdown.ts')
+const manager=new MarkdownManager({extensions:[StarterKit.configure({link:false}),ArticleReferenceLink,ArticleCardNode],markedOptions:{gfm:true,breaks:false}})
+const base={v:1,type:'link',url:'https://example.org/reference?lang=zh#part',title:'原始网页标题',description:'保留作者说明',subtitle:'2026 年存档',metadata_source:'provider',resolved_at:'2026-11-15T00:00:00Z'}
+function nodes(document,type){const result=[];function walk(node){if(node.type===type)result.push(node);for(const child of node.content||[])walk(child)}walk(document);return result}
+let checks=0
+function check(name,fn){fn();checks++;console.log('PASS '+name)}
+for(const style of ['inline','card','title'])check(style+' keeps its carrier, full metadata and neighboring text across Markdown roundtrip',()=>{
+ const card=style==='title'?{...base,display:'title'}:{...base},snippet=style==='inline'?articleReferenceMarkdown(card,'🔗 正文文字'):articleCardMarkdown(card),source='前面的正文\n\n'+snippet+'\n\n后面的正文',first=manager.parse(source),serialized=manager.serialize(first),again=manager.parse(serialized)
+ assert(serialized.includes('前面的正文')&&serialized.includes('后面的正文'))
+ if(style==='inline'){assert.equal(nodes(again,'articleCard').length,0);const marked=nodes(again,'text').find(node=>node.marks?.some(mark=>mark.type==='link'));assert.equal(marked.text,'🔗 正文文字');const attrs=marked.marks.find(mark=>mark.type==='link').attrs;assert.deepEqual(parseArticleReference(attrs.title,attrs.href),card)}
+ else{assert.equal(nodes(again,'articleCard').length,1);assert.deepEqual(parseArticleCard(nodes(again,'articleCard')[0].attrs.snapshot),card)}
+ const selected=markdownCardAt(source,source.indexOf(snippet)+Math.min(12,snippet.length-1));assert.deepEqual(selected.card,card);assert.equal(selected.inline,style==='inline');if(style==='inline')assert.equal(selected.label,'🔗 正文文字')
+})
+check('old snapshots and explicit card remain full cards; only title uses the simple native link',()=>{
+ for(const card of [base,{...base,display:'card'}]){assert.deepEqual(parseArticleCard(JSON.stringify(card)),card);assert.equal(articleCardSpec(card)[1].class,'content-card content-card--link')}
+ const title=articleCardSpec({...base,display:'title'});assert.equal(title[0],'a');assert.equal(title[1].class,'content-link-row');assert.equal(title[1].target,'_blank');assert.equal(title[1].rel,'noopener noreferrer');const spec=JSON.stringify(title);assert(spec.includes('content-link-row__title')&&spec.includes('content-link-row__host')&&spec.includes('content-link-row__icon')&&spec.includes('content-link-row__arrow'));assert(!spec.includes(base.description)&&!spec.includes('img'))
+})
+check('inline reference snapshots omit block display without losing metadata',()=>{assert.deepEqual(parseArticleReference(articleReferenceTitle({...base,display:'title'}),base.url),base)})
+check('inline carriers reject title display and never reinterpret a reserved snapshot as an ordinary webpage',()=>{const title=articleReferencePrefix+encodeArticleCard(JSON.stringify({...base,display:'title'}));assert.equal(parseArticleReference(title,base.url),null);assert.equal(articleLinkSnapshot(base.url,'文字',title),null);const source='[文字](<'+base.url+'> \"'+title+'\")';assert.equal(markdownCardAt(source,5),null);const card=articleReferencePrefix+encodeArticleCard(JSON.stringify({...base,display:'card'}));assert.equal(parseArticleReference(card,base.url).display,'card')})
+check('display snapshots reject duplicate keys including escaped and nested names',()=>{for(const raw of ['{'+JSON.stringify({...base,display:'title'}).slice(1,-1)+',"display":"card"}','{'+JSON.stringify({...base,display:'title'}).slice(1,-1)+',"\\u0064isplay":"card"}','{'+JSON.stringify({...base,display:'title'}).slice(1,-1)+',"stats":{"stars":1,"stars":2}}'])assert.equal(parseArticleCard(raw),null)})
+check('display snapshots reject null in any field or nested value while old optional-null snapshots remain compatible',()=>{const title={...base,display:'title'};for(const field of Object.keys(title))assert.equal(parseArticleCard(JSON.stringify({...title,[field]:null})),null);for(const field of ['image_url','stats','ref_id'])assert.equal(parseArticleCard(JSON.stringify({...title,[field]:null})),null);for(const value of [{nested:null},[null],[{nested:null}]])assert.equal(parseArticleCard(JSON.stringify({...title,stats:value})),null);const old={...base,description:null,subtitle:null,image_url:null,stats:null,resolved_at:null};assert.deepEqual(parseArticleCard(JSON.stringify(old)),old)})
+check('unknown painter namespace titles never become new author snapshots',()=>{for(const title of ['painter:v2:future-encoded-snapshot','painter:future:payload','painter:']){assert.equal(articleLinkSnapshot(base.url,'参考',title),null);const source='[参考](<'+base.url+'> "'+title+'")';assert.equal(markdownCardAt(source,4),null)}})
+check('unknown and null display values fail closed',()=>{for(const display of ['inline','future','',null,0,true,{}])assert.equal(parseArticleCard(JSON.stringify({...base,display})),null)})
+check('display is restricted to v1 webpage links',()=>{
+ for(const card of [{...base,type:'github',url:'https://github.com/example/repo',display:'title'},{v:1,type:'moment',url:'/moments/1',ref_id:'1',display:'title'},{v:2,type:'callout',tone:'note',body:'正文',display:'title'},{v:3,type:'layout',root:{kind:'panel',children:[{kind:'text',role:'body',text:'正文'}]},display:'title'}])assert.equal(parseArticleCard(JSON.stringify(card)),null)
+})
+check('source editing targets each of adjacent same-URL references by its own snapshot',()=>{
+ const first={...base,title:'第一个来源',description:'第一个快照'},second={...base,title:'第二个来源',description:'第二个快照'},a=articleReferenceMarkdown(first,'甲'),b=articleReferenceMarkdown(second,'乙'),source='前文 '+a+b+' 后文'
+ assert.deepEqual(markdownCardAt(source,source.indexOf(a)+4).card,first);assert.deepEqual(markdownCardAt(source,source.indexOf(b)+4).card,second)
+})
+check('plain HTTPS links reuse a snapshot but mail, HTTP and local destinations stay ordinary',()=>{
+ const source='前文 [普通网页](https://example.org/path "原提示") 后文',at=markdownCardAt(source,source.indexOf('普通网页'));assert.equal(at.inline,true);assert.deepEqual(at.card,articleLinkSnapshot('https://example.org/path','普通网页'));assert.equal(at.label,'普通网页')
+ for(const href of ['http://example.org','mailto:qa@example.org','/posts/1','#part','https://127.0.0.1/private'])assert.equal(articleLinkSnapshot(href,'普通链接'),null)
+})
+check('source editing keeps escaped punctuation in reference labels literal',()=>{const label='🔎 数字 [42] 与 A&B',raw=articleReferenceMarkdown(base,label),selected=markdownCardAt(raw,8);assert.equal(selected.label,label);assert.equal(articleReferenceMarkdown(selected.card,selected.label),raw)})
+check('an identical plain link inside earlier inline code cannot steal the real link range',()=>{const link='[参考](https://example.org)',source='前文 `'+link+'` 中间 '+link+' 后文',fake=source.indexOf(link),real=source.lastIndexOf(link);assert.equal(markdownCardAt(source,fake+4),null);const selected=markdownCardAt(source,real+4);assert.equal(selected.from,real);assert.equal(selected.to,real+link.length);const replaced=source.slice(0,selected.from)+'新链接'+source.slice(selected.to);assert(replaced.includes('`'+link+'`'));assert.equal(replaced,'前文 `'+link+'` 中间 新链接 后文')})
+check('a painter reference sample inside earlier inline code cannot steal an adjacent real reference',()=>{const link=articleReferenceMarkdown(base,'参考'),source='`'+link+'`'+link+' 后文',fake=source.indexOf(link),real=source.lastIndexOf(link);assert.equal(markdownCardAt(source,fake+4),null);const selected=markdownCardAt(source,real+4);assert.deepEqual(selected.card,base);assert.equal(selected.from,real);assert.equal(selected.to,real+link.length)})
+check('nested emphasis consumes code siblings before locating its real reference',()=>{const link=articleReferenceMarkdown(base,'参考'),source='前文 **`'+link+'` '+link+'** 后文',real=source.lastIndexOf(link);assert.equal(markdownCardAt(source,source.indexOf(link)+4),null);const selected=markdownCardAt(source,real+4);assert.equal(selected.from,real);assert.equal(selected.to,real+link.length)})
+check('source layouts without a contiguous token mapping stay untouched',()=>{const link='[参考](https://example.org)',source='> 前文\n> '+link;assert.equal(markdownCardAt(source,source.indexOf(link)+4),null)})
+check('link samples inside fenced and inline code are never edited as real links',()=>{const reference=articleReferenceMarkdown(base,'样例');for(const source of ['```markdown\n'+reference+'\n```','前文 `'+reference+'` 后文'])assert.equal(markdownCardAt(source,source.indexOf(reference)+4),null)})
+console.log(JSON.stringify({passed:checks}))

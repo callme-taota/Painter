@@ -14,7 +14,7 @@ import {randomID} from '../random'
 import Icon from './Icon.vue'
 import SelectField from './SelectField.vue'
 import ArticleCardComposer from './ArticleCardComposer.vue'
-import {ArticleCardNode,ArticleReferenceLink,parseArticleCard,parseArticleReference,articleReferenceTitle,type ArticleCard,type ArticleCardType} from '../articleCards'
+import {ArticleCardNode,ArticleReferenceLink,parseArticleCard,parseArticleReference,articleLinkSnapshot,articleReferenceTitle,type ArticleCard,type ArticleCardType} from '../articleCards'
 import {initArticleCards} from '../contentCards'
 import {toast} from '../toast'
 
@@ -61,20 +61,21 @@ function inspect(){const e=editor.value;if(!e)return;issue.value=markdownCompati
 function insertMarkdown(value:string){if(!editor.value||!editable.value)return false;editor.value.chain().focus().insertContent(value,{contentType:'markdown'}).run();return true}
 function replaceText(token:string,replacement:string){const e=editor.value;if(!e||!editable.value)return false;let range:{from:number;to:number}|null=null;e.state.doc.descendants((node,pos)=>{if(range||!node.isText)return;const at=node.text?.indexOf(token)??-1;if(at>=0)range={from:pos+at,to:pos+at+token.length}});if(!range)return false;e.commands.insertContentAt(range,replacement,{contentType:'markdown',updateSelection:false});return true}
 function chooseBlock(value:string|number){if(!editable.value)return;if(value==='paragraph')editor.value?.chain().focus().setParagraph().run();else editor.value?.chain().focus().setHeading({level:Number(value) as 1|2|3}).run()}
-function openLink(){const e=editor.value;if(!e)return;const attrs=e.getAttributes('link');if(parseArticleReference(attrs.title,attrs.href)){openCards();return}cardOpen.value=false;linkValue.value=attrs.href||'';linkError.value='';linkOpen.value=true;void nextTick(()=>linkInput.value?.focus())}
+function selectedLinkCard(e:Editor){const attrs=e.getAttributes('link'),range=getMarkRange(e.state.selection.$from,e.schema.marks.link,attrs);if(!range)return null;const label=e.state.doc.textBetween(range.from,range.to,' '),card=parseArticleReference(attrs.title,attrs.href)||articleLinkSnapshot(attrs.href,label,attrs.title);return card?{...range,label,card}:null}
+function openLink(){const e=editor.value;if(!e)return;const node=e.state.doc.nodeAt(e.state.selection.from),block=node?.type.name==='articleCard'?parseArticleCard(node.attrs.snapshot):null;if(block?.type==='link'||selectedLinkCard(e)){openCards();return}const attrs=e.getAttributes('link');cardOpen.value=false;linkValue.value=attrs.href||'';linkError.value='';linkOpen.value=true;void nextTick(()=>linkInput.value?.focus())}
 function applyLink(){if(!editable.value)return;const e=editor.value;if(!e)return;const value=linkValue.value.trim();if(value&&!safeMediaURL(value)){linkError.value='请输入网页、邮件或站内链接。';toast.error(linkError.value);return}const chain=e.chain().focus().extendMarkRange('link'),applied=value?chain.setLink({href:value}).run():chain.unsetLink().run();if(!applied){toast.error('链接尚未应用，请重新选择文字后重试。');return}linkOpen.value=false;toast.success(value?'链接已应用到当前草稿。':'链接已从当前文字移除。')}
 function openCards(kind?:ArticleCardType,position?:number){
  const e=editor.value;if(!e||!editable.value)return
  linkOpen.value=false;slash.value=null;bubble.value=null
  let from=position??e.state.selection.from,to=e.state.selection.to,initial:ArticleCard|null=null,block=false,label=e.state.doc.textBetween(from,to,' ')
- if(!kind){const node=e.state.doc.nodeAt(from);if(node?.type.name==='articleCard'){initial=parseArticleCard(node.attrs.snapshot);to=from+node.nodeSize;block=true}else{const attrs=e.getAttributes('link');initial=parseArticleReference(attrs.title,attrs.href);if(initial){const range=getMarkRange(e.state.selection.$from,e.schema.marks.link);if(range){from=range.from;to=range.to;label=e.state.doc.textBetween(from,to,' ')}}}}
+ if(!kind){const node=e.state.doc.nodeAt(from);if(node?.type.name==='articleCard'){initial=parseArticleCard(node.attrs.snapshot);to=from+node.nodeSize;block=true}else{const link=selectedLinkCard(e);if(link){initial=link.card;from=link.from;to=link.to;label=link.label}}}
  cardInitial.value=initial;cardKind.value=initial?.type||kind||'github';cardLabel.value=label;cardInline.value=initial?.type==='link'&&!block||!initial&&kind==='link';cardRange.value={from,to,block};cardOpen.value=true
 }
 function closeCards(){cardOpen.value=false;editor.value?.commands.focus()}
 function applyCard(value:{card:ArticleCard;inline:boolean;label:string}){
  const e=editor.value,range=cardRange.value;if(!e||!range||!editable.value)return
  let applied=false
- if(value.inline&&value.card.v===1&&value.card.type==='link'){const attrs={href:value.card.url,title:articleReferenceTitle(value.card)};if(!range.block&&e.state.doc.textBetween(range.from,range.to,' ')===value.label&&range.from!==range.to)applied=e.chain().focus().setTextSelection(range).setMark('link',attrs).run();else applied=e.chain().focus().insertContentAt(range,{type:'text',text:value.label,marks:[{type:'link',attrs}]},{contentType:'json'}).run()}
+ if(value.inline&&value.card.v===1&&value.card.type==='link'){const attrs={href:value.card.url,title:articleReferenceTitle(value.card)};if(!range.block&&e.state.doc.textBetween(range.from,range.to,' ')===value.label&&range.from!==range.to)applied=e.chain().focus().setTextSelection(range).setMark('link',attrs).run();else{const text={type:'text',text:value.label,marks:[{type:'link',attrs}]};applied=e.chain().focus().insertContentAt(range,range.block?{type:'paragraph',content:[text]}:text,{contentType:'json'}).run()}}
  else{const node={type:'articleCard',attrs:{snapshot:JSON.stringify(value.card)}};applied=e.chain().focus().insertContentAt(range,range.block?node:[node,{type:'paragraph'}],{contentType:'json'}).run()}
  if(!applied){toast.error('卡片尚未应用，请重新选择插入位置后重试。');return}
  cardOpen.value=false;toast.success(cardInitial.value?'卡片已更新到当前草稿，尚未发布。':'卡片已插入当前草稿，尚未发布。')

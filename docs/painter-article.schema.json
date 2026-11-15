@@ -491,6 +491,14 @@
         "resolved_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "display": {
+          "enum": [
+            "card",
+            "title"
+          ],
+          "default": "card",
+          "description": "Block presentation: card (default) or a single title row. Inline Markdown references must omit display or use card; title is invalid inline."
         }
       }
     },

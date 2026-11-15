@@ -50,6 +50,9 @@ entries 必须为1至6项。归纳原文要点、已知限制或明确给出的�
 6. 每卡最多64个节点、6层（根panel算第1层）、6张图片，编码后仍不得超过8192字节。所有节点精确使用各自字段，不写null、重复字段、HTML、Markdown样式、class、style、事件、函数或数据绑定。
 7. 此格式是Painter组件树，不是A2UI消息流，不输出createSurface、updateComponents、catalogId等协议消息。不生成新的事实或削弱原材料的限定条件。
 
+四补充、网页链接展示
+正文句子中的链接直接使用普通 Markdown。原材料有明确网页标题和公开HTTPS网址，且需要独立引用时，可使用 {"type":"card","card":{"v":1,"type":"link","url":"原材料提供的HTTPS网址","title":"原材料提供的标题","display":"title"}}，显示为单行标题。需要完整卡片时省略display或设为card，可附带原材料已有的description。display只适用于v1的link卡，不添加到v3来源节点；不编造标题、简介或图片，不自行生成painter:v1编码。
+
 五、长度与安全
 1. 卡片标题和摘要条目标题最多200字符；body最多2000字符；指标label和source.label最多120字符；value最多100字符；detail最多500字符；source.url最多2048个UTF-8字节。标题、标签、value为单行纯文本；body、detail可用JSON转义后的LF或CRLF换行，不使用制表符。
 2. blocks 必须为1至256项；整篇最多128张卡片；每张卡片编码后最多8192个UTF-8字节；完整JSON与最终Markdown均不得超过1048576个UTF-8字节。合并过细区块；材料过长时保留明确的节选范围和缺失说明，不静默删掉限制或伪称完整。
