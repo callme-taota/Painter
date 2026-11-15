@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {t} from "../i18n"
+
 import {computed,nextTick,onBeforeUnmount,ref,useId,watch} from 'vue'
 import Icon from './Icon.vue'
 type Option={value:string|number;label:string;disabled?:boolean}
@@ -28,6 +30,6 @@ watch(()=>props.disabled,v=>{if(v)close()})
 onBeforeUnmount(()=>{clearTimeout(timer);document.removeEventListener('pointerdown',outside);window.removeEventListener('resize',place);window.removeEventListener('scroll',place,true)})
 </script>
 <template>
- <div class="select-field"><span class="select-label">{{label}}</span><button ref="trigger" type="button" class="select-trigger" role="combobox" aria-haspopup="listbox" :aria-label="label" :aria-expanded="open" :aria-controls="open?id:undefined" :aria-activedescendant="open?id+'-'+active:undefined" :disabled="disabled" @click="open?close():reveal()" @keydown="key"><span>{{selected?.label||'请选择'}}</span><Icon name="chevron" :size="16"/></button></div>
+ <div class="select-field"><span class="select-label">{{label}}</span><button ref="trigger" type="button" class="select-trigger" role="combobox" aria-haspopup="listbox" :aria-label="label" :aria-expanded="open" :aria-controls="open?id:undefined" :aria-activedescendant="open?id+'-'+active:undefined" :disabled="disabled" @click="open?close():reveal()" @keydown="key"><span>{{selected?.label||t("请选择")}}</span><Icon name="chevron" :size="16"/></button></div>
  <Teleport :to="trigger?.closest('dialog')||'body'"><ul v-if="open" :id="id" ref="menu" class="select-menu" role="listbox" :aria-label="label" :style="position"><li v-for="(option,i) in options" :id="id+'-'+i" :key="option.value" role="option" :aria-selected="option.value===modelValue" :aria-disabled="option.disabled||undefined" :data-active="i===active" @pointermove="!option.disabled&&(active=i)" @pointerdown.prevent @click="choose(i)"><span>{{option.label}}</span><svg v-if="option.value===modelValue" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></li></ul></Teleport>
 </template>

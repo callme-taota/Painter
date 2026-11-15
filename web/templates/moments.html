@@ -1,17 +1,17 @@
 {{define "moment-feed"}}
-<header class="browse-heading"><h1>动态</h1></header>
-<section class="moments-feed" data-moment-feed data-layout="two" aria-label="公开动态">
-{{if .Items}}<div class="moments-toolbar"><div class="moments-layout" role="group" aria-label="动态布局" hidden><button type="button" data-moment-layout="list" aria-pressed="false">列表</button><button type="button" data-moment-layout="two" aria-pressed="true">双列</button><button type="button" data-moment-layout="grid" aria-pressed="false">多列</button></div></div>
+<header class="browse-heading"><h1>{{t "动态"}}</h1></header>
+<section class="moments-feed" data-moment-feed data-layout="two" aria-label="{{t "公开动态"}}">
+{{if .Items}}<div class="moments-toolbar"><div class="moments-layout" role="group" aria-label="{{t "动态布局"}}" hidden><button type="button" data-moment-layout="list" aria-pressed="false">{{t "列表"}}</button><button type="button" data-moment-layout="two" aria-pressed="true">{{t "双列"}}</button><button type="button" data-moment-layout="grid" aria-pressed="false">{{t "多列"}}</button></div></div>
 <div class="moments-items" data-infinite-items>{{range .Items}}{{template "moment-card" .}}{{end}}</div>
-{{else}}<div class="moments-empty"><h2>暂无动态</h2></div>{{end}}
+{{else}}<div class="moments-empty"><h2>{{t "暂无动态"}}</h2></div>{{end}}
 </section>
 {{end}}
 {{define "moment-card"}}
 <article class="moment-card" id="moment-{{.id}}">
- <div class="moment-card-header"><a class="moment-author" href="/users/{{.author.id}}">{{if .author.avatar_url}}<img class="moment-avatar" src="{{.author.avatar_url}}" width="32" height="32" alt="" loading="lazy">{{else}}<span class="moment-avatar" aria-hidden="true">{{initial .author.display_name}}</span>{{end}}<span class="moment-author-name">{{.author.display_name}}</span></a><a class="moment-permalink" href="/moments/{{.id}}" aria-label="查看这条动态"><time class="moment-time" datetime="{{.published_at}}">{{dateTime .published_at}}</time></a></div>
+ <div class="moment-card-header"><a class="moment-author" href="/users/{{.author.id}}">{{if .author.avatar_url}}<img class="moment-avatar" src="{{.author.avatar_url}}" width="32" height="32" alt="" loading="lazy">{{else}}<span class="moment-avatar" aria-hidden="true">{{initial .author.display_name}}</span>{{end}}<span class="moment-author-name">{{.author.display_name}}</span></a><a class="moment-permalink" href="/moments/{{.id}}" aria-label="{{t "查看这条动态"}}"><time class="moment-time" datetime="{{.published_at}}">{{dateTime .published_at}}</time></a></div>
  {{if .text}}<p class="moment-text">{{.text}}</p>{{end}}
- {{if .images}}<div class="moment-gallery" data-moment-gallery data-image-count="{{len .images}}" aria-label="动态图片">{{range $i,$image := .images}}<a class="moment-photo" href="{{.url}}" target="_blank" rel="noopener" data-moment-image data-image-alt="{{.alt}}" aria-label="查看图片 {{rank $i}}{{if .alt}}：{{.alt}}{{end}}"><img src="{{.url}}" alt="{{if .alt}}{{.alt}}{{else}}动态图片 {{rank $i}}{{end}}" loading="lazy" decoding="async"></a>{{end}}</div>{{end}}
- <button type="button" class="quiet" data-share-type="moment" data-share-id="{{.id}}" aria-label="分享这条动态">分享动态</button>
+ {{if .images}}<div class="moment-gallery" data-moment-gallery data-image-count="{{len .images}}" aria-label="{{t "动态图片"}}">{{range $i,$image := .images}}<a class="moment-photo" href="{{.url}}" target="_blank" rel="noopener" data-moment-image data-image-alt="{{.alt}}" aria-label="{{t "查看图片 {count}" "count" (rank $i)}}{{if .alt}}：{{.alt}}{{end}}"><img src="{{.url}}" alt="{{if .alt}}{{.alt}}{{else}}{{t "动态图片 {count}" "count" (rank $i)}}{{end}}" loading="lazy" decoding="async"></a>{{end}}</div>{{end}}
+ <button type="button" class="quiet" data-share-type="moment" data-share-id="{{.id}}" aria-label="{{t "分享这条动态"}}">{{t "分享动态"}}</button>
 </article>
 {{end}}
-{{define "moment-detail"}}<div class="moment-detail"><a class="moment-back" href="/moments"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> 所有动态</a><h1 class="sr-only">{{.Post.author.display_name}}的动态</h1>{{template "moment-card" .Post}}</div>{{end}}
+{{define "moment-detail"}}<div class="moment-detail"><a class="moment-back" href="/moments"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> {{t "所有动态"}}</a><h1 class="sr-only">{{t "{name}的动态" "name" .Post.author.display_name}}</h1>{{template "moment-card" .Post}}</div>{{end}}

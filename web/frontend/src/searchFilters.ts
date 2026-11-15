@@ -1,3 +1,4 @@
+import {t,formatNumber} from './i18n'
 import {registerMobileOverlay,dismissMobileOverlay} from './mobileOverlays'
 // Keep one set of form inputs. Desktop disclosures become a phone task sheet.
 export function initSearchFilters(){
@@ -9,21 +10,21 @@ export function initSearchFilters(){
  const selected=form.querySelector<HTMLElement>('.search-selected-tags')!,status=form.querySelector<HTMLElement>('[data-filter-status]')!,count=form.querySelector<HTMLElement>('[data-tag-count]')!,query=form.querySelector<HTMLInputElement>('[data-tag-query]')!
  const phone=matchMedia('(max-width:720px)');let dirty=false
  const sheet=document.createElement('dialog');sheet.className='mobile-sheet mobile-filter-sheet';sheet.setAttribute('aria-labelledby','mobile-filter-title')
- sheet.innerHTML='<header class="mobile-sheet-heading"><button type="button" class="quiet" data-filter-cancel>取消</button><h2 id="mobile-filter-title" tabindex="-1">筛选</h2><span aria-hidden="true"></span></header><div class="mobile-sheet-content"></div><div class="mobile-sheet-actions"><button type="button" class="quiet" data-filter-reset>重置</button><button type="button" class="primary" data-filter-apply>查看结果</button></div>'
+ sheet.innerHTML=`<header class="mobile-sheet-heading"><button type="button" class="quiet" data-filter-cancel>${t('取消')}</button><h2 id="mobile-filter-title" tabindex="-1">${t('筛选')}</h2><span aria-hidden="true"></span></header><div class="mobile-sheet-content"></div><div class="mobile-sheet-actions"><button type="button" class="quiet" data-filter-reset>${t('重置')}</button><button type="button" class="primary" data-filter-apply>${t('查看结果')}</button></div>`
  form.append(sheet);registerMobileOverlay(sheet,()=>{if(lastOwner)openFilter(lastOwner)})
  let lastOwner:HTMLDetailsElement|null=null
  let owner:HTMLDetailsElement|null=null,panel:HTMLElement|null=null,previousDirty=false,snapshot:boolean[]=[]
- function sortLabel(){const value=sorts.find(s=>s.checked)?.value;form!.querySelector('[data-sort-label]')!.textContent=value==='recent'?'最近发布':'相关性'}
+ function sortLabel(){const value=sorts.find(s=>s.checked)?.value;form!.querySelector('[data-sort-label]')!.textContent=value==='recent'?t('最近发布'):t('相关性')}
  function update(){
-  const checked=tags.filter(t=>t.checked);count.textContent=checked.length?`${checked.length} 个`:'全部';selected.replaceChildren()
-  for(const tag of checked){const button=document.createElement('button');button.type='button';button.className='search-selected-tag';const name=tag.closest('label')!.querySelector('span')!.textContent!;button.textContent=name;button.setAttribute('aria-label',`移除标签：${name}`);const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.classList.add('icon');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d','m7 7 10 10M17 7 7 17');svg.append(path);button.append(svg);button.addEventListener('click',()=>{tag.checked=false;dirty=true;update();form!.querySelector<HTMLElement>('[data-tag-filter] summary')?.focus()});selected.append(button)}
+  const checked=tags.filter(t=>t.checked);count.textContent=checked.length?t('{count} 个',{count:formatNumber(checked.length)}):t('全部');selected.replaceChildren()
+  for(const tag of checked){const button=document.createElement('button');button.type='button';button.className='search-selected-tag';const name=tag.closest('label')!.querySelector('span')!.textContent!;button.textContent=name;button.setAttribute('aria-label',t('移除标签：{name}',{name}));const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.classList.add('icon');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d','m7 7 10 10M17 7 7 17');svg.append(path);button.append(svg);button.addEventListener('click',()=>{tag.checked=false;dirty=true;update();form!.querySelector<HTMLElement>('[data-tag-filter] summary')?.focus()});selected.append(button)}
   for(const tag of tags)tag.disabled=checked.length>=20&&!tag.checked
-  status.textContent=dirty?'筛选已更改，点击“搜索”查看结果。':'';sortLabel()
+  status.textContent=dirty?t('筛选已更改，点击“搜索”查看结果。'):'';sortLabel()
  }
  function openFilter(detail:HTMLDetailsElement){
   if(sheet.open)return
   details.forEach(d=>d.open=false);owner=detail;lastOwner=detail;panel=detail.querySelector<HTMLElement>('.search-filter-popover')!
-  previousDirty=dirty;snapshot=[...tags,...sorts].map(x=>x.checked);sheet.returnValue='';sheet.querySelector('#mobile-filter-title')!.textContent=detail.hasAttribute('data-tag-filter')?'选择标签':'文章排序'
+  previousDirty=dirty;snapshot=[...tags,...sorts].map(x=>x.checked);sheet.returnValue='';sheet.querySelector('#mobile-filter-title')!.textContent=detail.hasAttribute('data-tag-filter')?t('选择标签'):t('文章排序')
   sheet.querySelector('.mobile-sheet-content')!.append(panel);sheet.showModal()
   requestAnimationFrame(()=>{sheet.querySelector<HTMLElement>('#mobile-filter-title')?.focus({preventScroll:true})})
  }

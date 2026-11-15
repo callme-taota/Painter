@@ -38,12 +38,14 @@ type pwaManifest struct {
 	Shortcuts                 []pwaShortcut `json:"shortcuts"`
 }
 
-func manifestForSite(name string) pwaManifest {
+func manifestForSite(name string) pwaManifest { return manifestForSiteLocale(name, defaultLocale) }
+
+func manifestForSiteLocale(name, locale string) pwaManifest {
 	if strings.TrimSpace(name) == "" {
 		name = "Painter"
 	}
 	return pwaManifest{
-		ID: "/", Name: name, ShortName: name, Language: "zh-CN",
+		ID: "/", Name: name, ShortName: name, Language: locale,
 		StartURL: "/", Scope: "/", Display: "standalone",
 		BackgroundColor: "#ffffff", ThemeColor: "#ffffff",
 		Icons: []pwaIcon{
@@ -51,16 +53,17 @@ func manifestForSite(name string) pwaManifest {
 			{Source: "/pwa/icon-512.png", Sizes: "512x512", Type: "image/png", Purpose: "any"},
 		},
 		// These are normal entry URLs: their usual visibility and login checks apply.
-		Shortcuts: []pwaShortcut{{Name: "文章", URL: "/posts"}, {Name: "产品", URL: "/products"}, {Name: "工作台", URL: "/studio"}},
+		Shortcuts: []pwaShortcut{{Name: translateUI(locale, "文章"), URL: "/posts"}, {Name: translateUI(locale, "产品"), URL: "/products"}, {Name: translateUI(locale, "工作台"), URL: "/studio"}},
 	}
 }
 
 func writePWAManifest(w http.ResponseWriter, r *http.Request, name string) {
 	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(manifestForSite(name)); err != nil {
+	if err := json.NewEncoder(&body).Encode(manifestForSiteLocale(name, requestLocale(r))); err != nil {
 		Error(w, err)
 		return
 	}
+	localeResponseHeaders(w, requestLocale(r))
 	w.Header().Set("Content-Type", "application/manifest+json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("X-Content-Type-Options", "nosniff")

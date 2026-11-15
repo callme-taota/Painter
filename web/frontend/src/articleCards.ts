@@ -1,3 +1,4 @@
+import {t} from './i18n'
 import {Node as TiptapNode} from '@tiptap/core'
 import {DOMSerializer,type DOMOutputSpec} from '@tiptap/pm/model'
 import Link,{isAllowedUri} from '@tiptap/extension-link'
@@ -21,8 +22,8 @@ export type ArticleLayoutNode=ArticleLayoutText|ArticleLayoutLink|ArticleLayoutI
 export type ArticleLayoutPanel={kind:'panel';tone?:'note'|'insight'|'warning';children:ArticleLayoutNode[]}
 export type ArticleLayoutCard={v:3;type:'layout';root:ArticleLayoutPanel}
 export type ArticleCard=ArticleCardV1|ArticlePanelCard|ArticleLayoutCard
-export const articleCardKinds=[{value:'callout',label:'提示'},{value:'metrics',label:'指标'},{value:'summary',label:'摘要组'},{value:'layout',label:'组合卡片'},{value:'github',label:'GitHub 仓库'},{value:'steam',label:'Steam 游戏'},{value:'apple_music',label:'Apple Music'},{value:'link',label:'网页参考'},{value:'moment',label:'站内动态'},{value:'phrase',label:'站内片语'}] as const
-const labels:Record<ArticleCardType,string>={callout:'提示',metrics:'指标',summary:'摘要组',layout:'组合卡片',github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:'网页参考',moment:'动态',phrase:'片语'}
+export const articleCardKinds=[{value:'callout',label:t('提示')},{value:'metrics',label:t('指标')},{value:'summary',label:t('摘要组')},{value:'layout',label:t('组合卡片')},{value:'github',label:t('GitHub 仓库')},{value:'steam',label:t('Steam 游戏')},{value:'apple_music',label:'Apple Music'},{value:'link',label:t('网页参考')},{value:'moment',label:t('站内动态')},{value:'phrase',label:t('站内片语')}] as const
+const labels:Record<ArticleCardType,string>={callout:t('提示'),metrics:t('指标'),summary:t('摘要组'),layout:t('组合卡片'),github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:t('网页参考'),moment:t('动态'),phrase:t('片语')}
 export const articleReferencePrefix='painter:v1:'
 export const isInternalArticleCard=(type:string)=>type==='moment'||type==='phrase'
 export const isArticlePanel=(type:string):type is ArticlePanelType=>type==='callout'||type==='metrics'||type==='summary'
@@ -160,7 +161,7 @@ function detailSpec(card:ArticleCardV1):DOMOutputSpec[]{
 }
 export function articleCardSpec(card:ArticleCard):DOMOutputSpec {
   if(card.v!==1)return layoutSpec(card.v===2?compileArticlePanel(card):card.root,card.type)
-  if(isInternalArticleCard(card.type))return ['a',{class:'content-card content-card--'+card.type,href:card.url,'data-internal-card-state':'pending'},['span',{class:'content-card__body'},span('content-card__title',labels[card.type]+'引用'),span('content-card__description','正在读取公开内容…')]]
+  if(isInternalArticleCard(card.type))return ['a',{class:'content-card content-card--'+card.type,href:card.url,'data-internal-card-state':'pending'},['span',{class:'content-card__body'},span('content-card__title',t('{kind}引用',{kind:labels[card.type]})),span('content-card__description',t('正在读取公开内容…'))]]
   if(card.type==='link'&&card.display==='title'){
     const svg=(name:string,path:string):DOMOutputSpec=>['http://www.w3.org/2000/svg svg',{class:name,width:'18',height:'18',viewBox:'0 0 24 24',focusable:'false',fill:'none',stroke:'currentColor','stroke-width':'1.65','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'},['http://www.w3.org/2000/svg path',{d:path}]]
     return ['a',{class:'content-link-row',href:card.url,target:'_blank',rel:'noopener noreferrer'},svg('content-link-row__icon','M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'),span('content-link-row__title',card.title||labels.link),span('content-link-row__host',new URL(card.url).hostname),svg('content-link-row__arrow','M7 17 17 7M7 7h10v10')]
@@ -216,7 +217,7 @@ export const ArticleCardNode=TiptapNode.create<{onEdit?:(position:number)=>void}
   addNodeView(){return ({node,editor,getPos})=>{
     const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'')+(card&&card.v!==1?' article-card-node--panel':'')+(card?.v===1&&card.type==='link'&&card.display==='title'?' article-card-node--link-title':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
     if(card)wrapper.append(DOMSerializer.renderSpec(document,articleCardSpec(card)).dom)
-    const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent='编辑卡片';edit.setAttribute('aria-label','编辑'+(card?articleCardTitle(card):'内容')+'卡片');edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
+    const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent=t('编辑卡片');edit.setAttribute('aria-label',t('编辑{name}卡片',{name:card?articleCardTitle(card):t('内容')}));edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
     wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card,a.content-link-row,.content-panel'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
     // DocumentEditor rescans through initArticleCards after initial mount and every document update.
     return {dom:wrapper,stopEvent:event=>event.target===edit,ignoreMutation:()=>true}

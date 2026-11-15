@@ -32,7 +32,7 @@ func v31NavigationTemplates(t *testing.T) *template.Template {
 			}
 			return strings.TrimPrefix(u.Host, "www.")
 		},
-	}).ParseFS(web.FS, "templates/*.html")
+	}).Funcs(localeTemplateFuncs(defaultLocale)).ParseFS(web.FS, "templates/*.html")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestV31EmptyToolsPreservePublicBrowsing(t *testing.T) {
 				v31AssertBrowseLinks(t, browse, kind)
 				tools := v31NavigationClass(t, dock, "dock-tools")
 				if len(friendWebNodes(tools, func(node *nethtml.Node) bool {
-					return node.Type == nethtml.ElementNode && slices.Contains([]string{"a", "button", "summary", "input"}, node.Data) && !friendWebHasAttr(node, "data-pwa-install") && !friendWebHasAttr(node, "data-pwa-help")
+					return node.Type == nethtml.ElementNode && slices.Contains([]string{"a", "button", "summary", "input"}, node.Data) && !friendWebHasAttr(node, "data-pwa-install") && !friendWebHasAttr(node, "data-pwa-help") && !friendWebHasAttr(node, "data-locale-switch")
 				})) != 0 {
 					t.Error("an explicit empty array must hide configured tools")
 				}
@@ -329,7 +329,9 @@ func TestV31ToolsUseTheCurrentSceneAndArticleLikeGuard(t *testing.T) {
 			}); (len(actions) == 1) != (sample.wantAction == "bottom") {
 				t.Error("article-bottom control leaked from another scene")
 			}
-			links := v31NavigationLinks(tools)
+			links := friendWebNodes(tools, func(node *nethtml.Node) bool {
+				return node.Type == nethtml.ElementNode && node.Data == "a" && !friendWebHasAttr(node, "data-locale-switch")
+			})
 			if sample.wantHref == "" {
 				if len(links) != 0 {
 					t.Error("account link leaked from the other scene")

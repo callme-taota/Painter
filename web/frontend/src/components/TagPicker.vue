@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {t} from "../i18n"
+
 import {computed,nextTick,onBeforeUnmount,onMounted,ref,useId,watch} from 'vue'
 import type {Row} from '../api'
 import Icon from './Icon.vue'
@@ -20,11 +22,11 @@ const selectedSet=computed(()=>new Set(selectedIds.value))
 const atLimit=computed(()=>selectedIds.value.length>=maxTags)
 const options=computed(()=>Array.from(new Map(props.tags.filter(tag=>tag.id!=null).map(tag=>{
  const id=String(tag.id)
- return [id,{id,name:String(tag.name||`标签 ${id}`)}] as const
+ return [id,{id,name:String(tag.name||t("标签 {value1}", {value1:id}))}] as const
 })).values()))
 const names=computed(()=>new Map(options.value.map(tag=>[tag.id,tag.name])))
 const selectedTags=computed(()=>selectedIds.value.map(id=>({
- id,name:names.value.get(id)||`不可用标签（${id}）`,unavailable:!names.value.has(id)
+ id,name:names.value.get(id)||t("不可用标签（{value1}）", {value1:id}),unavailable:!names.value.has(id)
 })))
 const hasUnavailable=computed(()=>selectedTags.value.some(tag=>tag.unavailable))
 const normalize=(value:string)=>value.normalize('NFKC').toLocaleLowerCase().trim()
@@ -34,10 +36,10 @@ const filteredOptions=computed(()=>{
 })
 const activeOption=computed(()=>open.value?filteredOptions.value[activeIndex.value]:undefined)
 const hint=computed(()=>{
- if(props.loading)return '正在载入标签…'
- if(atLimit.value)return '已达到 20 个标签上限，移除一个后可继续添加。'
- if(!options.value.length)return '站点还没有可选标签，可以先继续写作。'
- return '可选择多个标签，最多 20 个。'
+ if(props.loading)return t("正在载入标签…")
+ if(atLimit.value)return t("已达到 20 个标签上限，移除一个后可继续添加。")
+ if(!options.value.length)return t("站点还没有可选标签，可以先继续写作。")
+ return t("可选择多个标签，最多 20 个。")
 })
 
 function canToggle(id:string){return selectedSet.value.has(id)||!atLimit.value}
@@ -113,29 +115,29 @@ onBeforeUnmount(()=>document.removeEventListener('pointerdown',outside,true))
 
 <template>
  <fieldset ref="root" class="tag-picker" :disabled="blocked" :aria-busy="loading" @focusout="leave">
-  <legend><label :for="`${id}-input`">标签</label><span class="tag-count">已选 {{selectedIds.length}} / 20</span></legend>
+  <legend><label :for="`${id}-input`">{{t("标签")}}</label><span class="tag-count">{{t("已选 {value1} / 20", {value1:(selectedIds.length)})}}</span></legend>
   <div class="tag-picker-body">
    <div class="tag-control" :class="{'is-disabled':blocked}" @click="focusInput">
-    <button v-for="tag in selectedTags" :key="tag.id" class="selected-tag" type="button" :disabled="blocked" :aria-label="`移除标签：${tag.name}`" :title="tag.unavailable?'这个标签已归档或暂不可用，当前选择已保留。':tag.name" @click.stop="removeTag(tag.id)">
+    <button v-for="tag in selectedTags" :key="tag.id" class="selected-tag" type="button" :disabled="blocked" :aria-label="t('移除标签：{value1}', {value1:tag.name})" :title="tag.unavailable?t('这个标签已归档或暂不可用，当前选择已保留。'):tag.name" @click.stop="removeTag(tag.id)">
      <span>{{tag.name}}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
     </button>
     <div class="tag-input-row">
-     <input :id="`${id}-input`" ref="input" v-model="query" class="tag-search" type="text" role="combobox" :disabled="blocked" autocomplete="off" :spellcheck="false" placeholder="搜索并选择标签" :aria-expanded="open" aria-autocomplete="list" aria-haspopup="listbox" :aria-controls="open?`${id}-list`:undefined" :aria-activedescendant="activeOption?`${id}-option-${activeIndex}`:undefined" :aria-describedby="`${id}-hint${hasUnavailable?` ${id}-unavailable`:''}`" @focus="openDropdown" @input="openDropdown" @keydown="keydown" @compositionstart="composing=true" @compositionend="endComposition">
-     <button class="tag-toggle" type="button" :disabled="blocked" :aria-label="open?'收起标签选项':'展开标签选项'" :aria-expanded="open" :aria-controls="open?`${id}-list`:undefined" tabindex="-1" @click.stop="toggleDropdown"><Icon name="chevron" :size="18"/></button>
+     <input :id="`${id}-input`" ref="input" v-model="query" class="tag-search" type="text" role="combobox" :disabled="blocked" autocomplete="off" :spellcheck="false" :placeholder="t('搜索并选择标签')" :aria-expanded="open" aria-autocomplete="list" aria-haspopup="listbox" :aria-controls="open?`${id}-list`:undefined" :aria-activedescendant="activeOption?`${id}-option-${activeIndex}`:undefined" :aria-describedby="`${id}-hint${hasUnavailable?` ${id}-unavailable`:''}`" @focus="openDropdown" @input="openDropdown" @keydown="keydown" @compositionstart="composing=true" @compositionend="endComposition">
+     <button class="tag-toggle" type="button" :disabled="blocked" :aria-label="open?t('收起标签选项'):t('展开标签选项')" :aria-expanded="open" :aria-controls="open?`${id}-list`:undefined" tabindex="-1" @click.stop="toggleDropdown"><Icon name="chevron" :size="18"/></button>
     </div>
    </div>
    <div v-if="open" class="tag-dropdown">
-    <div v-if="filteredOptions.length" :id="`${id}-list`" class="tag-options" role="listbox" aria-label="可选标签" aria-multiselectable="true">
+    <div v-if="filteredOptions.length" :id="`${id}-list`" class="tag-options" role="listbox" :aria-label="t('可选标签')" aria-multiselectable="true">
      <button v-for="(tag,index) in filteredOptions" :id="`${id}-option-${index}`" :key="tag.id" class="tag-option" :class="{'is-active':index===activeIndex}" type="button" role="option" :aria-selected="selectedSet.has(tag.id)" :aria-disabled="!canToggle(tag.id)" :data-option-index="index" tabindex="-1" @mousedown.prevent @pointermove="event=>{if(event.pointerType==='mouse'&&canToggle(tag.id))activeIndex=index}" @click="toggleTag(tag.id)">
-      <span>{{tag.name}}</span><span v-if="selectedSet.has(tag.id)" class="tag-selected-label">已选</span>
+      <span>{{tag.name}}</span><span v-if="selectedSet.has(tag.id)" class="tag-selected-label">{{t("已选")}}</span>
      </button>
     </div>
-    <div v-else :id="`${id}-list`" class="tag-empty" role="listbox" aria-label="可选标签" aria-multiselectable="true"><p>{{options.length?'没有匹配的标签':'暂无可选标签'}}</p><span>{{options.length?'试试其他关键词。':'可以先继续写作。'}}</span></div>
+    <div v-else :id="`${id}-list`" class="tag-empty" role="listbox" :aria-label="t('可选标签')" aria-multiselectable="true"><p>{{options.length?t("没有匹配的标签"):t("暂无可选标签")}}</p><span>{{options.length?t("试试其他关键词。"):t("可以先继续写作。")}}</span></div>
    </div>
   </div>
   <p :id="`${id}-hint`" class="tag-hint" aria-live="polite">{{hint}}</p>
-  <p v-if="hasUnavailable" :id="`${id}-unavailable`" class="tag-hint">不可用的标签已保留，移除后无法在这里重新选择。</p>
-  <span class="sr-only" role="status">{{open?`找到 ${filteredOptions.length} 个标签，已选择 ${selectedIds.length} 个。`:''}}</span>
+  <p v-if="hasUnavailable" :id="`${id}-unavailable`" class="tag-hint">{{t("不可用的标签已保留，移除后无法在这里重新选择。")}}</p>
+  <span class="sr-only" role="status">{{open?t("找到 {value1} 个标签，已选择 {value2} 个。", {value1:filteredOptions.length,value2:selectedIds.length}):''}}</span>
  </fieldset>
 </template>
 

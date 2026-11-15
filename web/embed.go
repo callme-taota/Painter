@@ -10,7 +10,7 @@ import (
 // FS includes the production frontend. Building the Go application never needs Node.
 // The all: prefix intentionally includes Vite's .vite/manifest.json.
 //
-//go:embed templates all:assets
+//go:embed templates locales all:assets
 var FS embed.FS
 
 type Chunk struct {

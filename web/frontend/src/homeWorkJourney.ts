@@ -1,3 +1,4 @@
+import {t} from './i18n'
 import './homeWorkJourney.css'
 import {createPointMorph, type PointMorphRect} from './homePointMorph'
 import {registerHomeSnapSource} from './homeSnap'
@@ -34,14 +35,14 @@ export function initHomeWorkJourney(){
   if(!phone.matches)project.querySelectorAll<HTMLImageElement>('.project-owner-avatar').forEach(img=>{img.loading='eager'})
   const caption=record?.querySelector<HTMLElement>('.home-record-caption')?.cloneNode(true) as HTMLElement|undefined
   if(caption){caption.classList.add('work-record-caption');caption.setAttribute('aria-hidden','true');caption.inert=true;stage.append(caption)}
-  const jumps=document.createElement('nav');jumps.className='work-content-jumps sr-only';jumps.setAttribute('aria-label','直接查看首页内容')
-  const destinations:[string,string,number][]=[['home-projects','查看开源项目',2.25],['home-activity','查看发布日历',4.05],...(record?[['home-music','查看唱片墙',6.02] as [string,string,number]]:[])]
+  const jumps=document.createElement('nav');jumps.className='work-content-jumps sr-only';jumps.setAttribute('aria-label',t('直接查看首页内容'))
+  const destinations:[string,string,number][]=[['home-projects',t('查看开源项目'),2.25],['home-activity',t('查看发布日历'),4.05],...(record?[['home-music',t('查看唱片墙'),6.02] as [string,string,number]]:[])]
   for(const[id,label]of destinations){const a=document.createElement('a');a.href='#'+id;a.textContent=label;jumps.append(a)}
   journey.insertBefore(jumps,stage)
   let projectChooser:HTMLElement|undefined
   if(cards.length>1){
-   const chooser=document.createElement('div');projectChooser=chooser;chooser.inert=true;chooser.className='work-project-chooser';chooser.setAttribute('role','group');chooser.setAttribute('aria-label','选择开源项目')
-   const buttons=cards.map((card,index)=>{const button=document.createElement('button');button.type='button';button.dataset.workProjectPick=String(index);button.textContent=card.querySelector('h3')?.textContent||`项目 ${index+1}`;button.addEventListener('click',()=>card.querySelector<HTMLAnchorElement>('.project-card-link')?.focus({preventScroll:true}));chooser.append(button);return button})
+   const chooser=document.createElement('div');projectChooser=chooser;chooser.inert=true;chooser.className='work-project-chooser';chooser.setAttribute('role','group');chooser.setAttribute('aria-label',t('选择开源项目'))
+   const buttons=cards.map((card,index)=>{const button=document.createElement('button');button.type='button';button.dataset.workProjectPick=String(index);button.textContent=card.querySelector('h3')?.textContent||t('项目 {count}',{count:index+1});button.addEventListener('click',()=>card.querySelector<HTMLAnchorElement>('.project-card-link')?.focus({preventScroll:true}));chooser.append(button);return button})
    const selection=()=>{const selected=cards.findIndex(card=>card.classList.contains('is-active'));buttons.forEach((button,index)=>button.setAttribute('aria-pressed',String(index===(selected<0?cards.length-1:selected))))}
    const deck=project.querySelector<HTMLElement>('[data-project-deck]');deck?.after(chooser)
    if(deck)new MutationObserver(selection).observe(deck,{attributes:true,subtree:true,attributeFilter:['class']})

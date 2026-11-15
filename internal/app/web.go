@@ -21,7 +21,7 @@ import (
 
 type webPage struct {
 	Kind, Title, Description, Canonical, JS, Next, TopicParam, ReturnTo, Error, SearchID, PreviewImage, ViewerID string
-	ScriptNonce                                                                                                  string
+	ScriptNonce, Locale, LocaleNext                                                                              string
 	Site, Post, User, Featured, FriendSettings                                                                   map[string]any
 	ProductStats                                                                                                 map[string]any
 	Items, Categories, Tags, Topics, Related                                                                     []map[string]any
@@ -158,22 +158,32 @@ func webNext(r *http.Request, result map[string]any) string {
 }
 func (a *App) RegisterWeb() {
 	a.registerPWA()
-	templates := template.Must(template.New("page").Funcs(template.FuncMap{"str": webString, "hasTag": func(q url.Values, id any) bool {
-		for _, v := range q["tag_id"] {
-			if v == webString(id) {
-				return true
+	a.registerLocale()
+	templateSets := map[string]*template.Template{}
+	for _, locale := range supportedLocales {
+		templates := template.Must(template.New("page").Funcs(template.FuncMap{"str": webString, "hasTag": func(q url.Values, id any) bool {
+			for _, v := range q["tag_id"] {
+				if v == webString(id) {
+					return true
+				}
 			}
-		}
-		return false
-	}, "date": webDate, "dateTime": webDateTime, "gameHours": gameHours, "phrases": func(v any) []string { return strings.SplitAfter(webString(v), "，") }, "initial": webInitial, "rank": func(i int) int { return i + 1 }, "linkHost": func(v any) string {
-		u, _ := url.Parse(webString(v))
-		if u == nil {
-			return ""
-		}
-		return strings.TrimPrefix(u.Host, "www.")
-	}}).ParseFS(web.FS, "templates/*.html"))
+			return false
+		}, "date": webDate, "dateTime": webDateTime, "gameHours": gameHours, "phrases": func(v any) []string { return strings.SplitAfter(webString(v), "，") }, "initial": webInitial, "rank": func(i int) int { return i + 1 }, "linkHost": func(v any) string {
+			u, _ := url.Parse(webString(v))
+			if u == nil {
+				return ""
+			}
+			return strings.TrimPrefix(u.Host, "www.")
+		}}).Funcs(localeTemplateFuncs(locale)).ParseFS(web.FS, "templates/*.html"))
+		templateSets[locale] = templates
+	}
 	render := func(w http.ResponseWriter, r *http.Request, p webPage) {
 		p.ScriptNonce = requestScriptNonce(r.Context())
+		p.Locale = requestLocale(r)
+		if explicit := canonicalLocale(r.URL.Query().Get("lang")); explicit != "" {
+			a.persistLocaleChoice(w, r, explicit)
+		}
+		p.LocaleNext = localeReturnPath(r.URL.RequestURI())
 		if p.Kind == "home" || p.Kind == "login" || p.Kind == "register" {
 			installed, e := a.installationComplete(r.Context(), a.Pool)
 			if e != nil {
@@ -234,9 +244,11 @@ func (a *App) RegisterWeb() {
 		if p.Status == 0 {
 			p.Status = 200
 		}
+		localizePageChrome(&p)
+		localeResponseHeaders(w, p.Locale)
 		var buffer bytes.Buffer
-		if e := templates.ExecuteTemplate(&buffer, "page", p); e != nil {
-			http.Error(w, "页面暂不可用", 500)
+		if e := templateSets[p.Locale].ExecuteTemplate(&buffer, "page", p); e != nil {
+			http.Error(w, translateUI(p.Locale, "页面暂不可用"), 500)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -564,7 +576,7 @@ func (a *App) RegisterWeb() {
 				items[i]["next_id"] = items[i+1]["id"]
 			}
 		}
-		render(w, r, webPage{Kind: "phrases", Title: "片语", Description: "文章之外，留下的只言片语。", Items: items, Next: webNext(r, data)})
+		render(w, r, webPage{Kind: "phrases", Title: "片语", Description: translateUI(requestLocale(r), "文章之外，留下的只言片语。"), Items: items, Next: webNext(r, data)})
 	})
 	a.Mux.HandleFunc("GET /moments", func(w http.ResponseWriter, r *http.Request) {
 		data, e := a.PublicMoments(r.Context(), r.URL.Query())
@@ -587,13 +599,13 @@ func (a *App) RegisterWeb() {
 		if len(images) > 0 {
 			previewImage = a.Config.PublicBaseURL + webString(images[0]["url"])
 			if strings.TrimSpace(string(description)) == "" {
-				description = []rune(fmt.Sprintf("%s分享了%d张图片。", webString(author["display_name"]), len(images)))
+				description = []rune(translateUI(requestLocale(r), "{name}分享了{count}张图片。", "name", webString(author["display_name"]), "count", len(images)))
 			}
 		}
 		if len(description) > 160 {
 			description = description[:160]
 		}
-		render(w, r, webPage{Kind: "moment", Title: webString(author["display_name"]) + "的动态", Description: string(description), Post: item, PreviewImage: previewImage})
+		render(w, r, webPage{Kind: "moment", Title: translateUI(requestLocale(r), "{name}的动态", "name", webString(author["display_name"])), Description: string(description), Post: item, PreviewImage: previewImage})
 	})
 	a.Mux.HandleFunc("GET /friends", func(w http.ResponseWriter, r *http.Request) {
 		data, e := a.PublicFriends(r.Context())

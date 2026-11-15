@@ -45,11 +45,11 @@ func analyticsHash(s string) string { b := sha256.Sum256([]byte(s)); return hex.
 func analyticsPropInt(e *analyticsEvent, key string, min, max int64) (*int64, error) {
 	b, ok := e.Props[key]
 	if !ok {
-		return nil, E(400, "VALIDATION_FAILED", "事件缺少属性 "+key)
+		return nil, ET(400, "VALIDATION_FAILED", "事件缺少属性 {name}", "name", key)
 	}
 	var n int64
 	if json.Unmarshal(b, &n) != nil || n < min || n > max {
-		return nil, E(400, "VALIDATION_FAILED", "事件属性无效 "+key)
+		return nil, ET(400, "VALIDATION_FAILED", "事件属性无效 {name}", "name", key)
 	}
 	return &n, nil
 }
@@ -142,7 +142,7 @@ func (e *analyticsEvent) validate(now int64) error {
 	}
 	for key := range e.Props {
 		if !allowed[key] {
-			return E(400, "VALIDATION_FAILED", "事件包含未知属性 "+key)
+			return ET(400, "VALIDATION_FAILED", "事件包含未知属性 {name}", "name", key)
 		}
 	}
 	if e.Kind == "page_view.v1" && e.Post != nil && e.Revision == nil {

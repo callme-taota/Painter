@@ -1,3 +1,4 @@
+import {t,locale} from './i18n'
 import './toast.css'
 
 export type ToastKind='success'|'error'|'info'|'warning'
@@ -5,15 +6,15 @@ export type ToastOptions={id?:string;duration?:number}
 type Entry={id:string;kind:ToastKind;message:string;element:HTMLLIElement;text:HTMLParagraphElement;icon:SVGSVGElement;close:HTMLButtonElement;origin:HTMLElement|null;duration:number;remaining:number;started:number;timer?:number;paused:Set<string>}
 type ToastService={show:(kind:ToastKind,message:string,options:ToastOptions)=>string;dismiss:(id?:string)=>void}
 const singleton=Symbol.for('painter.toast.service')
-const labels:Record<ToastKind,string>={success:'成功',error:'错误',info:'提示',warning:'注意'}
+const labels:Record<ToastKind,string>={success:t('成功'),error:t('错误'),info:t('提示'),warning:t('注意')}
 const paths:Record<ToastKind,string[]>={success:['M20 6 9 17l-5-5'],error:['m8 8 8 8m0-8-8 8'],info:['M12 11v6','M12 7h.01'],warning:['M12 8v5','M12 17h.01']}
 
 // Callers provide human-facing copy, never raw responses or credentials.
 function safeMessage(message:string){
  const clean=message.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'')
-  .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi,'Bearer [已隐藏]')
-  .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,'[已隐藏的凭据]')
-  .replace(/\b(access_token|refresh_token|id_token|csrf_token|client_secret|password|authorization|api_key|token)(["']?\s*[:=]\s*["']?)[^\s,;"']+/gi,'$1$2[已隐藏]')
+  .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi,t('Bearer [已隐藏]'))
+  .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,t('[已隐藏的凭据]'))
+  .replace(/\b(access_token|refresh_token|id_token|csrf_token|client_secret|password|authorization|api_key|token)(["']?\s*[:=]\s*["']?)[^\s,;"']+/gi,t('$1$2[已隐藏]'))
   .trim()
  const points=Array.from(clean)
  return points.slice(0,4000).join('')+(points.length>4000?'…':'')
@@ -34,7 +35,7 @@ function svg(kind:ToastKind|'close'){
 function createService():ToastService {
  const host=document.createElement('div'),list=document.createElement('ol'),live=document.createElement('div')
  host.className='painter-toast-host';host.dataset.toastHost='';host.hidden=true
- list.className='painter-toast-list';list.setAttribute('aria-label','通知')
+ list.className='painter-toast-list';list.setAttribute('aria-label',t('通知'))
  live.className='painter-toast-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');live.setAttribute('aria-atomic','true')
  host.append(list,live)
  const popover=typeof host.showPopover==='function'
@@ -68,9 +69,9 @@ function createService():ToastService {
  const schedule=()=>{if(!frame)frame=requestAnimationFrame(()=>{frame=0;route()})}
  const announce=(entry:Entry)=>{
   announcements=announcements.filter(item=>item.id!==entry.id)
-  announcements.push({id:entry.id,text:labels[entry.kind]+'：'+entry.message})
+  announcements.push({id:entry.id,text:t('{kind}：{message}',{kind:labels[entry.kind],message:entry.message})})
   announcements=announcements.slice(-3);clearTimeout(announcementTimer);live.textContent=''
-  announcementTimer=window.setTimeout(()=>{live.textContent=announcements.filter(item=>entries.has(item.id)).map(item=>item.text).join('。');announcements=[]},100)
+  announcementTimer=window.setTimeout(()=>{live.textContent=announcements.filter(item=>entries.has(item.id)).map(item=>item.text).join(locale==='en'?'. ':'。');announcements=[]},100)
  }
  function dismiss(id?:string){
   const targets=id===undefined?Array.from(entries.values()):entries.has(id)?[entries.get(id)!]:[]
@@ -85,7 +86,7 @@ function createService():ToastService {
   if(!entry){
    if(entries.size>=3){const oldest=Array.from(entries.values()).find(item=>!item.element.contains(document.activeElement));if(oldest)dismiss(oldest.id)}
    const element=document.createElement('li'),text=document.createElement('p'),icon=svg(kind),close=document.createElement('button')
-   element.className='painter-toast';text.className='painter-toast-message';text.dir='auto';icon.classList.add('painter-toast-icon');close.className='painter-toast-close';close.type='button';close.setAttribute('aria-label','关闭通知');close.append(svg('close'))
+   element.className='painter-toast';text.className='painter-toast-message';text.dir='auto';icon.classList.add('painter-toast-icon');close.className='painter-toast-close';close.type='button';close.setAttribute('aria-label',t('关闭通知'));close.append(svg('close'))
    let id=options.id||'toast-'+(++sequence)
    while(!options.id&&entries.has(id))id='toast-'+(++sequence)
    entry={id,kind,message,element,text,icon,close,origin:document.activeElement instanceof HTMLElement?document.activeElement:null,duration:0,remaining:0,started:0,paused:new Set()}

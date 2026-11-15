@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {t} from "../i18n"
+
 import {computed,onMounted,reactive,ref} from 'vue'
 import {api,body} from '../api'
 import {toast} from '../toast'
@@ -6,32 +8,32 @@ import {toast} from '../toast'
 type Settings={version:number;enabled:boolean;client_id:string;client_secret_configured:boolean;source:'environment'|'database';callback_url:string}
 const settings=reactive<Settings>({version:0,enabled:false,client_id:'',client_secret_configured:false,source:'environment',callback_url:''})
 const secret=ref(''),loading=ref(true),busy=ref(false),loaded=ref(false),activeEnabled=ref(false),error=ref(''),conflict=ref(false)
-const status=computed(()=>activeEnabled.value?'已启用 GitHub 登录':settings.client_secret_configured?'GitHub 登录已停用':'尚未配置 GitHub 登录')
-async function load(){loading.value=true;error.value='';try{Object.assign(settings,await api<Settings>('/admin/auth/github'));activeEnabled.value=settings.enabled;secret.value='';loaded.value=true;conflict.value=false}catch(e){error.value=(e as Error).message||'GitHub 登录配置未能加载，请重试。'}finally{loading.value=false}}
-async function save(){if(busy.value||conflict.value)return;error.value='';if(settings.enabled&&(!settings.client_id.trim()||(!secret.value&&!settings.client_secret_configured))){error.value='启用前，请填写 Client ID 和 Client Secret。';return}busy.value=true;try{const data:Record<string,unknown>={version:settings.version,enabled:settings.enabled,client_id:settings.client_id};if(secret.value)data.client_secret=secret.value;Object.assign(settings,await api<Settings>('/admin/auth/github',{method:'PUT',body:body(data)}));activeEnabled.value=settings.enabled;secret.value='';toast.success(settings.enabled?'GitHub 登录已启用。可在登录页使用 GitHub 入口。':'GitHub 登录已停用，应用凭据已保留。')}catch(e){const failure=e as Error&{status?:number};conflict.value=failure.status===409;if(conflict.value)error.value=failure.message||'配置已在其他位置更新，请重新加载。';else toast.error(failure.message||'配置未能保存，请稍后重试。')}finally{busy.value=false}}
-async function copyCallback(){try{await navigator.clipboard.writeText(settings.callback_url);toast.success('回调地址已复制。')}catch{toast.error('暂时无法自动复制，请选中回调地址后手动复制。')}}
+const status=computed(()=>activeEnabled.value?t("已启用 GitHub 登录"):settings.client_secret_configured?t("GitHub 登录已停用"):t("尚未配置 GitHub 登录"))
+async function load(){loading.value=true;error.value='';try{Object.assign(settings,await api<Settings>('/admin/auth/github'));activeEnabled.value=settings.enabled;secret.value='';loaded.value=true;conflict.value=false}catch(e){error.value=(e as Error).message||t("GitHub 登录配置未能加载，请重试。")}finally{loading.value=false}}
+async function save(){if(busy.value||conflict.value)return;error.value='';if(settings.enabled&&(!settings.client_id.trim()||(!secret.value&&!settings.client_secret_configured))){error.value=t("启用前，请填写 Client ID 和 Client Secret。");return}busy.value=true;try{const data:Record<string,unknown>={version:settings.version,enabled:settings.enabled,client_id:settings.client_id};if(secret.value)data.client_secret=secret.value;Object.assign(settings,await api<Settings>('/admin/auth/github',{method:'PUT',body:body(data)}));activeEnabled.value=settings.enabled;secret.value='';toast.success(settings.enabled?t("GitHub 登录已启用。可在登录页使用 GitHub 入口。"):t("GitHub 登录已停用，应用凭据已保留。"))}catch(e){const failure=e as Error&{status?:number};conflict.value=failure.status===409;if(conflict.value)error.value=failure.message||t("配置已在其他位置更新，请重新加载。");else toast.error(failure.message||t("配置未能保存，请稍后重试。"))}finally{busy.value=false}}
+async function copyCallback(){try{await navigator.clipboard.writeText(settings.callback_url);toast.success(t("回调地址已复制。"))}catch{toast.error(t("暂时无法自动复制，请选中回调地址后手动复制。"))}}
 onMounted(load)
 </script>
 
 <template>
  <section class="panel github-settings" aria-labelledby="github-settings-title" :aria-busy="loading||busy">
-  <h2 id="github-settings-title">GitHub 登录</h2>
-  <p class="muted">登记站点的 OAuth App 后，成员可使用 GitHub 身份登录。GitHub 身份与本地账号分别管理，不会按用户名或邮箱合并。</p>
-  <p v-if="loading" role="status">正在加载登录配置…</p>
-  <div v-if="error" class="notice error" role="alert">{{error}} <button v-if="!loaded||conflict" type="button" class="quiet" :disabled="loading||busy" @click="load">重新加载配置</button></div>
+  <h2 id="github-settings-title">{{t("GitHub 登录")}}</h2>
+  <p class="muted">{{t("登记站点的 OAuth App 后，成员可使用 GitHub 身份登录。GitHub 身份与本地账号分别管理，不会按用户名或邮箱合并。")}}</p>
+  <p v-if="loading" role="status">{{t("正在加载登录配置…")}}</p>
+  <div v-if="error" class="notice error" role="alert">{{error}} <button v-if="!loaded||conflict" type="button" class="quiet" :disabled="loading||busy" @click="load">{{t("重新加载配置")}}</button></div>
 
   <form v-if="loaded&&!loading" @submit.prevent="save">
-   <p class="github-status"><strong>{{status}}</strong><span class="muted">{{settings.source==='environment'?'当前使用服务器环境配置。首次保存后使用此处配置。':'当前使用站点保存的配置。'}}</span></p>
+   <p class="github-status"><strong>{{status}}</strong><span class="muted">{{settings.source==='environment'?t("当前使用服务器环境配置。首次保存后使用此处配置。"):t("当前使用站点保存的配置。")}}</span></p>
    <fieldset :disabled="busy" class="github-fields">
-    <legend class="sr-only">GitHub OAuth 应用配置</legend>
-    <label class="check"><input v-model="settings.enabled" type="checkbox">启用 GitHub 登录</label>
+    <legend class="sr-only">{{t("GitHub OAuth 应用配置")}}</legend>
+    <label class="check"><input v-model="settings.enabled" type="checkbox">{{t("启用 GitHub 登录")}}</label>
     <div class="form-grid">
-     <div class="full"><label for="github-callback-url">Authorization callback URL</label><div class="github-callback"><input id="github-callback-url" :value="settings.callback_url" readonly aria-describedby="github-callback-help" autocomplete="off"><button type="button" @click="copyCallback">复制地址</button></div><small id="github-callback-help" class="muted">在 GitHub 应用中填写这个完整地址。</small></div>
+     <div class="full"><label for="github-callback-url">Authorization callback URL</label><div class="github-callback"><input id="github-callback-url" :value="settings.callback_url" readonly aria-describedby="github-callback-help" autocomplete="off"><button type="button" @click="copyCallback">{{t("复制地址")}}</button></div><small id="github-callback-help" class="muted">{{t("在 GitHub 应用中填写这个完整地址。")}}</small></div>
      <label>Client ID<input v-model="settings.client_id" maxlength="256" autocomplete="off" spellcheck="false" :required="settings.enabled"></label>
-     <div class="github-secret-field"><label for="github-client-secret">Client Secret<input id="github-client-secret" v-model="secret" type="password" maxlength="4096" autocomplete="new-password" :placeholder="settings.client_secret_configured?'已配置，留空保持':'粘贴 GitHub 生成的密钥'" aria-describedby="github-secret-help"></label><small id="github-secret-help" class="muted">{{settings.client_secret_configured?'已保存的密钥不会显示。留空保留，填写新密钥则替换。':'密钥仅在保存时提交给本站服务器。'}}</small></div>
+     <div class="github-secret-field"><label for="github-client-secret">Client Secret<input id="github-client-secret" v-model="secret" type="password" maxlength="4096" autocomplete="new-password" :placeholder="settings.client_secret_configured?t('已配置，留空保持'):t('粘贴 GitHub 生成的密钥')" aria-describedby="github-secret-help"></label><small id="github-secret-help" class="muted">{{settings.client_secret_configured?t("已保存的密钥不会显示。留空保留，填写新密钥则替换。"):t("密钥仅在保存时提交给本站服务器。")}}</small></div>
     </div>
-    <p class="muted github-help">GitHub 登录遵循上方账号访问策略；已绑定两步验证的账号仍需输入动态码。新身份仅在开放注册时创建读者账号。</p>
-    <div class="form-actions"><button class="primary" :disabled="busy||conflict">{{busy?'正在保存…':'保存 GitHub 登录'}}</button><a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer">登记 GitHub OAuth App</a></div>
+    <p class="muted github-help">{{t("GitHub 登录遵循上方账号访问策略；已绑定两步验证的账号仍需输入动态码。新身份仅在开放注册时创建读者账号。")}}</p>
+    <div class="form-actions"><button class="primary" :disabled="busy||conflict">{{busy?t("正在保存…"):t("保存 GitHub 登录")}}</button><a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer">{{t("登记 GitHub OAuth App")}}</a></div>
    </fieldset>
   </form>
  </section>

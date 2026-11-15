@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	stdhtml "html"
 	"io"
 	"strings"
@@ -93,7 +92,7 @@ func strictContentLayoutJSON(raw []byte) error {
 func contentLayoutRequired(fields map[string]json.RawMessage, keys ...string) error {
 	for _, key := range keys {
 		if _, ok := fields[key]; !ok {
-			return contentCardInvalid("组合布局缺少字段 " + key)
+			return contentCardInvalidT("组合布局缺少字段 {name}", "name", key)
 		}
 	}
 	return nil
@@ -167,7 +166,7 @@ func contentLayoutFields(raw []byte) error {
 				max = 6
 			}
 			if json.Unmarshal(children, &items) != nil || len(items) < 1 || len(items) > max {
-				return contentCardInvalid(fmt.Sprintf("%s 需要1至%d个子节点", identity.Kind, max))
+				return contentCardInvalidT("{kind} 需要1至{count}个子节点", "kind", identity.Kind, "count", max)
 			}
 			for _, item := range items {
 				if err := walk(item, depth+1, identity.Kind == "grid"); err != nil {
@@ -231,7 +230,7 @@ func validateContentLayout(c contentCard) error {
 				max = 6
 			}
 			if len(n.Children) < 1 || len(n.Children) > max {
-				return contentCardInvalid(fmt.Sprintf("%s 需要1至%d个子节点", n.Kind, max))
+				return contentCardInvalidT("{kind} 需要1至{count}个子节点", "kind", n.Kind, "count", max)
 			}
 			for _, child := range n.Children {
 				if err := walk(child, depth+1, n.Kind == "grid"); err != nil {

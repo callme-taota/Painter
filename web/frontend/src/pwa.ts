@@ -1,3 +1,4 @@
+import {t} from './i18n'
 import {toast} from './toast'
 import './pwa.css'
 
@@ -40,12 +41,12 @@ export function initPWA(){
   backButtons.forEach(button=>{button.hidden=!canBack})
  }
  function help(){
-  const security=isSecureContext?'':'请先使用本站的 HTTPS 地址。'
-  toast.info(`${security}使用 Chrome 时，可在地址栏或浏览器菜单中查找“安装”。是否提供安装由浏览器决定；已经安装的应用可从系统应用列表打开。当前版本需要联网使用。`,{id:'pwa-install-help',duration:14000})
+  const security=isSecureContext?'':t('请先使用本站的 HTTPS 地址。')
+  toast.info(security+t('使用 Chrome 时，可在地址栏或浏览器菜单中查找“安装”。是否提供安装由浏览器决定；已经安装的应用可从系统应用列表打开。当前版本需要联网使用。'),{id:'pwa-install-help',duration:14000})
  }
  async function install(){
   if(busy)return
-  if(installed||inApp()){sync();toast.info('可从系统应用列表打开已安装的应用。',{id:'pwa-install'});return}
+  if(installed||inApp()){sync();toast.info(t('可从系统应用列表打开已安装的应用。'),{id:'pwa-install'});return}
   const prompt=deferred,nativeInstall=browser.install
   if(!isSecureContext||!prompt&&typeof nativeInstall!=='function'){sync();help();return}
   busy=true;sync()
@@ -56,20 +57,20 @@ export function initPWA(){
     await nativeInstall.call(browser)
     nativeCompleted=true;deferred=null
     // A resolved Web Install API promise may also mean opening an existing app.
-    if(!installed)toast.info('浏览器已完成安装或打开操作。可在系统应用列表中查看。',{id:'pwa-install'})
+    if(!installed)toast.info(t('浏览器已完成安装或打开操作。可在系统应用列表中查看。'),{id:'pwa-install'})
    }else if(prompt){
     deferred=null
     await prompt.prompt()
     const choice=await prompt.userChoice
     if(!installed){
-     if(choice.outcome==='accepted')toast.info('已确认安装，请在浏览器中完成后续操作。',{id:'pwa-install'})
-     else toast.info('已取消安装。你可以稍后从浏览器菜单重试。',{id:'pwa-install'})
+     if(choice.outcome==='accepted')toast.info(t('已确认安装，请在浏览器中完成后续操作。'),{id:'pwa-install'})
+     else toast.info(t('已取消安装。你可以稍后从浏览器菜单重试。'),{id:'pwa-install'})
     }
    }
   }catch(error){
    if(!installed){
-    if(error instanceof DOMException&&error.name==='AbortError')toast.info('已取消或暂时无法安装。你可以稍后从浏览器菜单重试。',{id:'pwa-install'})
-    else toast.warning('浏览器暂时无法安装。请检查网络，或从浏览器菜单重试。',{id:'pwa-install'})
+    if(error instanceof DOMException&&error.name==='AbortError')toast.info(t('已取消或暂时无法安装。你可以稍后从浏览器菜单重试。'),{id:'pwa-install'})
+    else toast.warning(t('浏览器暂时无法安装。请检查网络，或从浏览器菜单重试。'),{id:'pwa-install'})
    }
   }finally{busy=false;sync()}
  }
@@ -81,7 +82,7 @@ export function initPWA(){
  addEventListener('appinstalled',()=>{
   installed=true;deferred=null
   try{sessionStorage.setItem(installedKey,'1')}catch{}
-  sync();toast.success('应用已安装，可以从系统应用列表打开。',{id:'pwa-install'})
+  sync();toast.success(t('应用已安装，可以从系统应用列表打开。'),{id:'pwa-install'})
  })
  installButtons.forEach(button=>button.addEventListener('click',()=>{
   button.closest('details')?.removeAttribute('open')

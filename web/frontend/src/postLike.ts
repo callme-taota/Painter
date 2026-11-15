@@ -1,3 +1,4 @@
+import {t,locale} from './i18n'
 import {randomID} from './random'
 import {toast} from './toast'
 import {invalidatePublicSession,loadPublicSession,observePublicSession,type PublicSession} from './publicSession'
@@ -7,7 +8,7 @@ function announce(state:LikeState){window.dispatchEvent(new CustomEvent('painter
 export function clearLikeSessions(){loads.clear();for(const state of states.values()){state.session={authenticated:false};state.liked=false;state.bookmarked=false;state.loaded=false;state.error='';announce(state)}}
 observePublicSession(value=>{if(value?.authenticated===false)clearLikeSessions()})
 export function getLike(id:string){if(!states.has(id))states.set(id,{postId:id,liked:false,bookmarked:false,count:0,busy:false,session:null,loaded:false,loadedAt:0,error:''});return states.get(id)!}
-async function read(path:string){const response=await fetch('/api/v1'+path,{credentials:'same-origin',cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok){if(response.status===401)invalidatePublicSession(true);throw new Error(data.error?.message||'互动状态暂不可用，请重试。')}return data}
+async function read(path:string){const response=await fetch('/api/v1'+path,{credentials:'same-origin',cache:'no-store',headers:{'Accept-Language':locale}});const data=await response.json().catch(()=>({}));if(!response.ok){if(response.status===401)invalidatePublicSession(true);throw new Error(t(data.error?.message||'互动状态暂不可用，请重试。'))}return data}
 export function setBookmarked(id:string,bookmarked:boolean){const state=getLike(id);state.bookmarked=bookmarked;announce(state)}
 export async function loadLike(id:string):Promise<LikeState>{
  if(loads.has(id))return loads.get(id)!
@@ -29,9 +30,9 @@ export async function toggleLike(id:string){
  const state=await loadLike(id);if(!state.loaded||state.busy||!state.session?.authenticated){if(state.error)toast.error(state.error,{id:'post-like:'+id});return state}
  state.busy=true;state.error='';announce(state)
  try{
-  const response=await fetch(`/api/v1/posts/${id}/like`,{method:state.liked?'DELETE':'PUT',credentials:'same-origin',headers:{'X-CSRF-Token':state.session.csrf_token||'','Idempotency-Key':randomID()}})
-  if(!response.ok){if(response.status===401){invalidatePublicSession(true);toast.error('登录已失效，请重新登录。',{id:'session-expired'});return state}const data=await response.json().catch(()=>({}));throw new Error(data.error?.message||'点赞未能保存，请重试。')}
+  const response=await fetch(`/api/v1/posts/${id}/like`,{method:state.liked?'DELETE':'PUT',credentials:'same-origin',headers:{'Accept-Language':locale,'X-CSRF-Token':state.session.csrf_token||'','Idempotency-Key':randomID()}})
+  if(!response.ok){if(response.status===401){invalidatePublicSession(true);toast.error(t('登录已失效，请重新登录。'),{id:'session-expired'});return state}const data=await response.json().catch(()=>({}));throw new Error(t(data.error?.message||'点赞未能保存，请重试。'))}
   state.liked=!state.liked;state.count=Math.max(0,state.count+(state.liked?1:-1));announce(state)
-  try{const metrics=await read(`/posts/${id}/metrics`);state.count=Number(metrics.like_count??metrics.likes??0);state.loadedAt=Date.now()}catch{toast.warning('点赞状态已更新，计数暂时无法刷新。',{id:'post-like:'+id})}
+  try{const metrics=await read(`/posts/${id}/metrics`);state.count=Number(metrics.like_count??metrics.likes??0);state.loadedAt=Date.now()}catch{toast.warning(t('点赞状态已更新，计数暂时无法刷新。'),{id:'post-like:'+id})}
  }catch(e){state.error='';toast.error((e as Error).message,{id:'post-like:'+id})}finally{state.busy=false;announce(state)}return state
 }

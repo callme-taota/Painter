@@ -94,7 +94,7 @@ func (a *App) RegisterMoments() {
 
 func validateMomentTextField(text string) error {
 	if !utf8.ValidString(text) || utf8.RuneCountInString(text) > MomentTextLimit {
-		return E(400, "VALIDATION_FAILED", fmt.Sprintf("动态最多%d个字符，空格与换行计入字数", MomentTextLimit))
+		return ET(400, "VALIDATION_FAILED", "动态最多{count}个字符，空格与换行计入字数", "count", MomentTextLimit)
 	}
 	if strings.ContainsFunc(text, func(r rune) bool { return unicode.IsControl(r) && r != '\n' && r != '\r' && r != '\t' }) {
 		return E(400, "VALIDATION_FAILED", "动态不能包含控制字符")

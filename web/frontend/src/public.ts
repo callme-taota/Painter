@@ -1,4 +1,6 @@
 import 'vite/modulepreload-polyfill'
+import {initLocaleLinks} from './i18n'
+initLocaleLinks()
 import './infiniteScroll.css'
 import {initPublicInfinite} from './publicInfinite'
 initPublicInfinite()

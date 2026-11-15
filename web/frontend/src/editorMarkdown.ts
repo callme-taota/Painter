@@ -1,3 +1,4 @@
+import {t} from './i18n'
 import {marked,type Token,type Tokens} from 'marked'
 import {parseArticleCard,parseArticleReference,articleLinkSnapshot,type ArticleCard} from './articleCards'
 
@@ -45,17 +46,17 @@ export function markdownCompatibility(source:string, serialized:string):string {
   const tokens=marked.lexer(source,{gfm:true,breaks:false})
   let issue=''
   if (/^\s*---\s*\r?\n[\s\S]*?\r?\n---(?:\s|$)/.test(source)) issue='Front matter'
-  if (Object.keys(tokens.links).length) issue='引用式链接定义'
+  if (Object.keys(tokens.links).length) issue=t('引用式链接定义')
   marked.walkTokens(tokens,token=>{
-    if(token.type==='html')issue='HTML 或注释'
-    if(token.type==='code'&&'lang' in token&&typeof token.lang==='string'&&/\s/.test(token.lang.trim()))issue='带附加属性的代码围栏'
-    if(!['code','codespan'].includes(token.type)&&'text' in token&&typeof token.text==='string'&&/(?:\[\^[^\]]+\]|^\s*:::[\w-]|\$\$)/m.test(token.text))issue='脚注、指令或数学扩展'
-    if((token.type==='image'||token.type==='link')&&'href' in token&&typeof token.href==='string'&&!safeMediaURL(token.href))issue='不支持的链接地址'
+    if(token.type==='html')issue=t('HTML 或注释')
+    if(token.type==='code'&&'lang' in token&&typeof token.lang==='string'&&/\s/.test(token.lang.trim()))issue=t('带附加属性的代码围栏')
+    if(!['code','codespan'].includes(token.type)&&'text' in token&&typeof token.text==='string'&&/(?:\[\^[^\]]+\]|^\s*:::[\w-]|\$\$)/m.test(token.text))issue=t('脚注、指令或数学扩展')
+    if((token.type==='image'||token.type==='link')&&'href' in token&&typeof token.href==='string'&&!safeMediaURL(token.href))issue=t('不支持的链接地址')
   })
   if(issue)return issue
   try {
-    if(canonicalHTML(marked.parse(source,{gfm:true,breaks:false,async:false}))!==canonicalHTML(marked.parse(serialized,{gfm:true,breaks:false,async:false})))return '暂不支持完整还原的 Markdown 结构'
-  }catch{return '暂不支持完整还原的 Markdown 结构'}
+    if(canonicalHTML(marked.parse(source,{gfm:true,breaks:false,async:false}))!==canonicalHTML(marked.parse(serialized,{gfm:true,breaks:false,async:false})))return t('暂不支持完整还原的 Markdown 结构')
+  }catch{return t('暂不支持完整还原的 Markdown 结构')}
   return ''
 }
 

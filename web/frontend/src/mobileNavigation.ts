@@ -1,3 +1,4 @@
+import {t} from './i18n'
 import {registerMobileOverlay} from './mobileOverlays'
 export function initMobileNavigation(){
  const dialog=document.querySelector<HTMLDialogElement>('#mobile-more')
@@ -23,8 +24,8 @@ export function initMobileNavigation(){
  const reading=document.querySelector<HTMLElement>('[data-article-toc] [data-article-toc-scroll]')
  if(reading){
   const wrapper=document.createElement('details');wrapper.className='mobile-contents'
-  const summary=document.createElement('summary');summary.textContent='在这篇文章中'
-  const links=document.createElement('nav');links.setAttribute('aria-label','文章目录');links.dataset.mobileArticleTocScroll='';links.tabIndex=0
+  const summary=document.createElement('summary');summary.textContent=t('在这篇文章中')
+  const links=document.createElement('nav');links.setAttribute('aria-label',t('文章目录'));links.dataset.mobileArticleTocScroll='';links.tabIndex=0
   for(const item of reading.childNodes)links.append(item.cloneNode(true))
   wrapper.append(summary,links);slot.before(wrapper)
  }

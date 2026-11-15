@@ -36,17 +36,28 @@ type App struct {
 }
 type Principal struct{ ID, Role, Username, DisplayName, SessionID string }
 type APIError struct {
-	Status    int    `json:"-"`
-	Code      string `json:"code"`
-	Message   string `json:"message"`
-	RequestID string `json:"request_id,omitempty"`
-	Details   any    `json:"details,omitempty"`
+	Status        int    `json:"-"`
+	Code          string `json:"code"`
+	Message       string `json:"message"`
+	RequestID     string `json:"request_id,omitempty"`
+	Details       any    `json:"details,omitempty"`
+	messageSource string
+	messageArgs   []any
 }
 
 func (e *APIError) Error() string { return e.Code + ": " + e.Message }
 func E(status int, code, message string) error {
 	return &APIError{Status: status, Code: code, Message: message}
 }
+
+// ET retains a source message and named values for response-time localization.
+// Its public Message remains formatted Chinese for existing callers and logs.
+// Ordinary placeholder values are opaque and are never looked up as messages.
+func ET(status int, code, source string, args ...any) error {
+	values := append([]any(nil), args...)
+	return &APIError{Status: status, Code: code, Message: localizedUIMessage(defaultLocale, source, values...), messageSource: source, messageArgs: values}
+}
+
 func NotFound() error  { return E(404, "NOT_FOUND", "资源不存在") }
 func NowMillis() int64 { return time.Now().UnixMilli() }
 func RandID() string {
@@ -122,6 +133,7 @@ func Error(w http.ResponseWriter, err error) {
 		w.Header().Set("Retry-After", "2")
 	}
 	copy := *ae
+	copy.Message = localeErrorMessage(ae, canonicalLocale(w.Header().Get("Content-Language")))
 	copy.RequestID = w.Header().Get("X-Request-ID")
 	if copy.RequestID == "" {
 		copy.RequestID = RandID()
@@ -231,6 +243,11 @@ func (a *App) Close() { a.Pool.Close() }
 func (a *App) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := RandID()
+		// Static assets and user media are language-independent. Negotiated UI
+		// responses and API errors share the same locale and cache variation.
+		if !strings.HasPrefix(r.URL.Path, "/assets/") && !strings.HasPrefix(r.URL.Path, "/media/") && !strings.HasPrefix(r.URL.Path, "/pwa/icon-") {
+			localeResponseHeaders(w, requestLocale(r))
+		}
 		w.Header().Set("X-Request-ID", requestID)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")

@@ -22,15 +22,15 @@ import (
 // every request. Rotating EncryptionKey intentionally invalidates old links.
 type shareReference struct{ Kind, ID string }
 type shareDocument struct {
-	Kind, ID, Title, Summary, Author, CoverURL, SiteName, Canonical, Favicon string
-	CSS                                                                      []string
-	Embed                                                                    bool
+	Kind, ID, Title, Summary, Author, CoverURL, SiteName, Canonical, Favicon, Locale string
+	CSS                                                                              []string
+	Embed                                                                            bool
 }
 type shareSeriesResolver func(context.Context, string) (map[string]any, error)
 
 var sharingTemplates struct {
 	sync.Once
-	template *template.Template
+	templates map[string]*template.Template
 }
 
 func shareKindCode(kind string) string {
@@ -159,7 +159,10 @@ func (a *App) RegisterSharing(series ...func(context.Context, string) (map[strin
 		resolveSeries = series[0]
 	}
 	sharingTemplates.Do(func() {
-		sharingTemplates.template = template.Must(template.New("sharing").ParseFS(web.FS, "templates/sharing.html"))
+		sharingTemplates.templates = map[string]*template.Template{}
+		for _, locale := range supportedLocales {
+			sharingTemplates.templates[locale] = template.Must(template.New("sharing").Funcs(localeTemplateFuncs(locale)).ParseFS(web.FS, "templates/sharing.html"))
+		}
 	})
 	a.Handle("GET /api/v1/share", func(w http.ResponseWriter, r *http.Request) error {
 		ref := shareReference{Kind: r.URL.Query().Get("type"), ID: r.URL.Query().Get("id")}
@@ -202,6 +205,8 @@ func (a *App) RegisterSharing(series ...func(context.Context, string) (map[strin
 				return err
 			}
 			doc.Embed = mode == "embed"
+			doc.Locale = requestLocale(r)
+			localeResponseHeaders(w, doc.Locale)
 			// The preview has no JavaScript and needs only its small standalone
 			// stylesheet. Keep source-only/test builds usable before assets exist.
 			if stylesheet, _ := web.Assets("src/sharing.css"); strings.HasSuffix(stylesheet, ".css") {
@@ -210,7 +215,7 @@ func (a *App) RegisterSharing(series ...func(context.Context, string) (map[strin
 				_, doc.CSS = web.Assets("src/public.ts")
 			}
 			var buffer bytes.Buffer
-			if err = sharingTemplates.template.ExecuteTemplate(&buffer, "sharing", doc); err != nil {
+			if err = sharingTemplates.templates[doc.Locale].ExecuteTemplate(&buffer, "sharing", doc); err != nil {
 				return fmt.Errorf("render share document: %w", err)
 			}
 			if doc.Embed {

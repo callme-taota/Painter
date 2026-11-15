@@ -3,12 +3,13 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),{createRequire}=require('node:module');
 const {chromium}=require(process.env.PAINTER_PLAYWRIGHT_MODULE||process.env.PLAYWRIGHT_MODULE||'playwright');
 const frontend=createRequire(path.resolve(__dirname,'../../web/frontend/package.json')),ts=frontend('typescript');
-const source=name=>ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../../web/frontend/src/'+name+'.ts'),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace(/import ['"]\.\/[^'"]+\.css['"];?\s*/g,'');
+const source=name=>ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../../web/frontend/src/'+name+'.ts'),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace(/import ['"]\.\/[^'"]+\.css['"];?\s*/g,'').replace(/import\(['"]\.\.\/\.\.\/locales\/en\.json['"]\)/g,"import('/messages-en')");
 const css=['pwa.css','toast.css'].map(name=>fs.readFileSync(path.resolve(__dirname,'../../web/frontend/src/'+name),'utf8')).join('\n');
 const out=process.env.ARTIFACT_DIR||'/tmp/painter-pwa-qa',checks=[],errors=[];fs.mkdirSync(out,{recursive:true});
 function check(name,value){assert.ok(value,name);checks.push(name);console.log('PASS '+name)}
 const server=http.createServer((req,res)=>{
- if(req.url==='/pwa.js'||req.url==='/toast'){res.setHeader('Content-Type','text/javascript');res.end(source(req.url==='/toast'?'toast':'pwa')+(req.url==='/pwa.js'?'\ninitPWA();':''));return}
+ if(req.url==='/messages-en'){res.setHeader('Content-Type','text/javascript');res.end('export default '+fs.readFileSync(path.resolve(__dirname,'../../web/locales/en.json'),'utf8')+';');return}
+ if(['/pwa.js','/toast','/i18n'].includes(req.url)){res.setHeader('Content-Type','text/javascript');res.end(source(req.url==='/pwa.js'?'pwa':req.url.slice(1))+(req.url==='/pwa.js'?'\ninitPWA();':''));return}
  res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>PWA isolated regression</title><style>:root{--paper:#fff;--ink:#18181b;--muted:#66666e;--line:#e4e4e7;--subtle:#f4f4f5;font-family:Arial,sans-serif}body{padding:24px}button{padding:12px;margin:8px}'+css+'</style><h1>应用安装测试</h1><button type="button" data-pwa-install hidden>安装应用</button><button type="button" data-pwa-help>安装说明</button><button type="button" data-app-back hidden>返回</button><a href="/two">下一页</a><script type="module" src="/pwa.js"></script></html>')
 });
 async function fixture(browser,base,options={}){

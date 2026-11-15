@@ -1,3 +1,4 @@
+import {t} from './i18n'
 import './momentGallery.css'
 
 type ImageGalleryOptions = {linkSelector?: string; title?: string}
@@ -14,7 +15,7 @@ function createImageViewer(): ImageViewer {
   const title = document.createElement('h2')
   title.id = 'moment-lightbox-title'
   title.className = 'sr-only'
-  title.textContent = '图片预览'
+  title.textContent = t('图片预览')
   const position = document.createElement('span')
   position.className = 'moment-lightbox-position sr-only'
   position.id = 'moment-lightbox-position'
@@ -36,9 +37,9 @@ function createImageViewer(): ImageViewer {
     button.append(svg)
     return button
   }
-  const close = iconButton('close', '关闭图片预览', 'M6 6l12 12M6 18 18 6')
-  const previous = iconButton('previous', '上一张图片', 'm15 6-6 6 6 6')
-  const next = iconButton('next', '下一张图片', 'm9 6 6 6-6 6')
+  const close = iconButton('close', t('关闭图片预览'), 'M6 6l12 12M6 18 18 6')
+  const previous = iconButton('previous', t('上一张图片'), 'm15 6-6 6 6 6')
+  const next = iconButton('next', t('下一张图片'), 'm9 6 6 6-6 6')
   const stage = document.createElement('div')
   stage.className = 'moment-lightbox-stage'
   let picture = document.createElement('img')
@@ -47,7 +48,7 @@ function createImageViewer(): ImageViewer {
   status.setAttribute('role', 'status')
   const original = document.createElement('a')
   original.className = 'moment-lightbox-original'
-  original.textContent = '打开原图'
+  original.textContent = t('打开原图')
   original.target = '_blank'
   original.rel = 'noopener'
   original.hidden = true
@@ -78,7 +79,7 @@ function createImageViewer(): ImageViewer {
       if (sequence !== request || !dialog.open) return
       current.hidden = true
       status.hidden = false
-      status.textContent = '图片暂时无法加载。'
+      status.textContent = t('图片暂时无法加载。')
       original.hidden = false
       dialog.dataset.imageState = 'error'
     })
@@ -86,7 +87,7 @@ function createImageViewer(): ImageViewer {
     picture = current
     if (document.activeElement === original) close.focus({preventScroll: true})
     status.hidden = false
-    status.textContent = '正在加载图片…'
+    status.textContent = t('正在加载图片…')
     original.hidden = true
     original.href = link.href
     dialog.dataset.imageState = 'loading'
@@ -149,7 +150,7 @@ export function initImageGalleries(galleries: Iterable<HTMLElement>, options: Im
         const links = Array.from(gallery.querySelectorAll<HTMLAnchorElement>(selector))
         if (!links.includes(link)) return
         event.preventDefault()
-        sharedViewer!.open(gallery, links, link, options.title || '图片')
+        sharedViewer!.open(gallery, links, link, options.title || t('图片'))
       })
     }
   }
@@ -157,5 +158,5 @@ export function initImageGalleries(galleries: Iterable<HTMLElement>, options: Im
 
 /** Native image links remain the no-JavaScript fallback. */
 export function initMomentGalleries() {
-  initImageGalleries(document.querySelectorAll<HTMLElement>('[data-moment-gallery]'), {title: '动态图片'})
+  initImageGalleries(document.querySelectorAll<HTMLElement>('[data-moment-gallery]'), {title: t('动态图片')})
 }

@@ -1,3 +1,4 @@
+import {t,locale,formatDate} from './i18n'
 import { randomID } from './random'
 import { reactive } from 'vue'
 import {invalidatePublicSession,loadPublicSession,observePublicSession} from './publicSession'
@@ -36,6 +37,7 @@ async function perform<T>(path:string,options:RequestInit & {version?:number|str
  if(signOut)signOutRequests++
  try{
   const headers=new Headers(options.headers)
+  if(!headers.has('Accept-Language'))headers.set('Accept-Language',locale)
   if(options.body&&!(options.body instanceof FormData))headers.set('Content-Type','application/json')
   if(!['GET','HEAD'].includes(method)){
    if(session.csrf_token)headers.set('X-CSRF-Token',session.csrf_token)
@@ -48,8 +50,8 @@ async function perform<T>(path:string,options:RequestInit & {version?:number|str
   if(!res.ok){
    if(res.status===401)await expireSession(signOut)
    const uploadInterrupted=path==='/media'&&method==='POST'&&[408,502,503,504,520,522,524].includes(res.status)
-   const fallback=uploadInterrupted?'图片上传未完成，连接中断或服务暂时不可用，请稍后重新选择图片重试。':'请求失败，请稍后重试'
-   throw new APIError(res.status,data.error?.code||(uploadInterrupted?'UPLOAD_INTERRUPTED':'REQUEST_FAILED'),data.error?.message||fallback,data.error?.details)
+   const fallback=uploadInterrupted?t('图片上传未完成，连接中断或服务暂时不可用，请稍后重新选择图片重试。'):t('请求失败，请稍后重试')
+   throw new APIError(res.status,data.error?.code||(uploadInterrupted?'UPLOAD_INTERRUPTED':'REQUEST_FAILED'),t(data.error?.message||fallback),data.error?.details)
   }
   if(signOut){await finishLocalSession('signout');explicitlySignedOut=true}
   // A post-write read must not join a pre-write read.
@@ -60,7 +62,7 @@ async function perform<T>(path:string,options:RequestInit & {version?:number|str
 }
 export async function loadSession(force=false){try{const value=await loadPublicSession(force);if(!value.authenticated&&session.authenticated){await expireSession();return}if(value.authenticated){expired=false;expiryNotified=false;explicitlySignedOut=false}Object.assign(session,{user:null,csrf_token:''},value)}finally{session.loading=false}}
 export function list(data:any):Row[]{return Array.isArray(data)?data:(data?.items||[])}
-export function date(value:any){ if(!value)return '—';const d=new Date(typeof value==='number'?value:value);return Number.isNaN(d.valueOf())?String(value):d.toLocaleDateString('zh-CN',{year:'numeric',month:'short',day:'numeric'}) }
+export function date(value:any){ if(!value)return '—';const d=new Date(typeof value==='number'?value:value);return Number.isNaN(d.valueOf())?String(value):formatDate(d) }
 export function download(name:string,text:string){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/markdown;charset=utf-8'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 export const body=(value:any)=>JSON.stringify(value)
 export async function allPages(path:string):Promise<Row[]>{let cursor='',out:Row[]=[];do{const data=await api(path+(cursor?(path.includes('?')?'&':'?')+'cursor='+encodeURIComponent(cursor):''));out.push(...list(data));if(!data.has_more)break;cursor=data.next_cursor||''}while(cursor);return out}

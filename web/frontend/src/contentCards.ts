@@ -1,3 +1,4 @@
+import {t,locale,formatDate,formatNumber} from './i18n'
 import './articleCards.css'
 import './researchCards.css'
 import {initImageGalleries} from './momentGallery'
@@ -113,7 +114,7 @@ function enhanceInlinePreview(wrapper: HTMLElement) {
   wrapper.dataset.previewDismissed = 'true'
   const hint = preview.querySelector<HTMLElement>(':scope > .content-link__hint') || document.createElement('span')
   hint.className = 'content-link__hint'
-  hint.textContent = '再次点按链接可打开'
+  hint.textContent = t('再次点按链接可打开')
   hint.hidden = true
   if (hint.parentElement !== preview) preview.append(hint)
   const state: LinkPreview = {wrapper, anchor, preview, hint, touchArmed: false, pointerType: ''}
@@ -177,10 +178,10 @@ function enhanceArticleImages(root: ParentNode) {
       link.classList.add('article-image-link')
       link.dataset.articleImage = ''
       link.dataset.imageAlt = image.alt
-      if (!image.alt && !link.getAttribute('aria-label')) link.setAttribute('aria-label', '查看文章图片')
+      if (!image.alt && !link.getAttribute('aria-label')) link.setAttribute('aria-label', t('查看文章图片'))
     }
   }
-  initImageGalleries(articles, {linkSelector: 'a[data-article-image]', title: '文章图片'})
+  initImageGalleries(articles, {linkSelector: 'a[data-article-image]', title: t('文章图片')})
 }
 
 function within(root: ParentNode, selector: string): HTMLElement[] {
@@ -203,7 +204,7 @@ export function initInternalArticleCards(root: ParentNode, signal?: AbortSignal)
     if (!anchor.classList.contains('content-card--' + kind)) continue
     internalRequests.add(anchor)
     anchor.setAttribute('aria-busy', 'true')
-    void fetch('/api/v1/content-cards/' + kind + '/' + match[2], {credentials:'omit', cache:'no-store', redirect:'error', signal})
+    void fetch('/api/v1/content-cards/' + kind + '/' + match[2], {credentials:'omit', cache:'no-store', redirect:'error', signal, headers:{'Accept-Language':locale}})
       .then(async response => {
         if (signal?.aborted || !anchor.isConnected) return
         if (response.status === 404) { internalCardUnavailable(anchor, kind, false); return }
@@ -215,7 +216,7 @@ export function initInternalArticleCards(root: ParentNode, signal?: AbortSignal)
         const body = document.createElement('span'); body.className = 'content-card__body'
         const add = (name:string, text:string) => { const node = document.createElement('span'); node.className = name; node.textContent = text; body.append(node); return node }
         if (kind === 'phrase') {
-          add('content-card__kind', reference.kind === 'word' ? '词语' : '句子')
+          add('content-card__kind', reference.kind === 'word' ? t('词语') : t('句子'))
           add('content-card__quote', reference.text)
           if (typeof reference.source === 'string' && reference.source) add('content-card__attribution', reference.source)
         } else {
@@ -226,7 +227,7 @@ export function initInternalArticleCards(root: ParentNode, signal?: AbortSignal)
           }
           const name = document.createElement('span'); name.className = 'content-card__author'; name.textContent = typeof author.display_name === 'string' ? author.display_name : ''; identity.append(name)
           if (typeof reference.published_at === 'string' && !Number.isNaN(Date.parse(reference.published_at))) {
-            const date = document.createElement('time'); date.className = 'content-card__date'; date.dateTime = reference.published_at; date.textContent = reference.published_at.slice(0,10); identity.append(date)
+            const date = document.createElement('time'); date.className = 'content-card__date'; date.dateTime = reference.published_at; date.textContent = formatDate(reference.published_at); identity.append(date)
           }
           body.append(identity)
           if (reference.text) add('content-card__text', reference.text)
@@ -235,10 +236,10 @@ export function initInternalArticleCards(root: ParentNode, signal?: AbortSignal)
             const photos = document.createElement('span'); photos.className = 'content-card__photos'
             for (const item of images.slice(0,3)) { const image = document.createElement('img'); image.className = 'content-card__photo'; image.src = item.url; image.alt = typeof item.alt === 'string' ? item.alt : ''; image.loading = 'lazy'; photos.append(image) }
             body.append(photos)
-            if (images.length > 3) add('content-card__photo-count', `共${images.length}张图片`)
+            if (images.length > 3) add('content-card__photo-count', t('共{count}张图片',{count:formatNumber(images.length)}))
           }
         }
-        add('content-card__destination', kind === 'moment' ? '查看动态' : '查看片语')
+        add('content-card__destination', kind === 'moment' ? t('查看动态') : t('查看片语'))
         anchor.replaceChildren(body)
         anchor.dataset.internalCardState = 'ready'
         anchor.removeAttribute('aria-busy')
@@ -257,8 +258,8 @@ function internalCardUnavailable(anchor:HTMLElement, kind:string, retryable:bool
   if (replacement instanceof HTMLAnchorElement) replacement.href = anchor.getAttribute('href') || ''
   else replacement.setAttribute('role','note')
   const body = document.createElement('span'); body.className = 'content-card__body'
-  const title = document.createElement('span'); title.className = 'content-card__title'; title.textContent = (kind === 'moment' ? '此动态' : '此片语') + (retryable ? '暂时无法读取' : '暂不可用')
-  const description = document.createElement('span'); description.className = 'content-card__description'; description.textContent = retryable ? '可打开原内容重试，或稍后重新预览' : '内容可能已撤回或删除'
+  const title = document.createElement('span'); title.className = 'content-card__title'; title.textContent = t(kind === 'moment' ? (retryable ? '此动态暂时无法读取' : '此动态暂不可用') : (retryable ? '此片语暂时无法读取' : '此片语暂不可用'))
+  const description = document.createElement('span'); description.className = 'content-card__description'; description.textContent = retryable ? t('可打开原内容重试，或稍后重新预览') : t('内容可能已撤回或删除')
   body.append(title,description); replacement.append(body); anchor.replaceWith(replacement)
 }
 

@@ -60,8 +60,14 @@ var contentCardRegistry = map[string]contentCardDefinition{
 	"moment": {"动态"}, "phrase": {"片语"},
 }
 
+// contentCardInvalid accepts validator-owned UI copy. Dynamic request values
+// belong in contentCardInvalidT placeholders so they remain opaque.
 func contentCardInvalid(message string) error {
-	return E(400, "CARD_INVALID", "内容卡片无效："+message)
+	return contentCardInvalidT(message)
+}
+
+func contentCardInvalidT(source string, args ...any) error {
+	return ET(400, "CARD_INVALID", "内容卡片无效：{reason}", "reason", translatableMessage(source, args...))
 }
 
 func contentCardText(value string, limit int, required bool) bool {
