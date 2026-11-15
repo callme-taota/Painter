@@ -564,7 +564,15 @@ func (a *App) RegisterWeb() {
 			failure(w, r, e)
 			return
 		}
-		render(w, r, webPage{Kind: "about", Title: "关于", Site: site, HTML: template.HTML(expanded)})
+		name := strings.TrimSpace(webString(site["intro_name"]))
+		if name == "" {
+			name = webString(site["display_name"])
+		}
+		description := []rune(rendered.Text)
+		if len(description) > 160 {
+			description = description[:160]
+		}
+		render(w, r, webPage{Kind: "about", Title: translateUI(requestLocale(r), "关于 {name}", "name", name), Description: string(description), Site: site, HTML: template.HTML(expanded)})
 	})
 	authPage := func(w http.ResponseWriter, r *http.Request) {
 		if a.redirectAuthenticationOrigin(w, r) {
