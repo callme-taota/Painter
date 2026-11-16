@@ -3,13 +3,16 @@ body[data-page-kind=moments] main.wrap.site-main{width:calc(100% - 176px);max-wi
 .moments-feed{min-width:0}
 .moments-items,.author-writing .author-moments{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:28px 20px;min-width:0}
 .moment-card{min-width:0;color:var(--ink)}
-.moment-preview{position:relative;display:flex;align-items:flex-end;isolation:isolate;aspect-ratio:4/5;overflow:hidden;border-radius:var(--radius-surface);background:var(--subtle);color:#fff;text-decoration:none}
+.moment-preview{position:relative;display:flex;align-items:flex-end;isolation:isolate;aspect-ratio:4/5;overflow:hidden;border-radius:var(--radius-surface);background:var(--subtle);color:#fff;text-decoration:none;box-shadow:-7px 14px 26px -16px rgb(var(--moment-color-left,0 0 0) / .28),7px 14px 26px -16px rgb(var(--moment-color-right,0 0 0) / .22)}
 .moment-preview:hover{color:#fff}
-.moment-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.moment-preview-caption{position:relative;z-index:1;width:100%;padding:52px 18px 18px;background:linear-gradient(transparent, rgb(0 0 0 / .62) 35%, rgb(0 0 0 / .88));color:#fff}
+.moment-cover{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+.moment-preview[data-cover-shape=long] .moment-cover{object-position:50% 0%}
+.moment-preview-glass{position:absolute;inset:auto 0 0;height:22%;pointer-events:none;background:linear-gradient(115deg,rgb(var(--moment-color-left,24 24 24) / .24),rgb(var(--moment-color-right,24 24 24) / .18));backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);mask-image:linear-gradient(transparent,#000 45%);-webkit-mask-image:linear-gradient(transparent,#000 45%)}
+.moment-preview:has(.moment-preview-caption) .moment-preview-glass{height:44%;background:rgb(16 16 16 / .35)}
+.moment-preview-caption{position:relative;z-index:1;width:100%;padding:28px 18px 18px;background:linear-gradient(transparent,rgb(0 0 0 / .5) 22%,rgb(0 0 0 / .55));color:#fff}
 .moment-text{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:400 16px/1.8 var(--font-ui)}
 .moment-preview .moment-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:15px;line-height:1.65;font-weight:500}
-.moment-preview-text{align-items:center;background:var(--subtle);color:var(--ink)}
+.moment-preview-text{align-items:center;background:var(--subtle);color:var(--ink);box-shadow:none}
 .moment-preview-text:hover{color:var(--ink)}
 .moment-preview-text .moment-preview-caption{padding:24px;background:transparent;color:inherit}
 .moment-preview-text .moment-text{-webkit-line-clamp:9;font-size:17px;line-height:1.85;font-weight:400}
@@ -22,6 +25,8 @@ body[data-page-kind=moments] main.wrap.site-main{width:calc(100% - 176px);max-wi
 .moment-avatar{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;border-radius:50%;object-fit:cover;background:var(--subtle);color:var(--muted);font-size:11px}
 .moment-cover-failed,.moment-slide-failed{margin:auto;padding:16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}
 .moment-preview[data-cover-failed] .moment-cover{visibility:hidden}
+.moment-preview[data-cover-failed]{box-shadow:none}
+.moment-preview[data-cover-failed] .moment-preview-glass{display:none}
 .moment-preview[data-cover-failed] .moment-cover-failed{display:block;align-self:center}
 .moment-preview[data-cover-failed] .moment-preview-caption{position:absolute;bottom:0;background:var(--subtle);color:var(--ink);padding-top:18px}
 .moment-time{display:block;color:var(--muted);font:400 12px/20px var(--font-ui);font-variant-numeric:tabular-nums}
@@ -73,12 +78,13 @@ html.moment-viewer-open,html.moment-viewer-open body{overflow:hidden}
 .moment-preview:focus-visible{outline-offset:4px}
 
 @media(min-width:1600px){.moments-items{grid-template-columns:repeat(5,minmax(0,1fr))}}
-@media(min-width:721px) and (max-width:1100px){.moments-items,.author-writing .author-moments{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 16px}.moment-reader{grid-template-columns:minmax(0,1fr) minmax(280px,1fr)}.moment-reader-author,.moment-reader-content{padding-inline:20px}}
+@media(min-width:721px) and (max-width:1100px){.moments-items,.author-writing .author-moments{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 16px}.moment-preview .moment-text{-webkit-line-clamp:2}.moment-reader{grid-template-columns:minmax(0,1fr) minmax(280px,1fr)}.moment-reader-author,.moment-reader-content{padding-inline:20px}}
 @media(max-width:720px){
  body[data-page-kind=moments] main.wrap.site-main{width:calc(100% - 24px);max-width:none;margin-inline:12px;padding-top:20px}
  .moments-items,.author-writing .author-moments{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}
- .moment-preview-caption{padding:40px 12px 12px}
- .moment-preview .moment-text{font-size:13px;line-height:1.65;-webkit-line-clamp:3}
+ .moment-preview-caption{padding:26px 12px 12px}
+ .moment-preview-glass{backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1)}
+ .moment-preview .moment-text{font-size:13px;line-height:1.65;-webkit-line-clamp:2}
  .moment-preview-text .moment-preview-caption{padding:16px}
  .moment-preview-text .moment-text{font-size:14px;line-height:1.8;-webkit-line-clamp:7}
  .moment-image-count{top:8px;right:8px;padding:2px 6px;gap:3px;font-size:11px;min-height:24px}
@@ -110,4 +116,8 @@ html.moment-viewer-open,html.moment-viewer-open body{overflow:hidden}
  .moment-viewer .moment-slides,.moment-viewer .moment-photo{height:auto;aspect-ratio:4/5}
  .moment-viewer .moment-photo img{height:100%}
 }
-@media(forced-colors:active){.moment-preview{border:1px solid CanvasText}.moment-preview-caption,.moment-image-count{background:Canvas;color:CanvasText}.moment-viewer,.moment-reader{outline:1px solid CanvasText}}
+html.reduce-transparency .moment-preview{box-shadow:none}
+html.reduce-transparency .moment-preview-glass{display:none}
+html.reduce-transparency .moment-preview-caption{background:var(--paper);color:var(--ink)}
+@media(prefers-reduced-transparency:reduce){.moment-preview{box-shadow:none}.moment-preview-glass{display:none}.moment-preview-caption{background:var(--paper);color:var(--ink)}}
+@media(forced-colors:active){.moment-preview{border:1px solid CanvasText;box-shadow:none}.moment-preview-glass{display:none}.moment-preview-caption,.moment-image-count{background:Canvas;color:CanvasText}.moment-viewer,.moment-reader{outline:1px solid CanvasText}}

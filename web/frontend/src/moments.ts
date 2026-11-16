@@ -1,8 +1,8 @@
 import {initMomentGalleries} from './momentGallery'
+import {initMomentCovers} from './momentCover'
 import {t, locale} from './i18n'
 
 const readers = new WeakSet<HTMLElement>()
-const covers = new WeakSet<HTMLImageElement>()
 const returnKey = 'painter-moment-return'
 let viewerInitialized = false
 
@@ -233,13 +233,7 @@ function initViewer() {
 }
 
 export function initMoments() {
-  for (const image of document.querySelectorAll<HTMLImageElement>('.moment-cover')) {
-    if (covers.has(image)) continue
-    covers.add(image)
-    const failed = () => image.closest('.moment-preview')?.setAttribute('data-cover-failed', '')
-    image.addEventListener('error', failed, {once: true})
-    if (image.complete && !image.naturalWidth) failed()
-  }
+  initMomentCovers()
   initReaders()
   initViewer()
   initBackLink()
