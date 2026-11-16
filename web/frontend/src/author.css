@@ -63,12 +63,6 @@ body[data-page-kind="author"] .author-content-tabs a:hover,body[data-page-kind="
 .author-writing .series-state{padding:0;background:transparent;border-radius:0}
 .author-writing .series-card-byline{margin-top:12px}
 .author-writing .series-public-card:first-child{padding-top:0}
-.author-writing .author-moments{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 32px}
-.author-writing .author-moments .moment-card{padding:0 0 24px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none}
-.author-moments .moment-card-header{margin-bottom:16px;gap:8px 16px}
-.author-moments .moment-gallery{margin-top:16px}
-.author-moments .moment-card>button{padding-inline:0;margin-top:12px;color:var(--muted);font-size:13px}
-.author-moments .moment-card>button:hover{color:var(--ink);background:transparent;text-decoration:underline;text-underline-offset:4px}
 .author-empty{padding:20px 0 48px}
 .author-empty h3{margin:0 0 10px;font-family:var(--font-ui);font-size:18px;font-weight:550;line-height:1.5;letter-spacing:-.02em}
 .author-empty p{max-width:65ch;margin:0;color:var(--muted);font-size:14px;line-height:1.8}

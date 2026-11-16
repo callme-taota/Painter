@@ -2954,5 +2954,13 @@
   "，请删减后保存。": ". Shorten it before saving.",
   "，请重新选择。": ". Please choose again.",
   "，迁移已完成": "; migration complete",
-  "；刷新保留此自定义内容。": "; refreshing preserves this custom content."
+  "；刷新保留此自定义内容。": "; refreshing preserves this custom content.",
+  "查看 {name} 的动态": "View {name}’s update",
+  "共 {count} 张图片": "{count} images",
+  "动态详情": "Update details",
+  "关闭动态": "Close update",
+  "在独立页面打开": "Open full page",
+  "正在读取动态…": "Loading update…",
+  "这条动态已撤回、删除或尚未公开。": "This update was withdrawn, deleted, or is not public.",
+  "动态暂时无法加载，请重试。": "This update could not be loaded. Please try again."
 }

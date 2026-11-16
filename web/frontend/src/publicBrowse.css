@@ -116,19 +116,6 @@ body[data-page-kind=series-list] .series-card-byline { margin-top:12px; }
 body[data-page-kind=series-list] .series-empty { padding:56px 0; }
 body[data-page-kind=series-list] .series-empty h2 { font:500 18px/1.5 var(--font-ui);margin:0 0 16px; }
 
-/* Updates remain a feed in every layout; the image is the only large surface. */
-body[data-page-kind=moments] .moments-toolbar { justify-content:flex-end;margin:12px 0 0; }
-body[data-page-kind=moments] .moments-layout { padding:0;border:0;background:none;gap:4px; }
-body[data-page-kind=moments] .moments-layout button { color:var(--muted);border:0; }
-body[data-page-kind=moments] .moments-layout button[aria-pressed=true] { color:var(--ink);background:var(--subtle); }
-body[data-page-kind=moments] .moments-items { gap:0 32px; }
-body[data-page-kind=moments] .moments-items .moment-card { padding:28px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;background:transparent; }
-body[data-page-kind=moments] .moment-card-header { margin-bottom:16px;gap:8px 16px; }
-body[data-page-kind=moments] .moment-text { font-size:16px;line-height:1.85; }
-body[data-page-kind=moments] .moment-gallery { margin-top:16px; }
-body[data-page-kind=moments] .moment-card>button { padding-inline:0;margin-top:12px;color:var(--muted);font-size:13px; }
-body[data-page-kind=moments] .moment-card>button:hover { color:var(--ink);background:transparent;text-decoration:underline;text-underline-offset:4px; }
-
 /* Search starts with the query, followed by one compact row of navigation/tools. */
 body[data-page-kind=search] .search-page-form { max-width:none;margin:0 0 28px; }
 body[data-page-kind=search] .search-query-row { max-width:720px;gap:12px; }
@@ -183,11 +170,6 @@ body[data-page-kind=search] .search-topic-links>p { margin:0;font-size:14px; }
   body[data-page-kind=series-list] .series-public-meta { gap:6px 12px;font-size:12px; }
   body[data-page-kind=series-list] .series-card-copy>p { font-size:14px;line-height:1.65; }
   body[data-page-kind=series-list] .series-card-byline { margin-top:8px; }
-  body[data-page-kind=moments] .moments-toolbar { display:none; }
-  body[data-page-kind=moments] .moments-items { gap:0; }
-  body[data-page-kind=moments] .moments-items .moment-card { padding:24px 0; }
-  body[data-page-kind=moments] .moment-card-header { margin-bottom:12px; }
-  body[data-page-kind=moments] .moment-text { font-size:16px; }
   body[data-page-kind=search] .search-query-row { gap:8px; }
   body[data-page-kind=search] .search-query-row>button { padding-inline:16px; }
   body[data-page-kind=search] .search-browse-bar { display:block;margin-top:12px; }

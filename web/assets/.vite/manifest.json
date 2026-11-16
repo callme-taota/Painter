@@ -1,16 +1,16 @@
 {
   "../locales/en.json": {
-    "file": "chunks/en-CFUBqKN2.js",
+    "file": "chunks/en-DxTFZRZS.js",
     "name": "en",
     "src": "../locales/en.json",
     "isDynamicEntry": true
   },
-  "_SelectField.vue_vue_type_script_setup_true_lang-DZDnPdO9.js": {
-    "file": "chunks/SelectField.vue_vue_type_script_setup_true_lang-DZDnPdO9.js",
+  "_SelectField.vue_vue_type_script_setup_true_lang-CDurdJED.js": {
+    "file": "chunks/SelectField.vue_vue_type_script_setup_true_lang-CDurdJED.js",
     "name": "SelectField.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_i18n-bcR5_UOf.js",
+      "_i18n-C0YlLskv.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ]
   },
@@ -18,12 +18,12 @@
     "file": "chunks/_plugin-vue_export-helper-DAHvvSey.js",
     "name": "_plugin-vue_export-helper"
   },
-  "_api-BQgCPC9k.js": {
-    "file": "chunks/api-BQgCPC9k.js",
+  "_api-B2X-REOc.js": {
+    "file": "chunks/api-B2X-REOc.js",
     "name": "api",
     "imports": [
-      "_i18n-bcR5_UOf.js",
-      "_publicSession-l4utVO9G.js",
+      "_i18n-C0YlLskv.js",
+      "_publicSession-BpxAxVvo.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ]
   },
@@ -32,11 +32,11 @@
     "name": "browser",
     "isDynamicEntry": true
   },
-  "_confirm-Cys_iQik.js": {
-    "file": "chunks/confirm-Cys_iQik.js",
+  "_confirm-B5spzMz9.js": {
+    "file": "chunks/confirm-B5spzMz9.js",
     "name": "confirm",
     "imports": [
-      "_i18n-bcR5_UOf.js",
+      "_i18n-C0YlLskv.js",
       "_infiniteScroll-CcHvAPba.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js"
     ],
@@ -52,19 +52,19 @@
     "file": "contentCards-B-SgKeXB.css",
     "src": "_contentCards-B-SgKeXB.css"
   },
-  "_contentCards-Bw8MtmFE.js": {
-    "file": "chunks/contentCards-Bw8MtmFE.js",
+  "_contentCards-BxnJwQDO.js": {
+    "file": "chunks/contentCards-BxnJwQDO.js",
     "name": "contentCards",
     "imports": [
-      "_publicSession-l4utVO9G.js",
-      "_i18n-bcR5_UOf.js"
+      "_publicSession-BpxAxVvo.js",
+      "_i18n-C0YlLskv.js"
     ],
     "css": [
       "contentCards-B-SgKeXB.css"
     ]
   },
-  "_i18n-bcR5_UOf.js": {
-    "file": "chunks/i18n-bcR5_UOf.js",
+  "_i18n-C0YlLskv.js": {
+    "file": "chunks/i18n-C0YlLskv.js",
     "name": "i18n",
     "dynamicImports": [
       "../locales/en.json"
@@ -74,20 +74,20 @@
     "file": "chunks/infiniteScroll-CcHvAPba.js",
     "name": "infiniteScroll"
   },
-  "_postLike-BMLsY_vS.js": {
-    "file": "chunks/postLike-BMLsY_vS.js",
+  "_postLike-BP0FC86a.js": {
+    "file": "chunks/postLike-BP0FC86a.js",
     "name": "postLike",
     "imports": [
-      "_i18n-bcR5_UOf.js",
-      "_publicSession-l4utVO9G.js",
-      "_toast-S7qEfLbI.js"
+      "_i18n-C0YlLskv.js",
+      "_publicSession-BpxAxVvo.js",
+      "_toast-DJjr6OoU.js"
     ]
   },
-  "_publicSession-l4utVO9G.js": {
-    "file": "chunks/publicSession-l4utVO9G.js",
+  "_publicSession-BpxAxVvo.js": {
+    "file": "chunks/publicSession-BpxAxVvo.js",
     "name": "publicSession",
     "imports": [
-      "_i18n-bcR5_UOf.js"
+      "_i18n-C0YlLskv.js"
     ]
   },
   "_runtime-core.esm-bundler-BsA5dPn8.js": {
@@ -115,19 +115,19 @@
       "geist-latin-BgDaEnEv.woff2"
     ]
   },
-  "_toast-L9esdD3p.css": {
-    "file": "toast-L9esdD3p.css",
-    "src": "_toast-L9esdD3p.css"
-  },
-  "_toast-S7qEfLbI.js": {
-    "file": "chunks/toast-S7qEfLbI.js",
+  "_toast-DJjr6OoU.js": {
+    "file": "chunks/toast-DJjr6OoU.js",
     "name": "toast",
     "imports": [
-      "_i18n-bcR5_UOf.js"
+      "_i18n-C0YlLskv.js"
     ],
     "css": [
       "toast-L9esdD3p.css"
     ]
+  },
+  "_toast-L9esdD3p.css": {
+    "file": "toast-L9esdD3p.css",
+    "src": "_toast-L9esdD3p.css"
   },
   "node_modules/vue/dist/vue.runtime.esm-bundler.js": {
     "file": "chunks/vue.runtime.esm-bundler-BDHfSOUB.js",
@@ -144,13 +144,13 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-Dm88E7wO.js",
+    "file": "chunks/AuthForm-C-svlUjH.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_i18n-bcR5_UOf.js",
+      "_i18n-C0YlLskv.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "__plugin-vue_export-helper-DAHvvSey.js"
     ],
@@ -159,33 +159,33 @@
     ]
   },
   "src/components/FollowIsland.vue": {
-    "file": "chunks/FollowIsland-BlrvF256.js",
+    "file": "chunks/FollowIsland-bpIkB0yc.js",
     "name": "FollowIsland",
     "src": "src/components/FollowIsland.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_i18n-bcR5_UOf.js",
-      "_api-BQgCPC9k.js",
-      "_postLike-BMLsY_vS.js",
-      "_toast-S7qEfLbI.js",
+      "_i18n-C0YlLskv.js",
+      "_api-B2X-REOc.js",
+      "_postLike-BP0FC86a.js",
+      "_toast-DJjr6OoU.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "_publicSession-l4utVO9G.js"
+      "_publicSession-BpxAxVvo.js"
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor-DIMWHwA1.js",
+    "file": "chunks/MarkdownEditor-C9kklk5W.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_i18n-bcR5_UOf.js",
-      "_publicSession-l4utVO9G.js",
-      "_api-BQgCPC9k.js",
-      "_contentCards-Bw8MtmFE.js",
-      "_SelectField.vue_vue_type_script_setup_true_lang-DZDnPdO9.js",
-      "_confirm-Cys_iQik.js",
-      "_toast-S7qEfLbI.js",
+      "_i18n-C0YlLskv.js",
+      "_publicSession-BpxAxVvo.js",
+      "_api-B2X-REOc.js",
+      "_contentCards-BxnJwQDO.js",
+      "_SelectField.vue_vue_type_script_setup_true_lang-CDurdJED.js",
+      "_confirm-B5spzMz9.js",
+      "_toast-DJjr6OoU.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "__plugin-vue_export-helper-DAHvvSey.js",
       "_infiniteScroll-CcHvAPba.js"
@@ -195,20 +195,20 @@
     ]
   },
   "src/components/PostIsland.vue": {
-    "file": "chunks/PostIsland-DyOiOAEt.js",
+    "file": "chunks/PostIsland-DOhdz_Iy.js",
     "name": "PostIsland",
     "src": "src/components/PostIsland.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_i18n-bcR5_UOf.js",
-      "_confirm-Cys_iQik.js",
-      "_api-BQgCPC9k.js",
-      "_postLike-BMLsY_vS.js",
-      "_toast-S7qEfLbI.js",
+      "_i18n-C0YlLskv.js",
+      "_confirm-B5spzMz9.js",
+      "_api-B2X-REOc.js",
+      "_postLike-BP0FC86a.js",
+      "_toast-DJjr6OoU.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "_infiniteScroll-CcHvAPba.js",
-      "_publicSession-l4utVO9G.js"
+      "_publicSession-BpxAxVvo.js"
     ],
     "css": [
       "PostIsland-C2EXfmCn.css"
@@ -224,12 +224,12 @@
     ]
   },
   "src/homeExtras.ts": {
-    "file": "chunks/homeExtras-DTkOWtG1.js",
+    "file": "chunks/homeExtras-LBCazS0w.js",
     "name": "homeExtras",
     "src": "src/homeExtras.ts",
     "isDynamicEntry": true,
     "imports": [
-      "_i18n-bcR5_UOf.js"
+      "_i18n-C0YlLskv.js"
     ]
   },
   "src/homeShowcase.ts": {
@@ -254,12 +254,12 @@
     "isDynamicEntry": true
   },
   "src/homeWorkJourney.ts": {
-    "file": "chunks/homeWorkJourney-D4BTgnCf.js",
+    "file": "chunks/homeWorkJourney-bOQkpAdV.js",
     "name": "homeWorkJourney",
     "src": "src/homeWorkJourney.ts",
     "isDynamicEntry": true,
     "imports": [
-      "_i18n-bcR5_UOf.js",
+      "_i18n-C0YlLskv.js",
       "src/homeSnap.ts"
     ],
     "css": [
@@ -273,28 +273,28 @@
     "isDynamicEntry": true
   },
   "src/phrases.ts": {
-    "file": "chunks/phrases-kBlAGibm.js",
+    "file": "chunks/phrases-C_a3ScxH.js",
     "name": "phrases",
     "src": "src/phrases.ts",
     "isDynamicEntry": true,
     "imports": [
-      "_i18n-bcR5_UOf.js",
-      "_toast-S7qEfLbI.js"
+      "_i18n-C0YlLskv.js",
+      "_toast-DJjr6OoU.js"
     ]
   },
   "src/public.ts": {
-    "file": "public-qFsSHLMl.js",
+    "file": "public-CLNI98hf.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
     "imports": [
-      "_i18n-bcR5_UOf.js",
+      "_i18n-C0YlLskv.js",
       "_shadcn-theme-CyFDgfb_.js",
       "_infiniteScroll-CcHvAPba.js",
-      "_contentCards-Bw8MtmFE.js",
-      "_postLike-BMLsY_vS.js",
-      "_toast-S7qEfLbI.js",
-      "_publicSession-l4utVO9G.js"
+      "_contentCards-BxnJwQDO.js",
+      "_postLike-BP0FC86a.js",
+      "_toast-DJjr6OoU.js",
+      "_publicSession-BpxAxVvo.js"
     ],
     "dynamicImports": [
       "node_modules/vue/dist/vue.runtime.esm-bundler.js",
@@ -316,19 +316,19 @@
       "src/homeShowcase.ts"
     ],
     "css": [
-      "public-Cu4mju3F.css",
+      "public-DSTkG_ES.css",
       "sharing-COMRoiPd.css"
     ]
   },
   "src/setup.ts": {
-    "file": "setup-DKNbVuut.js",
+    "file": "setup-CK-Oce1H.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
     "imports": [
       "_shadcn-theme-CyFDgfb_.js",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_i18n-bcR5_UOf.js",
+      "_i18n-C0YlLskv.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
       "__plugin-vue_export-helper-DAHvvSey.js"
     ],
@@ -346,7 +346,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-ZzZe1Tv-.js",
+    "file": "studio-CrUzncYr.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
@@ -354,17 +354,17 @@
       "_shadcn-theme-CyFDgfb_.js",
       "src/public.ts",
       "_runtime-dom.esm-bundler-CBz_knB0.js",
-      "_i18n-bcR5_UOf.js",
-      "_confirm-Cys_iQik.js",
-      "_api-BQgCPC9k.js",
-      "_SelectField.vue_vue_type_script_setup_true_lang-DZDnPdO9.js",
+      "_i18n-C0YlLskv.js",
+      "_confirm-B5spzMz9.js",
+      "_api-B2X-REOc.js",
+      "_SelectField.vue_vue_type_script_setup_true_lang-CDurdJED.js",
       "_runtime-core.esm-bundler-BsA5dPn8.js",
-      "_toast-S7qEfLbI.js",
+      "_toast-DJjr6OoU.js",
       "__plugin-vue_export-helper-DAHvvSey.js",
-      "_publicSession-l4utVO9G.js",
+      "_publicSession-BpxAxVvo.js",
       "_infiniteScroll-CcHvAPba.js",
-      "_contentCards-Bw8MtmFE.js",
-      "_postLike-BMLsY_vS.js"
+      "_contentCards-BxnJwQDO.js",
+      "_postLike-BP0FC86a.js"
     ],
     "dynamicImports": [
       "_browser-CqDbEFy1.js",

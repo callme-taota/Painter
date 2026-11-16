@@ -4,13 +4,14 @@ export function initPublicInfinite(){
  const foundSentinel=document.querySelector<HTMLElement>('[data-infinite-next]'),foundContainer=document.querySelector<HTMLElement>('[data-infinite-items]')
  if(!foundSentinel||!foundContainer)return
  const sentinel=foundSentinel,container=foundContainer
+ const listPath=location.pathname
  let next=sentinel.dataset.infiniteNext||'',busy=false,failed=false,changed=false
  const seen=new Set<string>(),abort=new AbortController()
  const observer=observeInfinite(sentinel,()=>void load())
  async function load(retry=false){
-  if(!next||busy||(failed&&!retry)||document.hidden)return
+  if(!next||busy||(failed&&!retry)||document.hidden||document.documentElement.classList.contains('moment-viewer-open'))return
   const url=new URL(next,location.href)
-  if(url.origin!==location.origin||url.pathname!==location.pathname||seen.has(url.href)){next='';return}
+  if(url.origin!==location.origin||url.pathname!==listPath||seen.has(url.href)){next='';return}
   busy=true;failed=false;sentinel.textContent=t('正在载入…');sentinel.setAttribute('aria-busy','true')
   try{
    const response=await fetch(url,{signal:abort.signal,headers:{Accept:'text/html','Accept-Language':locale}})
@@ -34,4 +35,5 @@ export function initPublicInfinite(){
  }
  addEventListener('pagehide',event=>{if(!event.persisted){abort.abort();observer.stop()}})
  addEventListener('pageshow',()=>observer.check())
+ document.addEventListener('painter:moment-viewer-closed',()=>observer.check())
 }

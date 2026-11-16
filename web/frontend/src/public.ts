@@ -99,6 +99,7 @@ import './publicBrowse.css'
 import './discover.css'
 import './products.css'
 import './dockCompact.css'
+import './momentsPublic.css'
 import {initPWA} from './pwa'
 initPWA()
 import {initSharing} from './sharing'
