@@ -1,8 +1,14 @@
 // Isolated toast UI checks; no application API, accounts, database or network.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{createRequire}=require('node:module');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const frontend=createRequire(path.resolve(__dirname,'../../web/frontend/package.json')),ts=frontend('typescript');
-const source=ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../../web/frontend/src/toast.ts'),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace(/import ['"]\.\/toast\.css['"];?\s*/,'')+'\nwindow.testToast=toast;';
+const frontend=createRequire(path.resolve(__dirname,'../../web/frontend/package.json'));
+// Bundle the real module graph as ESM: i18n now uses top-level await, which a
+// standalone transpile or a CommonJS wrapper cannot execute correctly.
+const {buildSync}=frontend('esbuild');
+const source=buildSync({
+ stdin:{contents:"import{toast}from'./toast';window.testToast=toast;",resolveDir:path.resolve(__dirname,'../../web/frontend/src'),loader:'ts'},
+ bundle:true,write:false,format:'esm',platform:'browser',loader:{'.css':'empty'},
+}).outputFiles[0].text;
 const css=fs.readFileSync(path.resolve(__dirname,'../../web/frontend/src/toast.css'),'utf8');
 const out=process.env.ARTIFACT_DIR||'/tmp/painter-toast-core-qa',checks=[];fs.mkdirSync(out,{recursive:true});
 function check(name,value){assert.ok(value,name);checks.push(name);console.log('PASS '+name)}

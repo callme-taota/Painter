@@ -48,6 +48,8 @@ make build
 
 ## 测试
 
+GitHub Actions 自动检查 `next` 的推送和 PR，覆盖 Go／PostgreSQL 18、前端与独立浏览器回归、部署与备份工具。运行范围及本地复现命令见[持续集成说明](docs/CI.md)。
+
 ```bash
 # 纯逻辑检查；未提供测试数据库时跳过数据库集成用例
 go test ./...
