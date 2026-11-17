@@ -33,6 +33,8 @@ type App struct {
 	Mux    *http.ServeMux
 	rateMu sync.Mutex
 	rates  map[string]rateBucket
+
+	momentCovers webMomentCoverCache
 }
 type Principal struct{ ID, Role, Username, DisplayName, SessionID string }
 type APIError struct {

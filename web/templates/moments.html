@@ -8,7 +8,7 @@
 {{end}}
 {{define "moment-card"}}
 <article class="moment-card" id="moment-{{.id}}" data-list-key="moment-{{.id}}">
- <a class="moment-preview{{if not .images}} moment-preview-text{{end}}" href="/moments/{{.id}}" data-moment-open aria-label="{{t "查看 {name} 的动态" "name" .author.display_name}}">
+ <a class="moment-preview{{if not .images}} moment-preview-text{{end}}" href="/moments/{{.id}}" data-moment-open{{if .cover_ratio}} data-cover-shape="{{.cover_shape}}" style="--moment-preview-ratio:{{.cover_ratio}};--moment-mobile-ratio:{{.cover_mobile_ratio}}"{{end}} aria-label="{{t "查看 {name} 的动态" "name" .author.display_name}}">
   {{if .images}}{{with index .images 0}}<img class="moment-cover" src="{{.url}}" alt="{{.alt}}" loading="lazy" decoding="async">{{end}}<span class="moment-cover-failed" hidden>{{t "图片暂时无法加载。"}}</span>{{if gt (len .images) 1}}<span class="moment-image-count" aria-label="{{t "共 {count} 张图片" "count" (len .images)}}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="13" height="13" rx="3"/><path d="M4 16V7a3 3 0 0 1 3-3h9"/></svg>{{len .images}}</span>{{end}}{{end}}
   {{if .images}}<span class="moment-preview-glass" aria-hidden="true"></span>{{end}}
   {{if .text}}<div class="moment-preview-caption"><p class="moment-text">{{.text}}</p></div>{{end}}

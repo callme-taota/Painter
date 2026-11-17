@@ -1,5 +1,6 @@
 import {initMomentGalleries} from './momentGallery'
 import {initMomentCovers} from './momentCover'
+import {initMomentGrids} from './momentGrid'
 import {t, locale} from './i18n'
 
 const readers = new WeakSet<HTMLElement>()
@@ -233,6 +234,7 @@ function initViewer() {
 }
 
 export function initMoments() {
+  initMomentGrids()
   initMomentCovers()
   initReaders()
   initViewer()

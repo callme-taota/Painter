@@ -252,6 +252,9 @@ func (a *App) RegisterWeb() {
 		if p.Status == 0 {
 			p.Status = 200
 		}
+		if p.Kind == "moments" || p.Kind == "author" && p.AuthorTab == "moments" {
+			p.Items = a.webMomentCoverItems(r.Context(), p.Items)
+		}
 		localizePageChrome(&p)
 		localeResponseHeaders(w, p.Locale)
 		var buffer bytes.Buffer
