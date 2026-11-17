@@ -225,7 +225,7 @@ func TestContentLinkTitleImportRoundTripAndInlineBoundary(t *testing.T) {
 		Enum    []string `json:"enum"`
 		Default string   `json:"default"`
 	}
-	if json.Unmarshal(schema.Defs["linkCard"].Properties["display"], &display) != nil || strings.Join(display.Enum, ",") != "card,title" || display.Default != "card" {
+	if json.Unmarshal(schema.Defs["linkCard"].Properties["display"], &display) != nil || strings.Join(display.Enum, ",") != "card,title,social" || display.Default != "card" {
 		t.Fatal("embedded import schema does not describe the exact display contract", display)
 	}
 	for _, kind := range []string{"githubCard", "steamCard", "apple_musicCard", "momentCard", "phraseCard", "calloutCard", "metricsCard", "summaryCard", "layoutCard"} {

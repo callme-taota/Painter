@@ -22,7 +22,7 @@ npm run build
 ## 资源与响应保护
 
 - 静态资源只提供真实普通文件，不列出目录；拒绝点路径、构建 manifest、source map 和源码扩展。拒绝和缺失资源返回 404、`no-store`；正常 JS/CSS/字体保留 GET、HEAD、Range 与缓存行为。
-- 页面设置 CSP：同源脚本与每响应随机 nonce；禁止任意内联脚本、eval、iframe、插件与外部 API 连接。主题初始化和 JSON-LD 带对应 nonce。编辑器动态样式、HTTPS 图片/音乐和 blob 图片预览继续允许。
+- 页面设置 CSP：同源脚本与每响应随机 nonce；禁止任意内联脚本、eval、任意 iframe、插件与外部 API 连接。正文视频仅允许在明确点击后嵌入 `https://player.bilibili.com/player.html`，使用沙箱且关闭自动播放；原始文章 HTML 仍不能直接插入 iframe。主题初始化和 JSON-LD 带对应 nonce。编辑器动态样式、HTTPS 图片/音乐和 blob 图片预览继续允许。
 - 普通页面禁止被 iframe 嵌入，并限制浏览器敏感权限；`/embed` 是明确允许外站嵌入的无脚本分享卡片，具体限制见[专栏与分享](SERIALS_AND_SHARING.md)。生成的 SVG 封面保留自身更严格的 CSP。
 - 可配置公网 HTTP → HTTPS 的 308 跳转，保留路径与查询参数。跳转地址仅来自 `PUBLIC_BASE_URL`，不使用客户端提供的转发 Host。
 - 公网 HTTPS 响应增加一天有效的 HSTS，不包含 `includeSubDomains` 或 preload，不影响同域名下其他站点。

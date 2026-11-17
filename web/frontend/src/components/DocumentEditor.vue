@@ -23,7 +23,7 @@ import {toast} from '../toast'
 const props=defineProps<{modelValue:string;disabled?:boolean;active?:boolean}>()
 const emit=defineEmits<{'update:modelValue':[value:string];save:[];'pick-image':[];image:[file:File];compatibility:[issue:string];composition:[value:boolean];'source-paste':[value:string]}>()
 const editor=shallowRef<Editor>(),issue=ref(''),revision=ref(0),composing=ref(false),linkOpen=ref(false),linkValue=ref(''),linkError=ref(''),linkInput=ref<HTMLInputElement>()
-const cardOpen=ref(false),cardInitial=ref<ArticleCard|null>(null),cardKind=ref<ArticleCardType>('github'),cardLabel=ref(''),cardInline=ref(false),cardRange=ref<{from:number;to:number;block:boolean}|null>(null)
+const cardOpen=ref(false),cardInitial=ref<ArticleCard|null>(null),cardKind=ref<ArticleCardType>('github'),cardLabel=ref(''),cardInline=ref(false),cardPresentation=ref<'social'>(),cardRange=ref<{from:number;to:number;block:boolean}|null>(null)
 const slash=ref<{from:number;to:number;query:string;x:number;y:number}|null>(null),slashIndex=ref(0),bubble=ref<{x:number;y:number}|null>(null)
 let applying=false,pending=false,lastEmitted=props.modelValue,compositionTimer:ReturnType<typeof setTimeout>|undefined,slashDismissedAt=-1
 const editable=computed(()=>!props.disabled&&!issue.value)
@@ -49,7 +49,9 @@ const commands=[
   {label:t("组合卡片"),hint:t("组合文字、指标、来源与图片"),search:'layout compose zuhe',run:()=>{openCards('layout');return true}},
   {label:t("GitHub 仓库"),hint:t("公开仓库卡片"),search:'github repository card kapian',run:()=>{openCards('github');return true}},
   {label:t("Steam 游戏"),hint:t("商店游戏卡片"),search:'steam game card youxi',run:()=>{openCards('steam');return true}},
+  {label:t("B站视频"),hint:t("点击加载的站内视频播放器"),search:'bilibili video BV av shipin',run:()=>{openCards('bilibili');return true}},
   {label:'Apple Music',hint:t("专辑或歌单卡片"),search:'apple music album playlist card yinyue',run:()=>{openCards('apple_music');return true}},
+  {label:t("社交分享"),hint:t("作者、文字与封面的链接卡片"),search:'social share weibo xhs x twitter douyin fenxiang',run:()=>{openCards('link',undefined,'social');return true}},
   {label:t("网页参考"),hint:t("文字、Emoji 与来源预览"),search:'link reference emoji card wangye',run:()=>{openCards('link');return true}},
   {label:t("站内动态"),hint:t("引用已公开的动态与照片"),search:'moment internal card dongtai',run:()=>{openCards('moment');return true}},
   {label:t("站内片语"),hint:t("引用已公开的句子或词语"),search:'phrase sentence word internal card pianyu',run:()=>{openCards('phrase');return true}},
@@ -66,12 +68,12 @@ function chooseBlock(value:string|number){if(!editable.value)return;if(value==='
 function selectedLinkCard(e:Editor){const attrs=e.getAttributes('link'),range=getMarkRange(e.state.selection.$from,e.schema.marks.link,attrs);if(!range)return null;const label=e.state.doc.textBetween(range.from,range.to,' '),card=parseArticleReference(attrs.title,attrs.href)||articleLinkSnapshot(attrs.href,label,attrs.title);return card?{...range,label,card}:null}
 function openLink(){const e=editor.value;if(!e)return;const node=e.state.doc.nodeAt(e.state.selection.from),block=node?.type.name==='articleCard'?parseArticleCard(node.attrs.snapshot):null;if(block?.type==='link'||selectedLinkCard(e)){openCards();return}const attrs=e.getAttributes('link');cardOpen.value=false;linkValue.value=attrs.href||'';linkError.value='';linkOpen.value=true;void nextTick(()=>linkInput.value?.focus())}
 function applyLink(){if(!editable.value)return;const e=editor.value;if(!e)return;const value=linkValue.value.trim();if(value&&!safeMediaURL(value)){linkError.value=t("请输入网页、邮件或站内链接。");toast.error(linkError.value);return}const chain=e.chain().focus().extendMarkRange('link'),applied=value?chain.setLink({href:value}).run():chain.unsetLink().run();if(!applied){toast.error(t("链接尚未应用，请重新选择文字后重试。"));return}linkOpen.value=false;toast.success(value?t("链接已应用到当前草稿。"):t("链接已从当前文字移除。"))}
-function openCards(kind?:ArticleCardType,position?:number){
+function openCards(kind?:ArticleCardType,position?:number,presentation?:'social'){
  const e=editor.value;if(!e||!editable.value)return
  linkOpen.value=false;slash.value=null;bubble.value=null
  let from=position??e.state.selection.from,to=e.state.selection.to,initial:ArticleCard|null=null,block=false,label=e.state.doc.textBetween(from,to,' ')
  if(!kind){const node=e.state.doc.nodeAt(from);if(node?.type.name==='articleCard'){initial=parseArticleCard(node.attrs.snapshot);to=from+node.nodeSize;block=true}else{const link=selectedLinkCard(e);if(link){initial=link.card;from=link.from;to=link.to;label=link.label}}}
- cardInitial.value=initial;cardKind.value=initial?.type||kind||'github';cardLabel.value=label;cardInline.value=initial?.type==='link'&&!block||!initial&&kind==='link';cardRange.value={from,to,block};cardOpen.value=true
+ cardPresentation.value=presentation;cardInitial.value=initial;cardKind.value=initial?.type||kind||'github';cardLabel.value=label;cardInline.value=!presentation&&(initial?.type==='link'&&!block||!initial&&kind==='link');cardRange.value={from,to,block};cardOpen.value=true
 }
 function closeCards(){cardOpen.value=false;editor.value?.commands.focus()}
 function applyCard(value:{card:ArticleCard;inline:boolean;label:string}){
@@ -135,7 +137,7 @@ defineExpose({insertMarkdown,replaceText,isComposing,flush:commit,openCards,focu
       </div>
     </div>
     <form v-if="linkOpen" class="document-link-form" @submit.prevent="applyLink"><label>{{t("链接地址")}}<input ref="linkInput" v-model="linkValue" :placeholder="t('https:// 或站内路径')" @keydown.esc.prevent="linkOpen=false;editor?.commands.focus()"></label><button type="submit">{{t("应用链接")}}</button><button type="button" class="quiet" @click="linkValue='';applyLink()">{{t("移除链接")}}</button><button type="button" class="quiet" @click="linkOpen=false;editor?.commands.focus()">{{t("取消")}}</button><p v-if="linkError" role="alert">{{linkError}}</p></form>
-    <ArticleCardComposer v-if="cardOpen" :initial="cardInitial" :kind="cardKind" :label="cardLabel" :inline="cardInline" :editing="!!cardInitial" :disabled="!editable" @close="closeCards" @apply="applyCard"/>
+    <ArticleCardComposer v-if="cardOpen" :initial="cardInitial" :kind="cardKind" :preferred-display="cardPresentation" :label="cardLabel" :inline="cardInline" :editing="!!cardInitial" :disabled="!editable" @close="closeCards" @apply="applyCard"/>
     <div v-if="editor?.isActive('table')&&editable" class="document-table-tools" role="group" :aria-label="t('表格操作')"><button @mousedown.prevent @click="editor?.chain().focus().addRowAfter().run()">{{t("添一行")}}</button><button @mousedown.prevent @click="editor?.chain().focus().addColumnAfter().run()">{{t("添一列")}}</button><button @mousedown.prevent @click="editor?.chain().focus().deleteRow().run()">{{t("删除本行")}}</button><button @mousedown.prevent @click="editor?.chain().focus().deleteColumn().run()">{{t("删除本列")}}</button><button @mousedown.prevent @click="editor?.chain().focus().deleteTable().run()">{{t("删除表格")}}</button></div>
     <EditorContent :editor="editor"/>
     <div class="document-footnote"><span>{{issue?t("请在 Markdown 源码中编辑这篇文章。"):t("输入 / 插入内容，选中文字设置格式。")}}</span><span>{{t("Markdown 保存")}}</span></div>

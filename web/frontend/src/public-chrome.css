@@ -4,10 +4,10 @@ html[data-theme=dark]{--link:#2997ff;--link-hover:#72bbff;--link-soft:#15324c}
 
 /* Blue signals an explicit reading action; navigation and linked content keep
    the neutral page hierarchy instead of turning every destination blue. */
-:is(.prose,.comment-body) a[href]:not(.content-card),
+:is(.prose,.comment-body) a[href]:not(.content-card,.content-social,.content-video__source),
 :is(.text-link,.read-link,.story-jump),
 .home-close-links>a,.search-dialog-foot>a{color:var(--link)}
-:is(.prose,.comment-body) a[href]:not(.content-card):hover,
+:is(.prose,.comment-body) a[href]:not(.content-card,.content-social,.content-video__source):hover,
 :is(.text-link,.read-link,.story-jump):hover{color:var(--link-hover)}
 .site-footer a:not(:has(img)),.author-more,.related-heading>a,
 .home-section-heading>a,.home-chapter-heading>a,.home-project-link,

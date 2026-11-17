@@ -1,3 +1,4 @@
+import {canonicalBilibiliURL,socialPlatform} from './articleEmbeds'
 import {t} from './i18n'
 import {Node as TiptapNode} from '@tiptap/core'
 import {DOMSerializer,type DOMOutputSpec} from '@tiptap/pm/model'
@@ -5,10 +6,10 @@ import Link,{isAllowedUri} from '@tiptap/extension-link'
 import {NodeSelection} from '@tiptap/pm/state'
 import './articleCards.css'
 
-export type ArticleReferenceType='github'|'steam'|'apple_music'|'link'|'moment'|'phrase'
+export type ArticleReferenceType='github'|'steam'|'apple_music'|'link'|'moment'|'phrase'|'bilibili'
 export type ArticlePanelType='callout'|'metrics'|'summary'
 export type ArticleCardType=ArticleReferenceType|ArticlePanelType|'layout'
-export type ArticleCardV1={v:1;type:ArticleReferenceType;url:string;title?:string;ref_id?:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string;display?:'card'|'title'}
+export type ArticleCardV1={v:1;type:ArticleReferenceType;url:string;title?:string;ref_id?:string;description?:string;subtitle?:string;image_url?:string;stats?:{stars?:number;forks?:number};metadata_source?:'provider'|'author';resolved_at?:string;display?:'card'|'title'|'social'}
 export type ArticleCardSource={label:string;url:string}
 export type ArticleCardMetric={label:string;value:string;detail?:string;source?:ArticleCardSource}
 export type ArticleCardEntry={title:string;body:string}
@@ -22,8 +23,8 @@ export type ArticleLayoutNode=ArticleLayoutText|ArticleLayoutLink|ArticleLayoutI
 export type ArticleLayoutPanel={kind:'panel';tone?:'note'|'insight'|'warning';children:ArticleLayoutNode[]}
 export type ArticleLayoutCard={v:3;type:'layout';root:ArticleLayoutPanel}
 export type ArticleCard=ArticleCardV1|ArticlePanelCard|ArticleLayoutCard
-export const articleCardKinds=[{value:'callout',label:t('提示')},{value:'metrics',label:t('指标')},{value:'summary',label:t('摘要组')},{value:'layout',label:t('组合卡片')},{value:'github',label:t('GitHub 仓库')},{value:'steam',label:t('Steam 游戏')},{value:'apple_music',label:'Apple Music'},{value:'link',label:t('网页参考')},{value:'moment',label:t('站内动态')},{value:'phrase',label:t('站内片语')}] as const
-const labels:Record<ArticleCardType,string>={callout:t('提示'),metrics:t('指标'),summary:t('摘要组'),layout:t('组合卡片'),github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:t('网页参考'),moment:t('动态'),phrase:t('片语')}
+export const articleCardKinds=[{value:'callout',label:t('提示')},{value:'metrics',label:t('指标')},{value:'summary',label:t('摘要组')},{value:'layout',label:t('组合卡片')},{value:'github',label:t('GitHub 仓库')},{value:'steam',label:t('Steam 游戏')},{value:'apple_music',label:'Apple Music'},{value:'bilibili',label:t('B站视频')},{value:'link',label:t('网页参考')},{value:'moment',label:t('站内动态')},{value:'phrase',label:t('站内片语')}] as const
+const labels:Record<ArticleCardType,string>={callout:t('提示'),metrics:t('指标'),summary:t('摘要组'),layout:t('组合卡片'),github:'GitHub',steam:'Steam',apple_music:'Apple Music',link:t('网页参考'),bilibili:t('B站视频'),moment:t('动态'),phrase:t('片语')}
 export const articleReferencePrefix='painter:v1:'
 export const isInternalArticleCard=(type:string)=>type==='moment'||type==='phrase'
 export const isArticlePanel=(type:string):type is ArticlePanelType=>type==='callout'||type==='metrics'||type==='summary'
@@ -108,14 +109,19 @@ export function parseArticleCard(raw:string):ArticleCard|null {
       return c as ArticlePanelCard
     }
     if(c.v!==1||isArticlePanel(String(c.type))||c.type==='layout')return null
-    if(c.type==='link'&&Object.hasOwn(c,'display')&&(!uniqueJSONKeys(raw)||!nonNullJSON(c)))return null
+    if((c.type==='bilibili'||c.type==='link'&&Object.hasOwn(c,'display'))&&(!uniqueJSONKeys(raw)||!nonNullJSON(c)))return null
+    if(c.type==='bilibili'||c.type==='link'&&c.display==='social'){
+      if(!fields(c,['v','type','url','title','description','subtitle','image_url','metadata_source','resolved_at',...(c.type==='link'?['display']:[])]))return null
+      for(const key of ['image_url','metadata_source','resolved_at'])if(Object.hasOwn(c,key)&&typeof c[key]!=='string')return null
+    }
     if(isInternalArticleCard(c.type)){
       if(!internalID(c.ref_id)||c.url!==internalArticleCardURL(c.type,c.ref_id)||Object.keys(c).some(k=>!['v','type','url','ref_id'].includes(k)))return null
       return c as ArticleCardV1
     }
     const u=publicURL(c.url)
-    if(!u||!text(c.title,200,true)||!text(c.description??'',1000)||!text(c.subtitle??'',200))return null
-    if(Object.keys(c).some(k=>!['v','type','url','title','description','subtitle','image_url','stats','metadata_source','resolved_at','display'].includes(k))||c.display!==undefined&&(c.type!=='link'||!['card','title'].includes(c.display)))return null
+    if(!u||!text(c.title,200,true)||!(c.type==='link'&&c.display==='social'?bodyText(c.description??'',1000,false):text(c.description??'',1000))||!text(c.subtitle??'',200))return null
+    if(Object.keys(c).some(k=>!['v','type','url','title','description','subtitle','image_url','stats','metadata_source','resolved_at','display'].includes(k))||c.display!==undefined&&(c.type!=='link'||!['card','title','social'].includes(c.display)))return null
+    if(c.type==='bilibili'&&canonicalBilibiliURL(c.url)!==c.url)return null
     if(c.type==='github'&&(u.host!=='github.com'||u.search||u.hash||!/^\/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\/?$/.test(u.pathname)))return null
     if(c.type==='steam'&&(u.host!=='store.steampowered.com'||!/^\/app\/[1-9][0-9]{0,9}(?:\/[^/]*)?\/?$/.test(u.pathname)))return null
     if(c.type==='apple_music'&&(u.host!=='music.apple.com'||!/^\/[a-zA-Z]{2}\/(?:album\/(?:[^/]+\/)?[1-9][0-9]{0,19}|playlist\/(?:[^/]+\/)?pl\.[A-Za-z0-9_.-]+)\/?$/.test(u.pathname)))return null
@@ -135,17 +141,17 @@ function decodeArticleCard(value:string){if(!/^[A-Za-z0-9_-]+$/.test(value)||val
 export function parseArticleReference(title:unknown,href:unknown):ArticleCardV1|null {
   if(typeof title!=='string'||!title.startsWith(articleReferencePrefix))return null
   const card=parseArticleCard(decodeArticleCard(title.slice(articleReferencePrefix.length)))
-  return card?.v===1&&card.type==='link'&&card.display!=='title'&&card.url===href?card:null
+  return card?.v===1&&card.type==='link'&&(!card.display||card.display==='card')&&card.url===href?card:null
 }
 export function articleCardMarkdown(card:ArticleCard){return '```painter-card\n'+JSON.stringify(card)+'\n```'}
-export function articleReferenceTitle(card:ArticleCard){if(card.v===1&&card.type==='link'){const {display,...inline}=card;return articleReferencePrefix+encodeArticleCard(JSON.stringify(inline))}return articleReferencePrefix+encodeArticleCard(JSON.stringify(card))}
+export function articleReferenceTitle(card:ArticleCard){if(card.v===1&&card.type==='link'&&card.display!=='social'){const {display,...inline}=card;return articleReferencePrefix+encodeArticleCard(JSON.stringify(inline))}return articleReferencePrefix+encodeArticleCard(JSON.stringify(card))}
 export function articleLinkSnapshot(href:unknown,label:string,title?:unknown):ArticleCardV1|null {if(typeof title==='string'&&title.startsWith('painter:'))return null;const card=parseArticleCard(JSON.stringify({v:1,type:'link',url:href,title:label.trim()||(typeof href==='string'?publicURL(href)?.hostname:'')||'',metadata_source:'author'}));return card?.v===1&&card.type==='link'?card:null}
 export function articleCardTitle(card:ArticleCard):string {
   if(card.v!==3)return card.title||labels[card.type]
   const find=(nodes:ArticleLayoutNode[]):string=>{for(const node of nodes){if(node.kind==='text'&&node.role==='title')return node.text;if('children' in node){const title=find(node.children);if(title)return title}}return ''}
   return find(card.root.children)||labels.layout
 }
-export function articleReferenceMarkdown(card:ArticleCard,label=articleCardTitle(card)){if(card.v!==1||card.type!=='link')return articleCardMarkdown(card);return '['+label.replace(/[\\`*_{}\[\]<>()#+.!|&~-]/g,'\\$&')+'](<'+card.url.replace(/</g,'%3C').replace(/>/g,'%3E')+'> "'+articleReferenceTitle(card)+'")'}
+export function articleReferenceMarkdown(card:ArticleCard,label=articleCardTitle(card)){if(card.v!==1||card.type!=='link'||card.display==='social'||card.display==='title')return articleCardMarkdown(card);return '['+label.replace(/[\\`*_{}\[\]<>()#+.!|&~-]/g,'\\$&')+'](<'+card.url.replace(/</g,'%3C').replace(/>/g,'%3E')+'> "'+articleReferenceTitle(card)+'")'}
 
 const span=(name:string,value:string):DOMOutputSpec=>['span',{class:name},value]
 function detailSpec(card:ArticleCardV1):DOMOutputSpec[]{
@@ -162,6 +168,25 @@ function detailSpec(card:ArticleCardV1):DOMOutputSpec[]{
 export function articleCardSpec(card:ArticleCard):DOMOutputSpec {
   if(card.v!==1)return layoutSpec(card.v===2?compileArticlePanel(card):card.root,card.type)
   if(isInternalArticleCard(card.type))return ['a',{class:'content-card content-card--'+card.type,href:card.url,'data-internal-card-state':'pending'},['span',{class:'content-card__body'},span('content-card__title',t('{kind}引用',{kind:labels[card.type]})),span('content-card__description',t('正在读取公开内容…'))]]
+  if(card.type==='bilibili'){
+    const stage:DOMOutputSpec[]=[]
+    if(card.image_url)stage.push(['img',{class:'content-video__poster',src:card.image_url,alt:'',loading:'lazy'}])
+    stage.push(['button',{class:'content-video__load',type:'button','data-video-load':'',hidden:''},t('加载B站播放器')])
+    const details:DOMOutputSpec[]=[span('content-video__title',card.title||labels.bilibili)]
+    if(card.subtitle)details.push(span('content-video__subtitle',card.subtitle))
+    if(card.description)details.push(span('content-video__description',card.description))
+    details.push(span('content-video__destination',t('在B站打开')))
+    return ['div',{class:'content-video','data-content-video':'bilibili'},['div',{class:'content-video__stage'},...stage],['div',{class:'content-video__details'},['a',{class:'content-video__source',href:card.url,target:'_blank',rel:'noopener noreferrer'},...details]]]
+  }
+  if(card.type==='link'&&card.display==='social'){
+    const meta:DOMOutputSpec[]=[span('content-social__platform',socialPlatform(card.url))]
+    if(card.subtitle)meta.push(span('content-social__author',card.subtitle))
+    const content:DOMOutputSpec[]=[['span',{class:'content-social__meta'},...meta],span('content-social__title',card.title||labels.link)]
+    if(card.description)content.push(span('content-social__text',card.description))
+    if(card.image_url)content.push(['img',{class:'content-social__image',src:card.image_url,alt:'',loading:'lazy'}])
+    content.push(span('content-social__url',new URL(card.url).hostname))
+    return ['a',{class:'content-social',href:card.url,target:'_blank',rel:'noopener noreferrer'},...content]
+  }
   if(card.type==='link'&&card.display==='title'){
     const svg=(name:string,path:string):DOMOutputSpec=>['http://www.w3.org/2000/svg svg',{class:name,width:'18',height:'18',viewBox:'0 0 24 24',focusable:'false',fill:'none',stroke:'currentColor','stroke-width':'1.65','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'},['http://www.w3.org/2000/svg path',{d:path}]]
     return ['a',{class:'content-link-row',href:card.url,target:'_blank',rel:'noopener noreferrer'},svg('content-link-row__icon','M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'),span('content-link-row__title',card.title||labels.link),span('content-link-row__host',new URL(card.url).hostname),svg('content-link-row__arrow','M7 17 17 7M7 7h10v10')]
@@ -218,7 +243,7 @@ export const ArticleCardNode=TiptapNode.create<{onEdit?:(position:number)=>void}
     const card=parseArticleCard(node.attrs.snapshot),wrapper=document.createElement('div');wrapper.className='article-card-node'+(card&&isInternalArticleCard(card.type)?' article-card-node--internal':'')+(card&&card.v!==1?' article-card-node--panel':'')+(card?.v===1&&card.type==='link'&&card.display==='title'?' article-card-node--link-title':'');wrapper.dataset.painterCard=encodeArticleCard(node.attrs.snapshot);wrapper.contentEditable='false'
     if(card)wrapper.append(DOMSerializer.renderSpec(document,articleCardSpec(card)).dom)
     const edit=document.createElement('button');edit.type='button';edit.className='article-card-node__edit';edit.textContent=t('编辑卡片');edit.setAttribute('aria-label',t('编辑{name}卡片',{name:card?articleCardTitle(card):t('内容')}));edit.addEventListener('click',event=>{event.preventDefault();const position=getPos();if(typeof position==='number')this.options.onEdit?.(position)});wrapper.append(edit)
-    wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card,a.content-link-row,.content-panel'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
+    wrapper.addEventListener('click',event=>{if(!(event.target instanceof Element)||!event.target.closest('a.content-card,a.content-link-row,a.content-social,.content-video,.content-panel'))return;if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();const position=getPos();if(typeof position==='number')editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc,position)))})
     // DocumentEditor rescans through initArticleCards after initial mount and every document update.
     return {dom:wrapper,stopEvent:event=>event.target===edit,ignoreMutation:()=>true}
   }},

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import {registerHooks,createRequire} from 'node:module'
 import {pathToFileURL} from 'node:url'
-registerHooks({resolve(specifier,context,next){if(specifier==='./articleCards'&&context.parentURL?.endsWith('/editorMarkdown.ts'))return {url:new URL('./articleCards.ts',context.parentURL).href,shortCircuit:true};return next(specifier,context)},load(url,context,next){if(url.endsWith('.css'))return {format:'module',source:'',shortCircuit:true};return next(url,context)}})
+registerHooks({resolve(specifier,context,next){if(['./articleEmbeds','./i18n'].includes(specifier)&&context.parentURL?.includes('/web/frontend/src/'))return {url:new URL(specifier+'.ts',context.parentURL).href,shortCircuit:true};if(specifier==='./articleCards'&&context.parentURL?.endsWith('/editorMarkdown.ts'))return {url:new URL('./articleCards.ts',context.parentURL).href,shortCircuit:true};return next(specifier,context)},load(url,context,next){if(url.endsWith('.css'))return {format:'module',source:'',shortCircuit:true};return next(url,context)}})
 const require=createRequire(new URL('../../web/frontend/package.json',import.meta.url))
 const {MarkdownManager}=await import(pathToFileURL(require.resolve('@tiptap/markdown')))
 const {StarterKit}=await import(pathToFileURL(require.resolve('@tiptap/starter-kit')))

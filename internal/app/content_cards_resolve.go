@@ -295,6 +295,15 @@ func (a *App) contentCardResolve(ctx context.Context, in contentCardResolveInput
 	}
 	c := contentCard{V: 1, Type: in.Type, URL: in.URL, MetadataSource: "provider", ResolvedAt: time.Now().UTC().Format(time.RFC3339)}
 	switch in.Type {
+	case "bilibili":
+		canonical, err := contentBilibiliInputURL(in.URL)
+		if err != nil {
+			return c, err
+		}
+		c.URL, c.Title, c.Description, c.MetadataSource, c.ResolvedAt = canonical, in.Title, in.Description, "author", ""
+		if c.Title == "" {
+			c.Title = "哔哩哔哩视频"
+		}
 	case "github":
 		r, e := a.fetchPublicGitHubRepository(ctx, in.URL)
 		if e != nil {

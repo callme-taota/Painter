@@ -53,6 +53,13 @@ entries 必须为1至6项。归纳原文要点、已知限制或明确给出的�
 四补充、网页链接展示
 正文句子中的链接直接使用普通 Markdown。原材料有明确网页标题和公开HTTPS网址，且需要独立引用时，可使用 {"type":"card","card":{"v":1,"type":"link","url":"原材料提供的HTTPS网址","title":"原材料提供的标题","display":"title"}}，显示为单行标题。需要完整卡片时省略display或设为card，可附带原材料已有的description。display只适用于v1的link卡，不添加到v3来源节点；不编造标题、简介或图片，不自行生成painter:v1编码。
 
+四补充、社交分享与B站视频
+1. 原材料明确提供社交分享链接与文字时，可使用独立卡片 {"type":"card","card":{"v":1,"type":"link","display":"social","url":"原材料提供的公开HTTPS网址","title":"原材料提供的标题","subtitle":"原材料提供的作者或账号说明","description":"原材料中的分享文字","metadata_source":"author"}}。title必填最多200字符；subtitle可省略最多200字符；description可省略最多1000字符，仅social呈现允许其中使用LF/CRLF换行，不使用制表符。可选image_url仅使用用户明确提供的已上传/media地址；没有就省略。不抓取平台脚本、头像或远程封面，不声称是认证或实时动态。
+2. 原材料明确提供B站视频链接时，可使用独立卡片 {"type":"card","card":{"v":1,"type":"bilibili","url":"原材料提供的规范B站视频地址","title":"原材料提供的标题或通用标题哔哩哔哩视频","metadata_source":"author"}}。规范地址必须是https://www.bilibili.com/video/BV后接10位英文字母或数字/，或https://www.bilibili.com/video/av后接1至18位正整数/；保留尾斜杠，编号不能以零开头，ID区分大小写。仅允许p=2至1000，第1分P省略参数；不能加入其他参数、fragment、短链、播放器网址或iframe HTML。只依据原材料规范化地址，不猜测视频ID或短链目标。
+3. B站可选subtitle最多200字符、description最多1000字符，均为单行纯文本；可选image_url只能用真实本地/media地址。不编造视频标题、创作者、时长、播放量或平台元数据；没有真实标题就使用“哔哩哔哩视频”。解析只在本地规范化地址，不联网获取元数据。阅读时由用户点击后加载官方播放器；不要把player URL、HTML、脚本、自动播放设置写进卡片。
+4. social和bilibili均不能放入行内painter:v1引用或v3组件树；独立卡片统一使用card区块。行内增强引用只接受link且display省略或为card。编辑导入内容不会自动修改已发布文章，仍需站点内明确发布。
+5. 若原始B站网页链接带有spm_id_from或vd_source，只删除这两个已知追踪参数，绝不把其值写入快照。各参数只能出现一次，解码后的值最多512个UTF-8字节；其余参数仍按前述规则处理，p仍唯一且不含前导零。编辑器可规范化此类粘贴输入，结构化导入JSON仍必须直接提供不带追踪参数的规范URL。不要据此接受其他未知参数或猜测短链目标。
+
 五、长度与安全
 1. 卡片标题和摘要条目标题最多200字符；body最多2000字符；指标label和source.label最多120字符；value最多100字符；detail最多500字符；source.url最多2048个UTF-8字节。标题、标签、value为单行纯文本；body、detail可用JSON转义后的LF或CRLF换行，不使用制表符。
 2. blocks 必须为1至256项；整篇最多128张卡片；每张卡片编码后最多8192个UTF-8字节；完整JSON与最终Markdown均不得超过1048576个UTF-8字节。合并过细区块；材料过长时保留明确的节选范围和缺失说明，不静默删掉限制或伪称完整。

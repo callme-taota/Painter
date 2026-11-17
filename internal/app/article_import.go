@@ -188,7 +188,7 @@ func inspectArticleImportMarkdown(markdown string) (int, error) {
 			if err != nil {
 				return ast.WalkStop, err
 			}
-			if card.Type != "link" || card.V != 1 || card.Display == "title" || string(node.Destination) != card.URL {
+			if card.Type != "link" || card.V != 1 || !contentCardInlineDisplay(card.Display) || string(node.Destination) != card.URL {
 				return ast.WalkStop, articleImportInvalid("行内引用须为同一网址的 link 卡片")
 			}
 			cards++

@@ -4,21 +4,23 @@ import {t} from "../i18n"
 import InfiniteList from './InfiniteList.vue'
 import {computed,nextTick,onBeforeUnmount,onMounted,reactive,ref,watch} from 'vue'
 import {appendUnique,api,body,type Row} from '../api'
-import {articleCardKinds,articleCardMarkdown,articleReferenceMarkdown,articleCardTitle,isArticlePanel,isInternalArticleCard,internalArticleCardURL,parseArticleCard,type ArticleCard,type ArticleCardType,type ArticleReferenceType,type ArticleCardMetric,type ArticleCardEntry,type ArticleLayoutCard,type ArticleLayoutNode,type ArticleLayoutText,type ArticleLayoutLink,type ArticleLayoutImage,type ArticleLayoutStack,type ArticleTextRole} from '../articleCards'
+import {articleCardKinds,articleCardMarkdown,articleReferenceMarkdown,articleCardTitle,isArticlePanel,isInternalArticleCard,internalArticleCardURL,parseArticleCard,type ArticleCard,type ArticleCardV1,type ArticleCardType,type ArticleReferenceType,type ArticleCardMetric,type ArticleCardEntry,type ArticleLayoutCard,type ArticleLayoutNode,type ArticleLayoutText,type ArticleLayoutLink,type ArticleLayoutImage,type ArticleLayoutStack,type ArticleTextRole} from '../articleCards'
 import SelectField from './SelectField.vue'
 import Icon from './Icon.vue'
 import {initArticleCards} from '../contentCards'
 import {toast} from '../toast'
+import {canonicalBilibiliURL} from '../articleEmbeds'
 
-const props=defineProps<{initial?:ArticleCard|null;label?:string;inline?:boolean;kind?:ArticleCardType;editing?:boolean;disabled?:boolean}>()
+const props=defineProps<{initial?:ArticleCard|null;label?:string;inline?:boolean;kind?:ArticleCardType;editing?:boolean;disabled?:boolean;preferredDisplay?:'social'}>()
 const emit=defineEmits<{close:[];apply:[value:{card:ArticleCard;inline:boolean;label:string}]}>()
 const initial=props.initial
 let nextRow=0
 const metricRow=(item?:ArticleCardMetric)=>({key:nextRow++,label:item?.label||'',value:item?.value||'',detail:item?.detail||'',source_label:item?.source?.label||'',source_url:item?.source?.url||''})
 const summaryRow=(item?:ArticleCardEntry)=>({key:nextRow++,title:item?.title||'',body:item?.body||''})
-const form=reactive({type:initial?.type||props.kind||'github',url:initial?.v===1?initial.url:'',title:initial&&initial.v!==3?initial.title||'':'',description:initial?.v===1?initial.description||'':'',label:props.label||'',emoji:'',display:(props.inline??(!initial&&props.kind==='link'))?'inline':initial?.v===1&&initial.type==='link'&&initial.display==='title'?'title':'card' as 'inline'|'card'|'title',tone:initial?.v===2&&initial.type==='callout'?initial.tone:'note' as 'note'|'insight'|'warning',body:initial?.v===2&&initial.type==='callout'?initial.body:'',metrics:initial?.v===2&&initial.type==='metrics'?initial.metrics.map(metricRow):[metricRow()],entries:initial?.v===2&&initial.type==='summary'?initial.entries.map(summaryRow):[summaryRow()]})
+const form=reactive({type:initial?.type||props.kind||'github',url:initial?.v===1?initial.url:'',title:initial&&initial.v!==3?initial.title||'':'',description:initial?.v===1?initial.description||'':'',subtitle:initial?.v===1?initial.subtitle||'':'',image_url:initial?.v===1?initial.image_url||'':'',label:props.label||'',emoji:'',display:props.preferredDisplay==='social'?'social':(props.inline??(!initial&&props.kind==='link'))?'inline':initial?.v===1&&initial.type==='link'&&initial.display?initial.display:'card' as 'inline'|'card'|'title'|'social',tone:initial?.v===2&&initial.type==='callout'?initial.tone:'note' as 'note'|'insight'|'warning',body:initial?.v===2&&initial.type==='callout'?initial.body:'',metrics:initial?.v===2&&initial.type==='metrics'?initial.metrics.map(metricRow):[metricRow()],entries:initial?.v===2&&initial.type==='summary'?initial.entries.map(summaryRow):[summaryRow()]})
 const snapshot=ref<ArticleCard|null>(initial||null),busy=ref(false),error=ref(''),preview=ref(''),urlInput=ref<HTMLInputElement>(),titleInput=ref<HTMLInputElement>(),previewRoot=ref<HTMLElement>(),referenceFilter=ref<HTMLInputElement>()
 const references=ref<Row[]>([]),referenceQuery=ref(''),referencesBusy=ref(false),referencesError=ref(''),nextCursor=ref(''),hasMore=ref(false)
+const isVideo=computed(()=>form.type==='bilibili'),isSocial=computed(()=>form.type==='link'&&form.display==='social')
 const isLink=computed(()=>form.type==='link'),isInternal=computed(()=>isInternalArticleCard(form.type)),internalLabel=computed(()=>form.type==='moment'?t("动态"):t("片语"))
 const isPanel=computed(()=>isArticlePanel(form.type))
 const isLayout=computed(()=>form.type==='layout')
@@ -53,14 +55,14 @@ function layoutCounts(items:ArticleLayoutNode[]){let nodes=0,images=0;const walk
 const layoutStats=computed(()=>{const result=layoutCounts(layout.value.root.children);return {...result,nodes:result.nodes+1}})
 const parsedLayout=computed(()=>parseArticleCard(layoutMode.value==='json'?layoutJSON.value:JSON.stringify(layout.value)))
 const layoutReady=computed(()=>parsedLayout.value?.v===3)
-const ready=computed(()=>isLayout.value?layoutReady.value:isPanel.value?!!parseArticleCard(JSON.stringify(candidate())):isInternal.value?snapshot.value?.v===1&&!!snapshot.value.ref_id&&snapshot.value.type===form.type:!!form.url.trim()&&!!form.title.trim()&&(isLink.value||!!snapshot.value))
+const ready=computed(()=>isLayout.value?layoutReady.value:isPanel.value?!!parseArticleCard(JSON.stringify(candidate())):isInternal.value?snapshot.value?.v===1&&!!snapshot.value.ref_id&&snapshot.value.type===form.type:!!form.url.trim()&&!!form.title.trim()&&(isLink.value||isVideo.value||!!snapshot.value))
 const filteredReferences=computed(()=>{const query=referenceQuery.value.trim().toLocaleLowerCase();return query?references.value.filter(row=>[row.text,row.source,row.author?.display_name].some(value=>typeof value==='string'&&value.toLocaleLowerCase().includes(query))):references.value})
 let controller:AbortController|undefined,referenceController:AbortController|undefined,request=0,referenceRequest=0
 watch(()=>[form.type,form.url],()=>{if(snapshot.value&&(form.type!==snapshot.value.type||snapshot.value.v===1&&form.url!==snapshot.value.url))snapshot.value=null;preview.value='';error.value=''})
 function focusPrimary(){if(isInternal.value)referenceFilter.value?.focus();else if(isLayout.value)layoutFieldsRoot.value?.querySelector<HTMLElement>('input,textarea')?.focus();else if(isPanel.value)titleInput.value?.focus();else urlInput.value?.focus()}
-watch(()=>form.type,(value,previous)=>{if(value===previous)return;request++;controller?.abort();busy.value=false;form.display=value==='link'?'inline':'card';snapshot.value=null;form.url='';form.title='';form.description='';form.body='';form.tone='note';form.metrics=[metricRow()];form.entries=[summaryRow()];layout.value=layoutTemplateCard('note');layoutTemplate.value='note';layoutMode.value='fields';referenceQuery.value='';references.value=[];referenceRequest++;referenceController?.abort();referencesError.value='';referencesBusy.value=false;if(isInternalArticleCard(value))void loadReferences(true);void nextTick(focusPrimary)})
+watch(()=>form.type,(value,previous)=>{if(value===previous)return;request++;controller?.abort();busy.value=false;form.display=value==='link'?'inline':'card';snapshot.value=null;form.url='';form.title='';form.description='';form.subtitle='';form.image_url='';form.body='';form.tone='note';form.metrics=[metricRow()];form.entries=[summaryRow()];layout.value=layoutTemplateCard('note');layoutTemplate.value='note';layoutMode.value='fields';referenceQuery.value='';references.value=[];referenceRequest++;referenceController?.abort();referencesError.value='';referencesBusy.value=false;if(isInternalArticleCard(value))void loadReferences(true);void nextTick(focusPrimary)})
 watch(()=>props.disabled,value=>{if(value)close()})
-watch(()=>[form.title,form.description,form.display,form.emoji,form.label,form.tone,form.body,form.metrics,form.entries],()=>{preview.value=''},{deep:true})
+watch(()=>[form.title,form.description,form.subtitle,form.image_url,form.display,form.emoji,form.label,form.tone,form.body,form.metrics,form.entries],()=>{preview.value=''},{deep:true})
 watch(layoutTemplate,value=>{if(value!=='custom'){layout.value=layoutTemplateCard(value);layoutMode.value='fields';void nextTick(focusPrimary)}})
 watch([layout,layoutJSON],()=>{if(!isLayout.value)return;request++;controller?.abort();busy.value=false;preview.value='';error.value=''},{deep:true})
 onMounted(()=>{void nextTick(focusPrimary);if(isInternal.value)void loadReferences(true);if(initial)void showPreview(candidate()).catch(e=>{error.value=(e as Error).message})})
@@ -75,7 +77,9 @@ function candidate():ArticleCard {
  if(isInternal.value&&snapshot.value?.v===1)return {v:1,type:snapshot.value.type,url:snapshot.value.url,ref_id:snapshot.value.ref_id}
  const base=snapshot.value?.v===1?snapshot.value:{v:1 as const,type:form.type as ArticleReferenceType,url:form.url.trim(),title:form.title.trim(),metadata_source:'author' as const}
  const {display,...snapshotFields}=base
- const card={...snapshotFields,title:form.title.trim(),description:form.description.trim(),...(form.type==='link'&&form.display==='title'?{display:'title' as const}:{})}
+ const card:ArticleCardV1={...snapshotFields,title:form.title.trim(),description:form.description.trim(),...(form.type==='link'&&(form.display==='title'||form.display==='social')?{display:form.display}:{})}
+ if(isVideo.value)card.url=canonicalBilibiliURL(form.url.trim())||form.url.trim()
+ if(isVideo.value||isSocial.value){card.subtitle=form.subtitle.trim();if(form.image_url)card.image_url=form.image_url;else delete card.image_url}
  if(card.title!==(snapshot.value?.v===1?snapshot.value.title:'')||card.description!==(snapshot.value?.v===1?snapshot.value.description||'':''))card.metadata_source='author'
  return card
 }
@@ -100,6 +104,12 @@ async function uploadLayoutImage(node:ArticleLayoutImage,event:Event){
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
  try{const data=new FormData();data.append('file',file);const result=await api<{media_id:string;state?:string}>('/media',{method:'POST',body:data,signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[/]media[/][a-fA-F0-9-]{16,128}$/.test('/media/'+result.media_id)||result.state&&result.state!=='ready')throw new Error(t("图片尚未上传完成，请重试。"));node.src='/media/'+result.media_id;if(!node.alt)node.alt=Array.from(file.name).slice(0,200).join('');toast.success(t("图片已上传到卡片，插入草稿后仍需保存。"))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=t("图片上传失败：{value1}", {value1:(e as Error).message});toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
+async function uploadReferenceImage(event:Event){
+ const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file||props.disabled||busy.value)return
+ if(file.size>10*1024*1024){toast.error(t('图片超过 10 MiB，请压缩后重试。'));return}
+ const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
+ try{const data=new FormData();data.append('file',file);const result=await api<{media_id:string;state?:string}>('/media',{method:'POST',body:data,signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[a-fA-F0-9-]{16,128}$/.test(result.media_id)||result.state&&result.state!=='ready')throw new Error(t('图片尚未上传完成，请重试。'));form.image_url='/media/'+result.media_id;toast.success(t('图片已上传到卡片，插入草稿后仍需保存。'))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
+}
 function referenceLabel(card:ArticleCard){return [form.emoji.trim(),form.label.trim()||articleCardTitle(card)].filter(Boolean).join(' ')}
 async function showPreview(card:ArticleCard,signal?:AbortSignal){const at=request,carrier=(value:ArticleCard)=>isLink.value&&form.display==='inline'?articleReferenceMarkdown(value,referenceLabel(value)):articleCardMarkdown(value),markdown=carrier(card);const result=await api<{sanitized_html:string}>('/editor/preview',{method:'POST',body:body({markdown,seq:0}),signal});if(at===request&&!signal?.aborted){try{if(carrier(candidate())!==markdown)return}catch{return}preview.value=result.sanitized_html;await nextTick();if(previewRoot.value)initArticleCards(previewRoot.value)}}
 async function loadReferences(reset=false){
@@ -111,9 +121,9 @@ async function loadReferences(reset=false){
 async function resolve(input:Row){
  if(props.disabled||busy.value)return
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
- try{const result=await api<{card:ArticleCard}>('/editor/cards/resolve',{method:'POST',body:body(input),signal:controller.signal});if(at!==request)return;if(result.card.v!==1)throw new Error(t("卡片信息不完整，请重新读取。"));form.url=result.card.url;form.title=result.card.title||'';form.description=result.card.description||'';await nextTick();snapshot.value=result.card;await showPreview(candidate(),controller.signal);if(at===request)toast.success(t("卡片信息已读取，请确认后插入草稿。"))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
+ try{const result=await api<{card:ArticleCard}>('/editor/cards/resolve',{method:'POST',body:body(input),signal:controller.signal});if(at!==request)return;if(result.card.v!==1)throw new Error(t("卡片信息不完整，请重新读取。"));form.url=result.card.url;form.title=result.card.title||'';form.description=result.card.description||'';form.subtitle=result.card.subtitle||form.subtitle;if(result.card.image_url)form.image_url=result.card.image_url;await nextTick();snapshot.value=result.card;await showPreview(candidate(),controller.signal);if(at===request)toast.success(t("卡片信息已读取，请确认后插入草稿。"))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
-function readMetadata(){void resolve({type:form.type,url:form.url.trim()})}
+function readMetadata(){void resolve({type:form.type,url:form.url.trim(),...(isVideo.value&&form.title.trim()?{title:form.title.trim(),description:form.description.trim()}:{})})}
 function chooseReference(row:Row){void resolve({type:form.type,ref_id:String(row.id),url:internalArticleCardURL(form.type,String(row.id))})}
 function referenceExcerpt(row:Row){const text=String(row.text||'');const points=Array.from(text);return points.length>130?points.slice(0,130).join('')+'…':text||t("图片动态")}
 async function apply(){
@@ -197,13 +207,17 @@ async function previewCard(){if(!ready.value||busy.value||props.disabled)return;
    </template>
    <template v-else>
     <label>{{t("网址")}}<input ref="urlInput" v-model="form.url" :disabled="busy||disabled" type="url" placeholder="https://" maxlength="2048" autocomplete="off" data-card-url></label>
-    <div class="article-card-panel__wide article-card-panel__actions"><button type="button" :disabled="busy||disabled||!form.url.trim()" data-card-resolve @click="readMetadata">{{t("读取网页信息")}}</button><button type="button" class="quiet" :disabled="busy||disabled||!ready" data-card-preview @click="previewCard">{{t("预览卡片")}}</button><span v-if="busy" role="status">{{t("正在读取或校验…")}}</span></div>
-    <label class="article-card-panel__wide">{{t("标题")}}<input v-model="form.title" :disabled="busy||disabled" maxlength="200" :placeholder="isLink?t('也可手动填写网页标题'):t('读取信息后可调整标题')" data-card-title></label>
-    <label class="article-card-panel__wide">{{t("简介（可选）")}}<textarea v-model="form.description" :disabled="busy||disabled" maxlength="1000" rows="2" :placeholder="t('补充这条参考与正文的关系')" data-card-description></textarea></label>
-    <template v-if="isLink"><div class="article-card-panel__wide" data-card-display><SelectField v-model="form.display" :disabled="busy||disabled" :label="t('展示方式')" :options="[{value:'inline',label:t('行内')},{value:'card',label:t('卡片')},{value:'title',label:t('单行标题')}]"/></div><template v-if="form.display==='inline'"><label>{{t("Emoji（可选）")}}<input v-model="form.emoji" :disabled="busy||disabled" maxlength="16" :placeholder="t('例如 🔎')" :aria-label="t('引用 Emoji')"></label><label>{{t("正文链接文字")}}<input v-model="form.label" :disabled="busy||disabled" maxlength="200" :placeholder="form.title||t('默认使用网页标题')" data-card-label></label></template></template>
+    <div class="article-card-panel__wide article-card-panel__actions"><button type="button" :disabled="busy||disabled||!form.url.trim()" data-card-resolve @click="readMetadata">{{isVideo?t("识别视频链接"):t("读取网页信息")}}</button><button type="button" class="quiet" :disabled="busy||disabled||!ready" data-card-preview @click="previewCard">{{t("预览卡片")}}</button><span v-if="busy" role="status">{{t("正在读取或校验…")}}</span></div>
+    <label class="article-card-panel__wide">{{t("标题")}}<input v-model="form.title" :disabled="busy||disabled" maxlength="200" :placeholder="isVideo?t('填写视频标题，无需读取平台信息'):isLink?t('也可手动填写网页标题'):t('读取信息后可调整标题')" data-card-title></label>
+    <label class="article-card-panel__wide">{{isSocial?t("分享文字（可选）"):t("简介（可选）")}}<textarea v-model="form.description" :disabled="busy||disabled" maxlength="1000" rows="2" :placeholder="t('补充这条参考与正文的关系')" data-card-description></textarea></label>
+    <template v-if="isLink"><div class="article-card-panel__wide" data-card-display><SelectField v-model="form.display" :disabled="busy||disabled" :label="t('展示方式')" :options="[{value:'inline',label:t('行内')},{value:'card',label:t('卡片')},{value:'title',label:t('单行标题')},{value:'social',label:t('社交分享')}]"/></div><template v-if="form.display==='inline'"><label>{{t("Emoji（可选）")}}<input v-model="form.emoji" :disabled="busy||disabled" maxlength="16" :placeholder="t('例如 🔎')" :aria-label="t('引用 Emoji')"></label><label>{{t("正文链接文字")}}<input v-model="form.label" :disabled="busy||disabled" maxlength="200" :placeholder="form.title||t('默认使用网页标题')" data-card-label></label></template></template>
+    <template v-if="isSocial||isVideo">
+     <label class="article-card-panel__wide">{{t("作者或账号（可选）")}}<input v-model="form.subtitle" :disabled="busy||disabled" maxlength="200" data-card-author></label>
+     <div class="article-card-panel__wide article-card-cover-field"><span class="article-card-cover-field__label">{{t("封面（可选）")}}</span><label class="button article-card-cover-field__upload">{{form.image_url?t("更换封面"):t("上传封面")}}<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" :disabled="busy||disabled" data-card-cover-file @change="uploadReferenceImage"></label><div v-if="form.image_url" class="article-card-cover-field__preview"><img :src="form.image_url" :alt="t('卡片封面预览')"><button type="button" class="quiet" :disabled="busy||disabled" data-card-cover-remove @click="form.image_url=''">{{t("移除封面")}}</button></div></div>
+    </template>
    </template>
   </div>
-  <p class="article-card-panel__copy">{{isPanel||isLayout?t("文字与数值按填写内容保存，不会自动核验或更新。请在说明中保留统计时间、口径与存档状态。"):isInternal?t("仅引用当前公开的{value1}。保存的是站内引用；来源更新后卡片随之更新，撤回或删除后不再展示原文与图片。", {value1:internalLabel}):isLink?t("网页参考可读取公开网页，也可手动填写标题。行内引用支持鼠标悬停和键盘聚焦查看来源。"):t("读取公开信息后插入，封面、简介与统计随文章保存。修改卡片不会自动更新已发布的文章。")}}</p>
+  <p class="article-card-panel__copy">{{isPanel||isLayout?t("文字与数值按填写内容保存，不会自动核验或更新。请在说明中保留统计时间、口径与存档状态。"):isInternal?t("仅引用当前公开的{value1}。保存的是站内引用；来源更新后卡片随之更新，撤回或删除后不再展示原文与图片。", {value1:internalLabel}):isVideo?t("填写标准 BV 或 av 视频链接，可保留分P参数。标题和封面由你填写；读者点击后加载播放器，不自动播放。"):isSocial?t("分享卡片可手动填写作者、文字和封面，不会加载社交平台脚本或同步点赞、评论数据。"):isLink?t("网页参考可读取公开网页，也可手动填写标题。行内引用支持鼠标悬停和键盘聚焦查看来源。"):t("读取公开信息后插入，封面、简介与统计随文章保存。修改卡片不会自动更新已发布的文章。")}}</p>
   <div v-if="preview" ref="previewRoot" class="article-card-panel__preview"><p>{{isLink?t("文章中的链接"):t("文章中的卡片")}}</p><div v-html="preview"></div></div>
   <p v-if="error" class="article-card-panel__error" role="alert" data-card-error>{{error}}</p>
   <div class="article-card-panel__actions"><button type="submit" class="primary" :disabled="busy||disabled||!ready" data-card-apply>{{busy?t("正在校验…"):editing?t("保存卡片"):t("插入卡片")}}</button><button type="button" class="quiet" @click="close">{{t("取消")}}</button></div>

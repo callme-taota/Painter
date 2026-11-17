@@ -471,8 +471,7 @@
         },
         "description": {
           "type": "string",
-          "maxLength": 1000,
-          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+          "maxLength": 1000
         },
         "subtitle": {
           "type": "string",
@@ -495,12 +494,41 @@
         "display": {
           "enum": [
             "card",
-            "title"
+            "title",
+            "social"
           ],
           "default": "card",
-          "description": "Block presentation: card (default) or a single title row. Inline Markdown references must omit display or use card; title is invalid inline."
+          "description": "Block presentation: card (default), a single title row, or an author-supplied social sharing snapshot. Inline Markdown references must omit display or use card; title and social are invalid inline."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "display": {
+                "const": "social"
+              }
+            },
+            "required": [
+              "display"
+            ]
+          },
+          "then": {
+            "properties": {
+              "description": {
+                "pattern": "^[^\\u0000-\\u0009\\u000b\\u000c\\u000e-\\u001f\\u007f-\\u009f]*$"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "description": {
+                "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+              }
+            }
+          }
+        }
+      ]
     },
     "momentCard": {
       "type": "object",
@@ -583,6 +611,9 @@
         },
         {
           "$ref": "#/$defs/phraseCard"
+        },
+        {
+          "$ref": "#/$defs/bilibiliCard"
         }
       ],
       "$comment": "Each encoded card snapshot is additionally limited to 8192 UTF-8 bytes by the server. The import path accepts local media URLs only."
@@ -886,6 +917,57 @@
         }
       },
       "$comment": "Controlled Painter component tree, not the A2UI wire protocol. Server enforces at most 64 nodes, depth 6 counting the root as 1, 6 images, and 8192 encoded UTF-8 bytes. Panels are root-only; grid children are stacks. All text is literal, not HTML or Markdown. No arbitrary styles, scripts, actions, bindings, or network requests."
+    },
+    "bilibiliCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v",
+        "type",
+        "url",
+        "title"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "type": {
+          "const": "bilibili"
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https://www\\.bilibili\\.com/video/(BV[A-Za-z0-9]{10}|av[1-9][0-9]{0,17})/(?:\\?p=(?:[2-9]|[1-9][0-9]{1,2}|1000))?$",
+          "description": "Canonical Bilibili video URL with a trailing slash. Only p=2..1000 is retained; p=1 must be omitted. No other query, fragment, short URL or player HTML is accepted. The editor input/resolver may discard one bounded spm_id_from and vd_source parameter each (decoded values at most 512 UTF-8 bytes); stored snapshots and this import schema never accept either tracking parameter."
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]*$"
+        },
+        "image_url": {
+          "$ref": "#/$defs/mediaURL"
+        },
+        "metadata_source": {
+          "enum": [
+            "provider",
+            "author"
+          ]
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Author-supplied Bilibili video snapshot. Only local /media images are accepted. Resolution is local URL normalization and never fetches platform metadata. The official player is loaded only after a reader click; arbitrary iframe HTML or player URLs are not data fields."
     }
   },
   "$comment": "The server enforces a 1048576-byte UTF-8 input limit and the same compiled-Markdown byte limit; at most 128 cards including fenced and inline cards inside Markdown; at most 8192 bytes per card; exact JSON fields, no duplicate keys/null, depth <= 24; public URL safety; internal ID/url equality; image authorization. JSON Schema character lengths do not substitute for byte limits. Import never publishes or changes tags, cover, dates, or author."

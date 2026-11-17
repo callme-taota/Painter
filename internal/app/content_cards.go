@@ -57,7 +57,7 @@ type contentCardDefinition struct{ Label string }
 // source, so future card pools can be added without a database dependency.
 var contentCardRegistry = map[string]contentCardDefinition{
 	"github": {"GitHub"}, "steam": {"Steam"}, "apple_music": {"Apple Music"}, "link": {"网页参考"},
-	"moment": {"动态"}, "phrase": {"片语"},
+	"moment": {"动态"}, "phrase": {"片语"}, "bilibili": {"哔哩哔哩视频"},
 }
 
 // contentCardInvalid accepts validator-owned UI copy. Dynamic request values
@@ -123,9 +123,79 @@ func contentCardImage(c contentCard) (string, error) {
 	return "", nil
 }
 
+var contentBilibiliPath = regexp.MustCompile(`^/video/(BV[A-Za-z0-9]{10}|av[1-9][0-9]{0,17})/?$`)
+var contentBilibiliPage = regexp.MustCompile(`^p=([1-9][0-9]{0,3})$`)
+
+// Only this local parser normalizes video references. Neither article rendering
+// nor resolving a Bilibili card contacts the platform or accepts player HTML.
+// Snapshots use a trailing slash and omit p=1; only p=2..1000 is retained.
+func contentBilibiliURL(raw string) (string, error) {
+	u, err := contentCardPublicURL(raw)
+	if err != nil || u.Host != "www.bilibili.com" || u.RawPath != "" || u.Fragment != "" || strings.Contains(raw, "#") || u.ForceQuery {
+		return "", contentCardInvalid("请输入规范的哔哩哔哩 BV 或 av 视频链接")
+	}
+	match := contentBilibiliPath.FindStringSubmatch(u.Path)
+	if match == nil {
+		return "", contentCardInvalid("请输入规范的哔哩哔哩 BV 或 av 视频链接")
+	}
+	canonical := "https://www.bilibili.com/video/" + match[1] + "/"
+	if u.RawQuery != "" {
+		page := contentBilibiliPage.FindStringSubmatch(u.RawQuery)
+		if page == nil {
+			return "", contentCardInvalid("哔哩哔哩视频链接只支持1至1000的分P参数")
+		}
+		n, err := strconv.Atoi(page[1])
+		if err != nil || n > 1000 {
+			return "", contentCardInvalid("哔哩哔哩视频链接只支持1至1000的分P参数")
+		}
+		if n > 1 {
+			canonical += "?p=" + strconv.Itoa(n)
+		}
+	}
+	return canonical, nil
+}
+
+// Pasted site URLs may contain these two known attribution values. They are
+// bounded, validated and discarded at the editor boundary; snapshots and player
+// URLs continue to use contentBilibiliURL's strict, tracking-free representation.
+func contentBilibiliInputURL(raw string) (string, error) {
+	u, err := contentCardPublicURL(raw)
+	if err != nil || strings.Contains(raw, "#") {
+		return "", contentCardInvalid("请输入规范的哔哩哔哩 BV 或 av 视频链接")
+	}
+	if u.RawQuery == "" {
+		return contentBilibiliURL(raw)
+	}
+	base, _, _ := strings.Cut(raw, "?")
+	canonical, err := contentBilibiliURL(base)
+	if err != nil {
+		return "", err
+	}
+	seen := map[string]bool{}
+	page := ""
+	for _, field := range strings.Split(u.RawQuery, "&") {
+		key, value, hasValue := strings.Cut(field, "=")
+		if !hasValue || seen[key] || key != "p" && key != "spm_id_from" && key != "vd_source" {
+			return "", contentCardInvalid("哔哩哔哩视频链接只支持分P和已知分享参数")
+		}
+		seen[key] = true
+		if key == "p" {
+			page = "?p=" + value
+			continue
+		}
+		decoded, err := url.QueryUnescape(value)
+		if err != nil || len(decoded) > 512 || !utf8.ValidString(decoded) {
+			return "", contentCardInvalid("哔哩哔哩分享参数格式无效或过长")
+		}
+	}
+	return contentBilibiliURL(canonical + page)
+}
+
+func contentCardInlineDisplay(display string) bool { return display == "" || display == "card" }
+
 func validateContentCard(c contentCard) (string, error) {
-	if c.Display != "" && (c.V != 1 || c.Type != "link" || c.Display != "card" && c.Display != "title") {
-		return "", contentCardInvalid("只有 v1 网页 link 支持 card 或 title 呈现方式")
+	if c.Display != "" && (c.V != 1 || c.Type != "link" || c.Display != "card" && c.Display != "title" && c.Display != "social") {
+		return "", contentCardInvalid("只有 v1 网页 link 支持 card、title 或 social 呈现方式")
 	}
 	if c.V == 3 && c.Type == "layout" {
 		return "", validateContentLayout(c)
@@ -150,7 +220,11 @@ func validateContentCard(c contentCard) (string, error) {
 	if c.RefID != "" {
 		return "", contentCardInvalid("外部卡片不能包含站内引用编号")
 	}
-	if !contentCardText(c.Title, 200, true) || !contentCardText(c.Description, 1000, false) || !contentCardText(c.Subtitle, 200, false) {
+	validDescription := contentCardText(c.Description, 1000, false)
+	if c.Type == "link" && c.Display == "social" {
+		validDescription = contentPanelText(c.Description, 1000, false)
+	}
+	if !contentCardText(c.Title, 200, true) || !validDescription || !contentCardText(c.Subtitle, 200, false) {
 		return "", contentCardInvalid("标题、简介或副标题超长或含控制字符")
 	}
 	if c.MetadataSource != "" && c.MetadataSource != "provider" && c.MetadataSource != "author" {
@@ -182,6 +256,14 @@ func validateContentCard(c contentCard) (string, error) {
 		}
 	case "link":
 		_ = u
+	case "bilibili":
+		canonical, err := contentBilibiliURL(c.URL)
+		if err != nil {
+			return "", err
+		}
+		if c.URL != canonical {
+			return "", contentCardInvalid("哔哩哔哩视频快照需要规范链接，分P为1时省略参数")
+		}
 	}
 	if c.Stats != nil {
 		if c.Type != "github" {
@@ -214,6 +296,14 @@ func parseContentCard(raw []byte) (contentCard, bool, error) {
 	}
 	if e := contentCardDisplayFields(raw, identity.V, identity.Type); e != nil {
 		return c, true, e
+	}
+	if identity.V == 1 && identity.Type == "bilibili" {
+		if err := strictContentLayoutJSON(raw); err != nil {
+			return c, true, contentCardInvalid("视频快照需要严格 JSON，不能包含重复字段或 null")
+		}
+		if _, err := contentPanelObject(raw, "v", "type", "url", "title", "description", "subtitle", "image_url", "metadata_source", "resolved_at"); err != nil {
+			return c, true, err
+		}
 	}
 	if identity.V == 3 {
 		if e := contentLayoutFields(raw); e != nil {
@@ -264,8 +354,8 @@ func contentCardDisplayFields(raw []byte, version int, kind string) error {
 			continue
 		}
 		var display string
-		if key != "display" || version != 1 || kind != "link" || json.Unmarshal(value, &display) != nil || display != "card" && display != "title" {
-			return contentCardInvalid("只有 v1 网页 link 支持 display: card 或 title")
+		if key != "display" || version != 1 || kind != "link" || json.Unmarshal(value, &display) != nil || display != "card" && display != "title" && display != "social" {
+			return contentCardInvalid("只有 v1 网页 link 支持 display: card、title 或 social")
 		}
 		if err := strictContentLayoutJSON(raw); err != nil {
 			return contentCardInvalid("呈现方式需要严格 JSON，不能包含重复字段或 null")
@@ -340,7 +430,7 @@ func prepareContentCards(doc ast.Node, source []byte, media map[string]bool) err
 		if len(changes) >= 128 {
 			return ast.WalkStop, contentCardInvalid("每篇文章最多128张卡片")
 		}
-		if inline && (c.Type != "link" || c.Display == "title" || string(n.(*ast.Link).Destination) != c.URL) {
+		if inline && (c.Type != "link" || !contentCardInlineDisplay(c.Display) || string(n.(*ast.Link).Destination) != c.URL) {
 			return ast.WalkStop, contentCardInvalid("行内引用须为同一网址的 link 卡片")
 		}
 		id, _ := contentCardImage(c)
@@ -420,6 +510,14 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 		_, e := w.WriteString(contentLinkRowHTML(c))
 		return ast.WalkSkipChildren, e
 	}
+	if c.Type == "link" && c.Display == "social" {
+		_, e := w.WriteString(contentSocialHTML(c))
+		return ast.WalkSkipChildren, e
+	}
+	if c.Type == "bilibili" {
+		_, e := w.WriteString(contentBilibiliHTML(c))
+		return ast.WalkSkipChildren, e
+	}
 	markup := `<a class="content-card content-card--` + c.Type + `" href="` + stdhtml.EscapeString(c.URL) + `" target="_blank" rel="noopener noreferrer">`
 	if c.ImageURL != "" {
 		markup += `<img class="content-card__image" src="` + stdhtml.EscapeString(c.ImageURL) + `" alt="" loading="lazy" referrerpolicy="no-referrer" />`
@@ -427,6 +525,37 @@ func renderContentCardBlock(w util.BufWriter, _ []byte, node ast.Node, entering 
 	markup += `<span class="content-card__body">` + contentCardSpan("content-card__eyebrow", contentCardRegistry[c.Type].Label) + contentCardDetails(c) + `</span></a>` + "\n"
 	_, e := w.WriteString(markup)
 	return ast.WalkSkipChildren, e
+}
+
+func contentSocialPlatform(host string) string {
+	host = strings.ToLower(host)
+	for _, platform := range []struct{ host, label string }{{"x.com", "X"}, {"twitter.com", "X"}, {"weibo.com", "微博"}, {"weibo.cn", "微博"}, {"xiaohongshu.com", "小红书"}, {"xhslink.com", "小红书"}, {"douyin.com", "抖音"}, {"bilibili.com", "B站"}, {"b23.tv", "B站"}} {
+		if host == platform.host || strings.HasSuffix(host, "."+platform.host) {
+			return platform.label
+		}
+	}
+	return "分享"
+}
+
+func contentSocialHTML(c contentCard) string {
+	destination, _ := url.Parse(c.URL)
+	markup := `<a class="content-social" href="` + stdhtml.EscapeString(c.URL) + `" target="_blank" rel="noopener noreferrer"><span class="content-social__meta">`
+	markup += contentCardSpan("content-social__platform", contentSocialPlatform(destination.Hostname())) + contentCardSpan("content-social__author", c.Subtitle) + `</span>`
+	markup += contentCardSpan("content-social__title", c.Title) + contentCardSpan("content-social__text", c.Description)
+	if c.ImageURL != "" {
+		markup += `<img class="content-social__image" src="` + stdhtml.EscapeString(c.ImageURL) + `" alt="" loading="lazy" referrerpolicy="no-referrer" />`
+	}
+	return markup + contentCardSpan("content-social__url", destination.Hostname()) + `</a>` + "\n"
+}
+
+func contentBilibiliHTML(c contentCard) string {
+	markup := `<div class="content-video" data-content-video="bilibili"><div class="content-video__stage">`
+	if c.ImageURL != "" {
+		markup += `<img class="content-video__poster" src="` + stdhtml.EscapeString(c.ImageURL) + `" alt="" loading="lazy" referrerpolicy="no-referrer" />`
+	}
+	markup += `<button class="content-video__load" type="button" data-video-load="" hidden="">加载B站播放器</button></div><div class="content-video__details"><a class="content-video__source" href="` + stdhtml.EscapeString(c.URL) + `" target="_blank" rel="noopener noreferrer">`
+	markup += contentCardSpan("content-video__title", c.Title) + contentCardSpan("content-video__subtitle", c.Subtitle) + contentCardSpan("content-video__description", c.Description) + contentCardSpan("content-video__destination", "在B站打开")
+	return markup + `</a></div></div>` + "\n"
 }
 
 const contentLinkRowIconPath = "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"

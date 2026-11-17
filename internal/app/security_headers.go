@@ -35,7 +35,7 @@ func (a *App) securityHeaders(w http.ResponseWriter, r *http.Request) *http.Requ
 		"font-src 'self' data:",
 		"connect-src 'self'",
 		"worker-src 'self' blob:",
-		"frame-src 'none'",
+		"frame-src https://player.bilibili.com/player.html",
 		"base-uri 'none'",
 		"object-src 'none'",
 		"frame-ancestors 'none'",

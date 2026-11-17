@@ -2,6 +2,8 @@ import {t,locale,formatDate,formatNumber} from './i18n'
 import './articleCards.css'
 import './researchCards.css'
 import {initImageGalleries} from './momentGallery'
+import {initContentVideos} from './contentVideos'
+import {socialPlatform} from './articleEmbeds'
 
 type LinkPreview = {
   wrapper: HTMLElement
@@ -159,7 +161,7 @@ function enhanceArticleImages(root: ParentNode) {
     .filter(article => article.closest('body')?.getAttribute('data-page-kind') === 'article' && !article.isContentEditable)
   for (const article of articles) {
     for (const image of article.querySelectorAll<HTMLImageElement>('img')) {
-      if (image.closest('.content-card,.content-link,button,[contenteditable="true"]')) continue
+      if (image.closest('.content-card,.content-link,.content-social,.content-video,button,[contenteditable="true"]')) continue
       const source = image.getAttribute('src')
       if (!source) continue
       let target: URL
@@ -265,6 +267,11 @@ function internalCardUnavailable(anchor:HTMLElement, kind:string, retryable:bool
 
 /** Safe to rescan after editor/preview updates; global listeners are shared. */
 export function initArticleCards(root: ParentNode = document) {
+  initContentVideos(root)
+  for (const card of within(root, 'a.content-social')) {
+    const platform = card.querySelector('.content-social__platform')
+    if (platform) { try { platform.textContent = socialPlatform(card.getAttribute('href') || '') } catch { /* Static source remains readable. */ } }
+  }
   if (active && !active.wrapper.isConnected) dismiss(active)
   for (const wrapper of within(root, '.content-link')) enhanceInlinePreview(wrapper)
   initInternalArticleCards(root)
