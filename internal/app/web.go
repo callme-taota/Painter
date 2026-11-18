@@ -693,58 +693,8 @@ func (a *App) RegisterWeb() {
 	for _, route := range []string{"GET /me", "GET /me/", "GET /studio", "GET /studio/"} {
 		a.Mux.HandleFunc(route, shell)
 	}
-	a.Mux.HandleFunc("GET /rss.xml", func(w http.ResponseWriter, r *http.Request) {
-		var enabled bool
-		if e := a.Pool.QueryRow(r.Context(), `SELECT rss_enabled FROM site_settings WHERE id=1`).Scan(&enabled); e != nil {
-			http.Error(w, "Feed unavailable", 503)
-			return
-		}
-		if !enabled {
-			http.NotFound(w, r)
-			return
-		}
-		data, e := a.PublicPosts(r.Context(), url.Values{"limit": {"20"}})
-		if e != nil {
-			http.Error(w, "Feed unavailable", 503)
-			return
-		}
-		site, e := a.webSite(r.Context())
-		if e != nil {
-			http.Error(w, "Feed unavailable", 503)
-			return
-		}
-		type item struct {
-			Title       string `xml:"title"`
-			Link        string `xml:"link"`
-			Description string `xml:"description"`
-			GUID        string `xml:"guid"`
-			Date        string `xml:"pubDate"`
-		}
-		type channel struct {
-			Title       string `xml:"title"`
-			Link        string `xml:"link"`
-			Description string `xml:"description"`
-			Items       []item `xml:"item"`
-		}
-		feed := struct {
-			XMLName xml.Name `xml:"rss"`
-			Version string   `xml:"version,attr"`
-			Channel channel  `xml:"channel"`
-		}{Version: "2.0", Channel: channel{Title: webString(site["display_name"]), Link: a.Config.PublicBaseURL, Description: webString(site["tagline"])}}
-		for _, post := range webMaps(data["items"]) {
-			link := a.Config.PublicBaseURL + "/posts/" + webString(post["id"])
-			stamp, _ := time.Parse(time.RFC3339Nano, webString(post["published_at"]))
-			feed.Channel.Items = append(feed.Channel.Items, item{Title: webString(post["title"]), Link: link, GUID: link, Description: webString(post["summary"]), Date: stamp.Format(time.RFC1123Z)})
-		}
-		b, e := xml.MarshalIndent(feed, "", "  ")
-		if e != nil {
-			http.Error(w, "Feed unavailable", 503)
-			return
-		}
-		w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-store")
-		_, _ = w.Write(append([]byte(xml.Header), b...))
-	})
+	a.Mux.HandleFunc("GET /rss.xml", a.rssFeed)
+
 	a.Mux.HandleFunc("GET /sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
 		type loc struct {
 			URL string `xml:"loc"`

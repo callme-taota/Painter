@@ -38,6 +38,7 @@
   "B站": "Bilibili",
   "B站视频": "Bilibili video",
   "B站视频：{title}": "Bilibili video: {title}",
+  "RSS 订阅": "RSS feed",
   "CSRF校验失败": "CSRF validation failed",
   "Client ID 与回调": "Client ID and callbacks",
   "Emoji（可选）": "Emoji (optional)",
