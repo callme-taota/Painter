@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import {getTheme,setTheme,type Theme} from "../theme"
 import {locale,t} from "../i18n"
 
-import {computed,nextTick,ref,watch} from 'vue'
+import {computed,nextTick,onMounted,onBeforeUnmount,ref,watch} from 'vue'
 import Icon from './Icon.vue'
 import SelectField from './SelectField.vue'
 import {currentNavigation,isNavigationItem,type NavigationGroup} from '../navigation'
@@ -16,11 +17,14 @@ function readExpanded(){try{const saved=JSON.parse(sessionStorage.getItem('paint
 function toggle(id:string){expanded.value[id]=!expanded.value[id];try{sessionStorage.setItem('painter-navigation-v9:'+props.user?.id,JSON.stringify(expanded.value))}catch{}}
 watch(()=>props.user?.id,readExpanded,{immediate:true})
 watch(()=>active.value?.item.id,()=>{if(active.value)expanded.value[active.value.group.id]=true;void nextTick(revealCurrent)})
-function readTheme(){try{return localStorage.getItem('painter-theme')||'system'}catch{return 'system'}}
-const theme=ref(readTheme())
+const theme=ref(getTheme())
+function themeChanged(event:Event){theme.value=(event as CustomEvent<Theme>).detail||getTheme()}
+function themeStored(event:StorageEvent){if(event.key==='painter-theme'||event.key===null)theme.value=getTheme()}
+onMounted(()=>{document.addEventListener('painter:theme-change',themeChanged);window.addEventListener('storage',themeStored)})
+onBeforeUnmount(()=>{document.removeEventListener('painter:theme-change',themeChanged);window.removeEventListener('storage',themeStored)})
 const localeNext=location.pathname+location.search+location.hash
 function localeURL(lang:'zh-CN'|'en'){return '/locale?lang='+encodeURIComponent(lang)+'&next='+encodeURIComponent(localeNext)}
-function changeTheme(value:string|number){theme.value=String(value);try{localStorage.setItem('painter-theme',theme.value)}catch{}document.documentElement.dataset.theme=theme.value==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):theme.value}
+function changeTheme(value:string|number){const choice:Theme=value==='light'||value==='dark'?value:'system';theme.value=choice;setTheme(choice)}
 </script>
 <template>
  <a v-if="presentation!=='sheet'" class="studio-brand" href="/" :aria-label="t('Painter 首页')"><img :src="'/assets/images/painter-logo.png'" width="38" height="38" alt=""><span>Painter<small>{{t("创作与管理")}}</small></span></a>
@@ -32,7 +36,7 @@ function changeTheme(value:string|number){theme.value=String(value);try{localSto
 .studio-language{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid var(--line);border-radius:var(--radius-control);background:var(--subtle)}
 .studio-language a{display:flex;align-items:center;justify-content:center;flex:1;min-width:0;min-height:30px;padding:4px 8px;border-radius:calc(var(--radius-control) - 3px);color:var(--muted);font:500 .75rem/1.4 var(--font-ui);text-decoration:none}
 .studio-language a:hover{color:var(--ink);background:var(--paper)}
-.studio-language a[aria-current]{color:var(--ink);background:var(--paper);box-shadow:0 1px 2px rgb(0 0 0 / .05)}
+.studio-language a[aria-current]{color:var(--ink);background:var(--paper);box-shadow:0 1px 2px color-mix(in srgb,var(--shadow-color) 5%,transparent)}
 .studio-language a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:960px){.studio-language a{min-height:44px}}
 </style>

@@ -1,5 +1,4 @@
-body[data-page-kind=home]{display:flow-root;--home-paper-end:#f2eadc;--home-surface:color-mix(in srgb,var(--bg),var(--home-paper-end) calc(var(--home-warmth,0) * 100%));background:var(--home-surface)}
-html[data-theme=dark] body[data-page-kind=home]{--home-paper-end:#211e19}
+body[data-page-kind=home]{display:flow-root;--home-surface:color-mix(in srgb,var(--bg),var(--home-paper-end) calc(var(--home-warmth,0) * 100%));background:var(--home-surface)}
 body[data-page-kind=home] .site-header{position:absolute;top:12px;left:50%;transform:translateX(-50%);margin:0;z-index:30}
 body[data-page-kind=home] main.wrap.site-main{width:100%;margin:0;padding:0;max-width:none}
 .home-story{position:relative;--page-spread:1}
@@ -9,7 +8,7 @@ body[data-page-kind=home] main.wrap.site-main{width:100%;margin:0;padding:0;max-
 .story-leaf{position:absolute;inset:0;border-radius:var(--radius-surface);background:var(--paper);border:1px solid var(--line)}
 .story-leaf-back{transform:translate3d(calc(-22px * var(--page-spread)),calc(12px * var(--page-spread)),-40px) rotate(-7deg)}
 .story-leaf-middle{transform:translate3d(calc(-10px * var(--page-spread)),calc(5px * var(--page-spread)),-20px) rotate(-3deg);background:var(--subtle)}
-.story-leaf-front{display:flex;flex-direction:column;justify-content:center;padding:40px;background:var(--hero-sheet);color:var(--hero-sheet-ink);border:0;box-shadow:0 24px 60px rgb(0 0 0 / .14)}
+.story-leaf-front{display:flex;flex-direction:column;justify-content:center;padding:40px;background:var(--hero-sheet);color:var(--hero-sheet-ink);border:0;box-shadow:0 24px 60px color-mix(in srgb,var(--shadow-color) 14%,transparent)}
 .story-sheet-title{font:600 clamp(2.25rem,4vw,4.5rem)/1.15 var(--font-ui);letter-spacing:-.04em;overflow-wrap:anywhere;max-height:4.6em;overflow:hidden}
 .story-sheet-intro{margin-top:24px;font:400 14px/1.8 var(--font-ui);color:var(--hero-sheet-muted);max-height:7.2em;overflow:hidden;overflow-wrap:anywhere}
 .story-sheet-signature{display:flex;align-items:center;gap:9px;position:absolute;left:40px;bottom:32px;font:500 13px/20px var(--font-ui);letter-spacing:-.02em}.story-sheet-signature img{width:28px;height:28px;object-fit:contain}

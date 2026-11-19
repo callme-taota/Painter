@@ -1,37 +1,38 @@
 ---
 name: Painter Next
 description: A personal publication with neutral reading surfaces and a compact inset workbench.
+colorSource: "colors.json"
 colors:
-  accent: "#18181b"
-  accent-soft: "#f4f4f5"
-  background: "#fff"
-  paper: "#fff"
-  sidebar: "#fafafa"
-  ink: "#18181b"
-  muted: "#66666e"
-  line: "#e4e4e7"
-  subtle: "#f4f4f5"
-  primary-ink: "#fafafa"
-  focus-ring: "#52525b"
-  link: "#0066cc"
-  link-hover: "#004d99"
-  danger: "#b42318"
-  success: "#146b4d"
-  dark-accent: "#fafafa"
-  dark-accent-soft: "#27272a"
-  dark-background: "#09090b"
-  dark-paper: "#18181b"
-  dark-sidebar: "#111113"
-  dark-ink: "#fafafa"
-  dark-muted: "#a1a1aa"
-  dark-line: "#3f3f46"
-  dark-subtle: "#27272a"
-  dark-primary-ink: "#18181b"
-  dark-focus-ring: "#a1a1aa"
-  dark-link: "#2997ff"
-  dark-link-hover: "#72bbff"
-  dark-danger: "#ffb4ab"
-  dark-success: "#8ed9b5"
+  accent: "var(--accent)"
+  accent-soft: "var(--accent-soft)"
+  background: "var(--bg)"
+  paper: "var(--paper)"
+  sidebar: "var(--sidebar)"
+  ink: "var(--ink)"
+  muted: "var(--muted)"
+  line: "var(--line)"
+  subtle: "var(--subtle)"
+  primary-ink: "var(--primary-ink)"
+  focus-ring: "var(--focus-ring)"
+  link: "var(--link)"
+  link-hover: "var(--link-hover)"
+  danger: "var(--danger)"
+  success: "var(--success)"
+  dark-accent: "var(--accent)"
+  dark-accent-soft: "var(--accent-soft)"
+  dark-background: "var(--bg)"
+  dark-paper: "var(--paper)"
+  dark-sidebar: "var(--sidebar)"
+  dark-ink: "var(--ink)"
+  dark-muted: "var(--muted)"
+  dark-line: "var(--line)"
+  dark-subtle: "var(--subtle)"
+  dark-primary-ink: "var(--primary-ink)"
+  dark-focus-ring: "var(--focus-ring)"
+  dark-link: "var(--link)"
+  dark-link-hover: "var(--link-hover)"
+  dark-danger: "var(--danger)"
+  dark-success: "var(--success)"
 typography:
   display:
     fontFamily: 'Geist, "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", Arial, sans-serif'
@@ -162,7 +163,7 @@ components:
 
 保留 Painter 原标识和个人出版物气质。身份、简介、封面和作品来自实际配置；界面以黑白灰、中性浅深色、细边界和克制的 Apple 蓝文字链接组织内容。工作台采用紧凑的内嵌任务区、分组侧栏和面包屑；基于现有 Vue 组件，不引入 React/Radix 运行时。
 
-上方 frontmatter 记录颜色、字体、间距和控件角色；实现位于 `frontend/src/shadcn-theme.css` 等共享样式。产品行为见 [PRODUCT.md](PRODUCT.md)，跨端约束见 [全端交互规范](../docs/CROSS_PLATFORM_EXPERIENCE.md)。这些规则不代表自动完成视觉或真机验收。
+颜色的唯一来源为 [colors.json](colors.json)，上方 frontmatter 只引用语义 key；字体、间距和控件角色保持原规范。色彩实现由配置生成，不在组件中另写色值；详见 [全端色彩契约](../docs/COLOR_SYSTEM.md)。产品行为见 [PRODUCT.md](PRODUCT.md)，跨端约束见 [全端交互规范](../docs/CROSS_PLATFORM_EXPERIENCE.md)。这些规则不代表自动完成视觉或真机验收。
 
 ## 色彩与材质
 

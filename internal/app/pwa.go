@@ -47,7 +47,7 @@ func manifestForSiteLocale(name, locale string) pwaManifest {
 	return pwaManifest{
 		ID: "/", Name: name, ShortName: name, Language: locale,
 		StartURL: "/", Scope: "/", Display: "standalone",
-		BackgroundColor: "#ffffff", ThemeColor: "#ffffff",
+		BackgroundColor: web.Color(web.ColorBg, web.Light), ThemeColor: web.Color(web.ColorBg, web.Light),
 		Icons: []pwaIcon{
 			{Source: "/pwa/icon-192.png", Sizes: "192x192", Type: "image/png", Purpose: "any"},
 			{Source: "/pwa/icon-512.png", Sizes: "512x512", Type: "image/png", Purpose: "any"},

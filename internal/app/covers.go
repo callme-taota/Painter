@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
+	"painter-next/web"
 )
 
 // CoverConfig is revision data: changing a working cover never changes the
@@ -315,10 +316,10 @@ const coverRendererVersion = "gradient-v1"
 func renderCoverSVG(title string, c CoverConfig) string {
 	type palette struct{ deep, middle, light, paper, wash, ink string }
 	colors := map[string]palette{
-		"ink":  {"#14273e", "#355879", "#96b7cc", "#e8eef4", "#b7ccd9", "#163147"},
-		"moss": {"#163c36", "#397a69", "#a6c39d", "#eef1e7", "#c3d2aa", "#24473a"},
-		"clay": {"#542d37", "#a35452", "#edb28a", "#f8eee5", "#e9bcaa", "#5b3435"},
-		"plum": {"#332c56", "#715580", "#c69bb4", "#f3eaf1", "#d2b5ca", "#483755"},
+		"ink":  {web.Color(web.ColorCoverInkDeep, web.Light), web.Color(web.ColorCoverInkMiddle, web.Light), web.Color(web.ColorCoverInkLight, web.Light), web.Color(web.ColorCoverInkPaper, web.Light), web.Color(web.ColorCoverInkWash, web.Light), web.Color(web.ColorCoverInkInk, web.Light)},
+		"moss": {web.Color(web.ColorCoverMossDeep, web.Light), web.Color(web.ColorCoverMossMiddle, web.Light), web.Color(web.ColorCoverMossLight, web.Light), web.Color(web.ColorCoverMossPaper, web.Light), web.Color(web.ColorCoverMossWash, web.Light), web.Color(web.ColorCoverMossInk, web.Light)},
+		"clay": {web.Color(web.ColorCoverClayDeep, web.Light), web.Color(web.ColorCoverClayMiddle, web.Light), web.Color(web.ColorCoverClayLight, web.Light), web.Color(web.ColorCoverClayPaper, web.Light), web.Color(web.ColorCoverClayWash, web.Light), web.Color(web.ColorCoverClayInk, web.Light)},
+		"plum": {web.Color(web.ColorCoverPlumDeep, web.Light), web.Color(web.ColorCoverPlumMiddle, web.Light), web.Color(web.ColorCoverPlumLight, web.Light), web.Color(web.ColorCoverPlumPaper, web.Light), web.Color(web.ColorCoverPlumWash, web.Light), web.Color(web.ColorCoverPlumInk, web.Light)},
 	}
 	p, ok := colors[c.Color]
 	if !ok {
@@ -329,7 +330,7 @@ func renderCoverSVG(title string, c CoverConfig) string {
 	// Broad light fields give the entire image color and depth. All visible
 	// geometry is the full canvas; the title is the only foreground element.
 	x, size, width, lineHeight, family := 92, 72, 13.8, 90, "'Noto Serif CJK SC','Source Han Serif SC','Songti SC',serif"
-	ink, anchor := "#fffaf4", "start"
+	ink, anchor := web.Color(web.ColorCoverTitle, web.Light), "start"
 	switch c.Template {
 	case "geometric":
 		fmt.Fprintf(&out, `<linearGradient id="cover-base" x1="0" y1="1" x2="1" y2="0"><stop stop-color="%s"/><stop offset=".62" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient><radialGradient id="cover-light" cx="1" cy="0" r="1.1"><stop stop-color="%s" stop-opacity=".5"/><stop offset="1" stop-color="%s" stop-opacity="0"/></radialGradient>`, p.deep, p.middle, p.light, p.light, p.middle)

@@ -36,6 +36,8 @@ jobs:
           npm ci --prefix tests/ci
       - name: Validate checked-in offline assets
         run: node tests/ci/check-assets.mjs
+      - name: Test shared color contract guard
+        run: npm run test:colors --prefix web/frontend
       - name: Typecheck and build production assets
         run: npm run build --prefix web/frontend
       - name: Validate rebuilt offline assets

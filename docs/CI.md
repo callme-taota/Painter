@@ -49,3 +49,7 @@ python3 -m unittest discover -s tests/backup -v
 仓库管理员如需阻止失败合并，可在 `next` 的 branch protection / ruleset 中将上述三个检查设为 required；工作流本身不修改仓库规则。
 
 参考：[GitHub PostgreSQL services](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers)、[PostgreSQL Ubuntu 客户端](https://www.postgresql.org/download/linux/ubuntu/)、[Playwright CI](https://playwright.dev/docs/ci)。
+
+## 统一颜色检查
+
+前端构建先运行 `npm run check:colors`：验证 `web/colors.json` 的生成物未过期，再检查 CSS / Vue / TS / HTML 与明确列出的 Go 界面入口，拒绝裸色值、未知颜色 key 和组件覆盖全局颜色。CI 额外执行 `npm run test:colors` 的正反例。新增颜色和派生槽位的维护方法见 [全端色彩契约](COLOR_SYSTEM.md)。

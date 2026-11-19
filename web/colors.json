@@ -1,0 +1,560 @@
+{
+  "version": 1,
+  "colors": {
+    "bg": {
+      "light": "#ffffff",
+      "dark": "#09090b",
+      "description": "页面底色",
+      "category": "interface"
+    },
+    "paper": {
+      "light": "#ffffff",
+      "dark": "#18181b",
+      "description": "内容、表单和弹层表面",
+      "category": "interface"
+    },
+    "canvas": {
+      "light": "#f7f7f8",
+      "dark": "#111113",
+      "description": "独立分享页和授权页的外层底色",
+      "category": "interface"
+    },
+    "ink": {
+      "light": "#18181b",
+      "dark": "#fafafa",
+      "description": "主要文字",
+      "category": "interface"
+    },
+    "muted": {
+      "light": "#66666e",
+      "dark": "#a1a1aa",
+      "description": "次要文字",
+      "category": "interface"
+    },
+    "muted-strong": {
+      "light": "#52525b",
+      "dark": "#d4d4d8",
+      "description": "透明表面上的次要文字",
+      "category": "interface"
+    },
+    "accent": {
+      "light": "#18181b",
+      "dark": "#fafafa",
+      "description": "中性主要操作",
+      "category": "interface"
+    },
+    "accent-soft": {
+      "light": "#f4f4f5",
+      "dark": "#27272a",
+      "description": "中性选中背景",
+      "category": "interface"
+    },
+    "line": {
+      "light": "#e4e4e7",
+      "dark": "#3f3f46",
+      "description": "分隔线和默认边框",
+      "category": "interface"
+    },
+    "line-strong": {
+      "light": "#a1a1aa",
+      "dark": "#71717a",
+      "description": "需要可辨识的控件边界",
+      "category": "interface"
+    },
+    "subtle": {
+      "light": "#f4f4f5",
+      "dark": "#27272a",
+      "description": "轻量嵌入表面",
+      "category": "interface"
+    },
+    "glass": {
+      "light": "#ffffff",
+      "dark": "#18181b",
+      "description": "玻璃不可用时的实色表面",
+      "category": "interface"
+    },
+    "primary-ink": {
+      "light": "#fafafa",
+      "dark": "#18181b",
+      "description": "中性主按钮上的文字",
+      "category": "interface"
+    },
+    "focus-ring": {
+      "light": "#52525b",
+      "dark": "#a1a1aa",
+      "description": "键盘焦点",
+      "category": "interface"
+    },
+    "sidebar": {
+      "light": "#fafafa",
+      "dark": "#111113",
+      "description": "工作台侧栏",
+      "category": "interface"
+    },
+    "hero-sheet": {
+      "light": "#18181b",
+      "dark": "#fafafa",
+      "description": "首页名片",
+      "category": "interface"
+    },
+    "hero-sheet-ink": {
+      "light": "#fafafa",
+      "dark": "#18181b",
+      "description": "首页名片主文字",
+      "category": "interface"
+    },
+    "hero-sheet-muted": {
+      "light": "#a1a1aa",
+      "dark": "#52525b",
+      "description": "首页名片次文字",
+      "category": "interface"
+    },
+    "link": {
+      "light": "#0066cc",
+      "dark": "#2997ff",
+      "description": "文字链接和可导航强调",
+      "category": "interface"
+    },
+    "link-hover": {
+      "light": "#004d99",
+      "dark": "#72bbff",
+      "description": "链接悬停",
+      "category": "interface"
+    },
+    "link-soft": {
+      "light": "#e5f0ff",
+      "dark": "#15324c",
+      "description": "链接选中与轻量蓝色背景",
+      "category": "interface"
+    },
+    "link-ink": {
+      "light": "#ffffff",
+      "dark": "#09090b",
+      "description": "蓝色实心操作上的文字",
+      "category": "interface"
+    },
+    "danger": {
+      "light": "#b42318",
+      "dark": "#ffb4ab",
+      "description": "失败、危险和删除",
+      "category": "interface"
+    },
+    "success": {
+      "light": "#146b4d",
+      "dark": "#8ed9b5",
+      "description": "成功和正向状态",
+      "category": "interface"
+    },
+    "warning": {
+      "light": "#865500",
+      "dark": "#f1c56b",
+      "description": "警告和待处理状态",
+      "category": "interface"
+    },
+    "glass-tint": {
+      "light": "rgb(255 255 255 / .62)",
+      "dark": "rgb(18 21 28 / .66)",
+      "description": "通用导航玻璃",
+      "category": "material"
+    },
+    "glass-header": {
+      "light": "rgb(255 255 255 / .8)",
+      "dark": "rgb(18 21 28 / .8)",
+      "description": "顶部玻璃",
+      "category": "material"
+    },
+    "glass-mobile": {
+      "light": "rgb(255 255 255 / .54)",
+      "dark": "rgb(24 27 33 / .62)",
+      "description": "移动底部玻璃",
+      "category": "material"
+    },
+    "glass-dense": {
+      "light": "rgb(255 255 255 / .94)",
+      "dark": "rgb(18 21 28 / .94)",
+      "description": "密集内容上的玻璃",
+      "category": "material"
+    },
+    "glass-fallback": {
+      "light": "rgb(255 255 255 / .54)",
+      "dark": "rgb(18 21 28 / .62)",
+      "description": "无折射时的玻璃",
+      "category": "material"
+    },
+    "search-surface": {
+      "light": "rgb(255 255 255 / .74)",
+      "dark": "rgb(18 21 28 / .78)",
+      "description": "搜索玻璃表面",
+      "category": "material"
+    },
+    "search-border": {
+      "light": "rgb(24 24 27 / .12)",
+      "dark": "rgb(255 255 255 / .15)",
+      "description": "搜索玻璃分界",
+      "category": "material"
+    },
+    "search-fill": {
+      "light": "rgb(24 24 27 / .055)",
+      "dark": "rgb(255 255 255 / .07)",
+      "description": "搜索内层悬停填充",
+      "category": "material"
+    },
+    "home-paper-end": {
+      "light": "#f2eadc",
+      "dark": "#211e19",
+      "description": "可选的首页纸张背景终色",
+      "category": "material"
+    },
+    "shadow-color": {
+      "light": "#000000",
+      "dark": "#000000",
+      "description": "阴影基色",
+      "category": "invariant"
+    },
+    "glass-highlight": {
+      "light": "#ffffff",
+      "dark": "#ffffff",
+      "description": "玻璃高光基色",
+      "category": "invariant"
+    },
+    "media-ink": {
+      "light": "#ffffff",
+      "dark": "#ffffff",
+      "description": "图片和深色媒体上的文字",
+      "category": "invariant"
+    },
+    "media-muted": {
+      "light": "rgb(255 255 255 / .76)",
+      "dark": "rgb(255 255 255 / .76)",
+      "description": "媒体次文字",
+      "category": "invariant"
+    },
+    "media-canvas": {
+      "light": "#09090b",
+      "dark": "#09090b",
+      "description": "媒体承载背景",
+      "category": "invariant"
+    },
+    "media-line": {
+      "light": "rgb(255 255 255 / .2)",
+      "dark": "rgb(255 255 255 / .2)",
+      "description": "媒体分界线",
+      "category": "invariant"
+    },
+    "scrim": {
+      "light": "rgb(0 0 0 / .5)",
+      "dark": "rgb(0 0 0 / .5)",
+      "description": "默认模态遮罩",
+      "category": "invariant"
+    },
+    "qr-paper": {
+      "light": "#ffffff",
+      "dark": "#ffffff",
+      "description": "二维码背景，主题不变",
+      "category": "invariant"
+    },
+    "qr-ink": {
+      "light": "#000000",
+      "dark": "#000000",
+      "description": "二维码前景，主题不变",
+      "category": "invariant"
+    },
+    "syntax-comment": {
+      "light": "#667585",
+      "dark": "#a6b2c3",
+      "description": "代码高亮：comment",
+      "category": "syntax"
+    },
+    "syntax-keyword": {
+      "light": "#8051aa",
+      "dark": "#d4b2ff",
+      "description": "代码高亮：keyword",
+      "category": "syntax"
+    },
+    "syntax-string": {
+      "light": "#146b4d",
+      "dark": "#8ed9b5",
+      "description": "代码高亮：string",
+      "category": "syntax"
+    },
+    "syntax-number": {
+      "light": "#9c4b15",
+      "dark": "#f6bd8b",
+      "description": "代码高亮：number",
+      "category": "syntax"
+    },
+    "syntax-name": {
+      "light": "#235fdb",
+      "dark": "#9dbcff",
+      "description": "代码高亮：name",
+      "category": "syntax"
+    },
+    "activity-0": {
+      "light": "color-mix(in srgb,var(--ink) 4%,var(--bg))",
+      "dark": "color-mix(in srgb,var(--ink) 4%,var(--bg))",
+      "description": "发布频率等级 0",
+      "category": "data"
+    },
+    "activity-1": {
+      "light": "color-mix(in srgb,var(--link) 22%,var(--bg))",
+      "dark": "color-mix(in srgb,var(--link) 22%,var(--bg))",
+      "description": "发布频率等级 1",
+      "category": "data"
+    },
+    "activity-2": {
+      "light": "color-mix(in srgb,var(--link) 44%,var(--bg))",
+      "dark": "color-mix(in srgb,var(--link) 44%,var(--bg))",
+      "description": "发布频率等级 2",
+      "category": "data"
+    },
+    "activity-3": {
+      "light": "color-mix(in srgb,var(--link) 72%,var(--bg))",
+      "dark": "color-mix(in srgb,var(--link) 72%,var(--bg))",
+      "description": "发布频率等级 3",
+      "category": "data"
+    },
+    "activity-4": {
+      "light": "var(--link)",
+      "dark": "var(--link)",
+      "description": "发布频率等级 4",
+      "category": "data"
+    },
+    "cover-ink-deep": {
+      "light": "#14273e",
+      "dark": "#14273e",
+      "description": "封面作品 ink deep",
+      "category": "artwork"
+    },
+    "cover-ink-middle": {
+      "light": "#355879",
+      "dark": "#355879",
+      "description": "封面作品 ink middle",
+      "category": "artwork"
+    },
+    "cover-ink-light": {
+      "light": "#96b7cc",
+      "dark": "#96b7cc",
+      "description": "封面作品 ink light",
+      "category": "artwork"
+    },
+    "cover-ink-paper": {
+      "light": "#e8eef4",
+      "dark": "#e8eef4",
+      "description": "封面作品 ink paper",
+      "category": "artwork"
+    },
+    "cover-ink-wash": {
+      "light": "#b7ccd9",
+      "dark": "#b7ccd9",
+      "description": "封面作品 ink wash",
+      "category": "artwork"
+    },
+    "cover-ink-ink": {
+      "light": "#163147",
+      "dark": "#163147",
+      "description": "封面作品 ink ink",
+      "category": "artwork"
+    },
+    "cover-moss-deep": {
+      "light": "#163c36",
+      "dark": "#163c36",
+      "description": "封面作品 moss deep",
+      "category": "artwork"
+    },
+    "cover-moss-middle": {
+      "light": "#397a69",
+      "dark": "#397a69",
+      "description": "封面作品 moss middle",
+      "category": "artwork"
+    },
+    "cover-moss-light": {
+      "light": "#a6c39d",
+      "dark": "#a6c39d",
+      "description": "封面作品 moss light",
+      "category": "artwork"
+    },
+    "cover-moss-paper": {
+      "light": "#eef1e7",
+      "dark": "#eef1e7",
+      "description": "封面作品 moss paper",
+      "category": "artwork"
+    },
+    "cover-moss-wash": {
+      "light": "#c3d2aa",
+      "dark": "#c3d2aa",
+      "description": "封面作品 moss wash",
+      "category": "artwork"
+    },
+    "cover-moss-ink": {
+      "light": "#24473a",
+      "dark": "#24473a",
+      "description": "封面作品 moss ink",
+      "category": "artwork"
+    },
+    "cover-clay-deep": {
+      "light": "#542d37",
+      "dark": "#542d37",
+      "description": "封面作品 clay deep",
+      "category": "artwork"
+    },
+    "cover-clay-middle": {
+      "light": "#a35452",
+      "dark": "#a35452",
+      "description": "封面作品 clay middle",
+      "category": "artwork"
+    },
+    "cover-clay-light": {
+      "light": "#edb28a",
+      "dark": "#edb28a",
+      "description": "封面作品 clay light",
+      "category": "artwork"
+    },
+    "cover-clay-paper": {
+      "light": "#f8eee5",
+      "dark": "#f8eee5",
+      "description": "封面作品 clay paper",
+      "category": "artwork"
+    },
+    "cover-clay-wash": {
+      "light": "#e9bcaa",
+      "dark": "#e9bcaa",
+      "description": "封面作品 clay wash",
+      "category": "artwork"
+    },
+    "cover-clay-ink": {
+      "light": "#5b3435",
+      "dark": "#5b3435",
+      "description": "封面作品 clay ink",
+      "category": "artwork"
+    },
+    "cover-plum-deep": {
+      "light": "#332c56",
+      "dark": "#332c56",
+      "description": "封面作品 plum deep",
+      "category": "artwork"
+    },
+    "cover-plum-middle": {
+      "light": "#715580",
+      "dark": "#715580",
+      "description": "封面作品 plum middle",
+      "category": "artwork"
+    },
+    "cover-plum-light": {
+      "light": "#c69bb4",
+      "dark": "#c69bb4",
+      "description": "封面作品 plum light",
+      "category": "artwork"
+    },
+    "cover-plum-paper": {
+      "light": "#f3eaf1",
+      "dark": "#f3eaf1",
+      "description": "封面作品 plum paper",
+      "category": "artwork"
+    },
+    "cover-plum-wash": {
+      "light": "#d2b5ca",
+      "dark": "#d2b5ca",
+      "description": "封面作品 plum wash",
+      "category": "artwork"
+    },
+    "cover-plum-ink": {
+      "light": "#483755",
+      "dark": "#483755",
+      "description": "封面作品 plum ink",
+      "category": "artwork"
+    },
+    "cover-title": {
+      "light": "#fffaf4",
+      "dark": "#fffaf4",
+      "description": "深色生成封面的标题",
+      "category": "artwork"
+    },
+    "author-paper-start": {
+      "light": "#dce5f1",
+      "dark": "#dce5f1",
+      "description": "作者背景 paper start",
+      "category": "artwork"
+    },
+    "author-paper-end": {
+      "light": "#f0eee8",
+      "dark": "#f0eee8",
+      "description": "作者背景 paper end",
+      "category": "artwork"
+    },
+    "author-mist-start": {
+      "light": "#829f9f",
+      "dark": "#829f9f",
+      "description": "作者背景 mist start",
+      "category": "artwork"
+    },
+    "author-mist-end": {
+      "light": "#cedbd3",
+      "dark": "#cedbd3",
+      "description": "作者背景 mist end",
+      "category": "artwork"
+    },
+    "author-ink-start": {
+      "light": "#19283e",
+      "dark": "#19283e",
+      "description": "作者背景 ink start",
+      "category": "artwork"
+    },
+    "author-ink-end": {
+      "light": "#586e90",
+      "dark": "#586e90",
+      "description": "作者背景 ink end",
+      "category": "artwork"
+    },
+    "author-rose-start": {
+      "light": "#bda09c",
+      "dark": "#bda09c",
+      "description": "作者背景 rose start",
+      "category": "artwork"
+    },
+    "author-rose-end": {
+      "light": "#e3d3c4",
+      "dark": "#e3d3c4",
+      "description": "作者背景 rose end",
+      "category": "artwork"
+    }
+  },
+  "aliases": {
+    "content-panel-link": "link",
+    "game-ink": "media-ink",
+    "game-canvas": "media-canvas",
+    "share-bg": "canvas",
+    "share-paper": "paper",
+    "share-ink": "ink",
+    "share-muted": "muted",
+    "share-blue": "link",
+    "share-line": "line"
+  },
+  "modes": {
+    "contrast": {
+      "line": "currentColor",
+      "line-strong": "currentColor",
+      "muted": "var(--ink)",
+      "muted-strong": "var(--ink)",
+      "glass-tint": "var(--paper)",
+      "glass-header": "var(--paper)",
+      "glass-mobile": "var(--paper)",
+      "glass-dense": "var(--paper)",
+      "glass-fallback": "var(--paper)",
+      "search-surface": "var(--paper)",
+      "search-border": "currentColor",
+      "search-fill": "var(--subtle)"
+    },
+    "print": {
+      "bg": "#ffffff",
+      "paper": "#ffffff",
+      "canvas": "#ffffff",
+      "ink": "#000000",
+      "muted": "#333333",
+      "muted-strong": "#333333",
+      "line": "#999999",
+      "subtle": "#f4f4f5",
+      "link": "#004d99",
+      "link-hover": "#004d99"
+    }
+  }
+}

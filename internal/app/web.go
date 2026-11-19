@@ -55,6 +55,8 @@ func (p webPage) DocumentTitle() string {
 	return title + " · " + site
 }
 
+func (p webPage) ThemeColor() string { return web.Color(web.ColorBg, web.Light) }
+
 func (p webPage) FaviconURL() string { return "/assets/" + siteFaviconPath }
 
 func webString(v any) string {

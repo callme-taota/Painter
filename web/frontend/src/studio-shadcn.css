@@ -4,9 +4,9 @@
  * https://ui.shadcn.com/view/new-york-v4/sidebar-07
  * Painter keeps its own components, routes, permissions and V17 dimensions.
  */
-body[data-page-kind=studio]{--bg:var(--sidebar);--studio-sidebar:240px;--studio-pad:28px;background:var(--bg);font-family:var(--font-ui)}
-body[data-page-kind=studio] .workbench{background:var(--bg)}
-body[data-page-kind=studio] .work-nav{width:var(--studio-sidebar);padding:12px 12px 0;background:var(--bg);border:0;backdrop-filter:none;box-shadow:none}
+body[data-page-kind=studio]{--studio-sidebar:240px;--studio-pad:28px;background:var(--sidebar);font-family:var(--font-ui)}
+body[data-page-kind=studio] .workbench{background:var(--sidebar)}
+body[data-page-kind=studio] .work-nav{width:var(--studio-sidebar);padding:12px 12px 0;background:var(--sidebar);border:0;backdrop-filter:none;box-shadow:none}
 
 /* The rail is navigation rather than another card. */
 body[data-page-kind=studio] .studio-brand,
@@ -111,7 +111,7 @@ body[data-page-kind=studio] .editor-tools .view-switch button[aria-pressed=true]
 
 /* Drawer visibility, its native dialog semantics, focus and navigation remain
    owned by the existing components. */
-body[data-page-kind=studio] .studio-drawer{background:var(--bg);border:0;backdrop-filter:none;box-shadow:none}
+body[data-page-kind=studio] .studio-drawer{background:var(--sidebar);border:0;backdrop-filter:none;box-shadow:none}
 body[data-page-kind=studio] .studio-drawer::backdrop{background:color-mix(in srgb,var(--ink) 35%,transparent);backdrop-filter:none}
 @media(max-width:1100px) and (min-width:961px){body[data-page-kind=studio]{--studio-sidebar:216px;--studio-pad:24px}}
 @media(max-width:960px){

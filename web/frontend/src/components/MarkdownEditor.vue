@@ -107,9 +107,10 @@ function sourcePaste(value:string){if(editorLocked.value)return;viewMode.value='
 const localNewDrafts=ref<Row[]>([])
 let resolveNewMapping=false
 const editorHighlight=HighlightStyle.define([
- {tag:[syntaxTags.keyword,syntaxTags.heading,syntaxTags.link,syntaxTags.atom,syntaxTags.number],color:'var(--accent)'},
- {tag:[syntaxTags.string,syntaxTags.regexp],color:'var(--success)'},
- {tag:[syntaxTags.comment,syntaxTags.meta,syntaxTags.punctuation],color:'var(--muted)'},
+ {tag:[syntaxTags.keyword,syntaxTags.heading,syntaxTags.link,syntaxTags.atom],color:'var(--syntax-keyword)'},
+ {tag:syntaxTags.number,color:'var(--syntax-number)'},
+ {tag:[syntaxTags.string,syntaxTags.regexp],color:'var(--syntax-string)'},
+ {tag:[syntaxTags.comment,syntaxTags.meta,syntaxTags.punctuation],color:'var(--syntax-comment)'},
  {tag:syntaxTags.strong,fontWeight:'700'},
  {tag:syntaxTags.emphasis,fontStyle:'italic'},
  {tag:syntaxTags.strikethrough,textDecoration:'line-through'},

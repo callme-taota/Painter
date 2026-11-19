@@ -1,16 +1,16 @@
 /* The photographic game chapter opens a window onto the record contact sheet. */
 body[data-page-kind=home]:has(.floating-controls) main.wrap.site-main{width:100%;margin:0;max-width:none}
 .home-game-story.home-wall,.home-record-wall.home-wall{width:100%;max-width:none;margin:0;padding:0;border:0}
-.home-game-story{position:relative;isolation:isolate;margin-top:80px!important;--game-ink:#fff;--game-canvas:#09090b}
+.home-game-story{position:relative;isolation:isolate;margin-top:80px!important;}
 .home-game-stage{position:relative}
 .home-game-window{position:relative;background:var(--game-canvas);color:var(--game-ink);overflow:hidden}
 .home-game-frame{position:relative;min-height:100svh;overflow:hidden;background:var(--game-canvas);color:var(--game-ink)}
 .game-backdrop{position:absolute;inset:-10% 0;width:100%;height:120%;object-fit:cover;object-position:var(--game-art-position,center);transform:translate3d(0,var(--game-image-y,0),0)}
 .game-backdrop[hidden],.game-wordmark[hidden],.game-library-art img[hidden]{display:none}
-.home-game-frame:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgb(0 0 0 / .62) 0,rgb(0 0 0 / .62) 120px,transparent 260px),linear-gradient(180deg,transparent 35%,rgb(0 0 0 / .16) 50%,rgb(0 0 0 / .78))}
+.home-game-frame:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--shadow-color) 62%,transparent) 0,color-mix(in srgb,var(--shadow-color) 62%,transparent) 120px,transparent 260px),linear-gradient(180deg,transparent 35%,color-mix(in srgb,var(--shadow-color) 16%,transparent) 50%,color-mix(in srgb,var(--shadow-color) 78%,transparent))}
 .game-scene-content{position:relative;z-index:1;display:flex;align-items:flex-end;min-height:100svh;padding:120px max(8vw,48px) 144px;transform:translate3d(0,var(--game-copy-y,0),0)}
 .game-identity{width:min(520px,70%);min-width:0}
-.game-wordmark{display:block;width:auto;max-width:100%;max-height:180px;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 4px 16px rgb(0 0 0 / .35))}
+.game-wordmark{display:block;width:auto;max-width:100%;max-height:180px;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 4px 16px color-mix(in srgb,var(--shadow-color) 35%,transparent))}
 .game-name-fallback{display:none;font:600 clamp(2rem,5.4vw,5rem)/1.12 var(--font-ui);letter-spacing:-.035em;overflow-wrap:anywhere}
 .has-missing-logo .game-name-fallback{display:block}
 .game-identity .game-playtime{margin:28px 0 16px;font:500 16px/1.6 var(--font-ui);color:var(--game-ink);font-variant-numeric:tabular-nums}
@@ -29,22 +29,22 @@ body[data-page-kind=home]:has(.floating-controls) main.wrap.site-main{width:100%
 .is-enhanced .home-game-frame .game-scene-content{height:100%;min-height:0}
 .is-enhanced .home-game-chrome{opacity:var(--game-ui-opacity,1)}
 .is-enhanced .game-static-more{display:none}
-.home-record-wall{position:relative;z-index:1;isolation:isolate;color:#fff;background:#09090b}
+.home-record-wall{position:relative;z-index:1;isolation:isolate;color:var(--media-ink);background:var(--media-canvas)}
 .home-record-stage{position:relative;min-height:100svh;overflow:hidden}
 .home-record-wall .home-record-grid{--record-columns:4;--record-cell:calc(100vw / var(--record-columns));position:relative;display:grid;grid-template-columns:repeat(var(--record-columns),minmax(0,1fr));grid-auto-rows:var(--record-cell);align-content:start;gap:0;min-height:100svh;transform:translate3d(0,var(--record-drift,0px),0);transform-origin:0 0}
-.home-record-tile{position:relative;display:block;min-width:0;min-height:0;overflow:hidden;aspect-ratio:1;background:#18181b;color:#fff}
+.home-record-tile{position:relative;display:block;min-width:0;min-height:0;overflow:hidden;aspect-ratio:1;background:var(--ink);color:var(--media-ink)}
 .home-record-tile>img{display:block;width:100%;height:100%;object-fit:cover}
 .home-record-tile>img[hidden]{display:none}
-.home-record-tile>span{position:absolute;inset:auto 0 0;display:grid;gap:4px;padding:20px 16px;color:#fff;background:linear-gradient(transparent,rgb(0 0 0 / .9));opacity:0;transform:translateY(6px);transition:opacity .18s ease-out,transform .18s ease-out;pointer-events:none;overflow-wrap:anywhere}
+.home-record-tile>span{position:absolute;inset:auto 0 0;display:grid;gap:4px;padding:20px 16px;color:var(--media-ink);background:linear-gradient(transparent,color-mix(in srgb,var(--shadow-color) 90%,transparent));opacity:0;transform:translateY(6px);transition:opacity .18s ease-out,transform .18s ease-out;pointer-events:none;overflow-wrap:anywhere}
 .home-record-tile strong{font:500 14px/1.5 var(--font-ui)}
 .home-record-tile small{font:400 12px/1.5 var(--font-ui)}
 .home-record-tile:hover>span,.home-record-tile:focus-visible>span{opacity:1;transform:none}
-.home-record-tile:focus-visible{z-index:2;outline:3px solid #fff;outline-offset:-4px}
+.home-record-tile:focus-visible{z-index:2;outline:3px solid var(--media-ink);outline-offset:-4px}
 /* The game cell belongs to the desktop transition, not the album collection. */
-.home-record-game{display:none;align-self:start;justify-self:start;width:100%;height:var(--record-cell);background:var(--game-canvas,#09090b)}
+.home-record-game{display:none;align-self:start;justify-self:start;width:100%;height:var(--record-cell);background:var(--game-canvas)}
 @media(min-width:721px) and (prefers-reduced-motion:no-preference){.home-record-game.is-record-game-tile-enhanced{display:block}}
 .home-record-game>img.record-game-art{position:absolute;inset:-10% 0;width:100%;height:120%;object-fit:cover;object-position:var(--game-art-position,center)}
-.home-record-game:after{content:'';position:absolute;inset:0;pointer-events:none;opacity:var(--record-game-shade,.12);background:linear-gradient(180deg,rgb(0 0 0 / .62) 0,rgb(0 0 0 / .62) 120px,transparent 260px),linear-gradient(180deg,transparent 35%,rgb(0 0 0 / .16) 50%,rgb(0 0 0 / .78))}
+.home-record-game:after{content:'';position:absolute;inset:0;pointer-events:none;opacity:var(--record-game-shade,.12);background:linear-gradient(180deg,color-mix(in srgb,var(--shadow-color) 62%,transparent) 0,color-mix(in srgb,var(--shadow-color) 62%,transparent) 120px,transparent 260px),linear-gradient(180deg,transparent 35%,color-mix(in srgb,var(--shadow-color) 16%,transparent) 50%,color-mix(in srgb,var(--shadow-color) 78%,transparent))}
 .home-record-game>.record-game-label{z-index:1}
 .home-record-game.has-missing-art>.record-game-label{opacity:1;transform:none}
 .home-record-game.is-record-game-tile-enhanced{grid-column:var(--record-game-column,auto);grid-row:var(--record-game-row,auto);width:var(--record-game-width,var(--record-cell));height:var(--record-game-height,var(--record-cell));transform:translate3d(var(--record-game-x,0px),var(--record-game-y,0px),0);opacity:var(--record-game-opacity,1);z-index:2;aspect-ratio:auto}
@@ -53,13 +53,13 @@ body[data-page-kind=home]:has(.floating-controls) main.wrap.site-main{width:100%
 /* This saved hero puts its subject on the right. The real wall cell and full
    scene share one overridable art direction instead of changing the first game. */
 @media(max-width:720px){:is(.home-game-frame,.home-record-game)[data-game-platform="steam"][data-game-id="271590"]{--game-art-position:82% center}}
-.home-record-caption{position:relative;z-index:3;display:flex;align-items:end;justify-content:space-between;gap:32px;padding:80px max(8vw,48px) 48px;background:linear-gradient(transparent,rgb(0 0 0 / .92));margin-top:-200px;min-height:200px;pointer-events:none;color:#fff}
+.home-record-caption{position:relative;z-index:3;display:flex;align-items:end;justify-content:space-between;gap:32px;padding:80px max(8vw,48px) 48px;background:linear-gradient(transparent,color-mix(in srgb,var(--shadow-color) 92%,transparent));margin-top:-200px;min-height:200px;pointer-events:none;color:var(--media-ink)}
 .home-record-caption>div{min-width:0;max-width:65ch}
 .home-record-caption h2{font:600 clamp(1.8rem,3.2vw,3rem)/1.2 var(--font-ui);letter-spacing:-.03em;margin:0 0 12px;overflow-wrap:anywhere}
-.home-record-caption p{font:400 13px/1.8 var(--font-ui);margin:0;white-space:pre-line;overflow-wrap:anywhere;color:#fff}
-.home-record-caption .record-playlist-source{margin-top:8px;font-size:12px;color:#fff}
+.home-record-caption p{font:400 13px/1.8 var(--font-ui);margin:0;white-space:pre-line;overflow-wrap:anywhere;color:var(--media-ink)}
+.home-record-caption .record-playlist-source{margin-top:8px;font-size:12px;color:var(--media-ink)}
 .record-destinations{display:flex;flex-direction:column;align-items:end;gap:8px;pointer-events:auto}
-.record-source-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:13px;color:#fff}
+.record-source-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:13px;color:var(--media-ink)}
 .record-source-link:hover{text-decoration:underline;text-underline-offset:4px}
 .home-record-wall .home-music-badge{margin:0 -6px -6px 0;flex:none}
 .home-collection-journey.is-game-journey>.home-record-wall{margin-top:-200svh;min-height:200svh}

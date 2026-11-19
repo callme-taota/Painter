@@ -2,9 +2,10 @@ import './homePointMorph.css'
 
 export type PointMorphRect = {left: number; top: number; width: number; height: number}
 
-type DayFrame = PointMorphRect & {element: HTMLElement; color: string; shadow: string}
+type DayFrame = PointMorphRect & {element: HTMLElement; level: number}
 type CoverFrame = {element: HTMLElement; source: DayFrame; target: PointMorphRect}
 
+const activityColors = ['var(--activity-0)', 'var(--activity-1)', 'var(--activity-2)', 'var(--activity-3)', 'var(--activity-4)'] as const
 const clamp = (value: number) => Math.max(0, Math.min(1, value))
 const smooth = (from: number, to: number, value: number) => {
   const t = clamp((value - from) / (to - from))
@@ -156,8 +157,7 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
     const cards = Array.from(stage.querySelectorAll<HTMLElement>('.project-card-link')).map(card => center(localRect(card.getBoundingClientRect(), stageBox)))
     const fallback = {x: stageBox.width / 2, y: stageBox.height / 2}
     frames = days.map(element => {
-      const style = getComputedStyle(element)
-      return {element, ...localRect(element.getBoundingClientRect(), stageBox), color: style.backgroundColor, shadow: style.boxShadow}
+      return {element, ...localRect(element.getBoundingClientRect(), stageBox), level: Math.max(0, Math.min(4, Math.round(Number(element.dataset.level) || 0)))}
     }).filter(frame => frame.width > 0 && frame.height > 0)
     visible = frames.filter(frame => {
       const x = frame.left + stageBox.left
@@ -214,8 +214,8 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
       surface.style.top = `${target.top}px`
       surface.style.width = `${target.width}px`
       surface.style.height = `${target.height}px`
-      surface.style.backgroundColor = source.color
-      surface.style.boxShadow = source.shadow
+      surface.style.backgroundColor = activityColors[source.level]!
+      surface.style.boxShadow = source.level === 0 ? 'inset 0 0 0 1px color-mix(in srgb,var(--ink) 13%,transparent)' : 'none'
       if (tile.hasAttribute('data-record-game-tile')) {
         const art = tile.querySelector<HTMLImageElement>('img'), image = surface.querySelector<HTMLImageElement>('img')
         if (art && image) {
@@ -273,10 +273,7 @@ export function createPointMorph(stage: HTMLElement, activity: HTMLElement, reco
       element.style.transform = recordProgress === 1 ? 'none' : `translate3d(${x.toFixed(3)}px,${y.toFixed(3)}px,0) scale(${scaleX.toFixed(6)},${scaleY.toFixed(6)})`
       element.style.borderRadius = `${(radius / scaleX).toFixed(3)}px / ${(radius / scaleY).toFixed(3)}px`
       const stroke = 1 - smooth(0, .65, recordProgress)
-      let length = 0
-      element.style.boxShadow = !stroke || source.shadow === 'none' ? 'none' : source.shadow
-        .replace(/(?:rgba?|color)\([^)]*\)/g, color => `color-mix(in srgb,${color} ${(stroke * 100).toFixed(4)}%,transparent)`)
-        .replace(/(-?[\d.]+)px/g, (_, value: string) => `${(Number(value) / (length++ === 0 ? scaleX : length === 2 ? scaleY : Math.sqrt(scaleX * scaleY))).toFixed(4)}px`)
+      element.style.boxShadow = !stroke || source.level !== 0 ? 'none' : `inset 0 0 0 ${(1 / Math.sqrt(scaleX * scaleY)).toFixed(4)}px color-mix(in srgb,var(--ink) ${(stroke * 13).toFixed(4)}%,transparent)`
     })
   }
 

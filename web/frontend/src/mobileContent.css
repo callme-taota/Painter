@@ -49,7 +49,7 @@
   .home-story .story-pages{width:196px;margin:0;transform:rotate(-5deg)}
   .home-story .story-leaf-back{transform:translate(-14px,6px) rotate(-5deg)}
   .home-story .story-leaf-middle{transform:translate(-6px,2px) rotate(-2deg)}
-  .home-story .story-leaf-front{padding:22px;box-shadow:0 14px 32px rgb(0 0 0 / .13)}
+  .home-story .story-leaf-front{padding:22px;box-shadow:0 14px 32px color-mix(in srgb,var(--shadow-color) 13%,transparent)}
   .home-story .story-sheet-title{font-size:28px;letter-spacing:-.03em;line-height:1.18}
   .home-story .story-sheet-signature{left:22px;bottom:22px;font-size:12px}
   .home-story .story-sheet-signature img{width:24px;height:24px}
@@ -88,7 +88,7 @@
     scroll-snap-align:start;
   }
   .home-projects .project-playing-card:is(:hover,:focus-within,.is-active){transform:none;--card-lift:0px;--card-tilt:0deg}
-  .home-projects .project-card-link{height:100%;min-height:320px;padding:22px;box-shadow:0 5px 16px rgb(0 0 0 / .09)}
+  .home-projects .project-card-link{height:100%;min-height:320px;padding:22px;box-shadow:0 5px 16px color-mix(in srgb,var(--shadow-color) 9%,transparent)}
   .home-projects .project-card-body{padding-block:24px 20px}
   .home-projects .project-owner-avatar{margin-bottom:14px}
   .home-projects .project-card-body h3{font-size:23px;line-height:1.25}
@@ -160,7 +160,7 @@
   .home-game-story .home-game-stage{display:contents}
   .home-game-story .home-game-window{display:flex;align-items:stretch;gap:14px;position:relative;height:auto;min-height:0;padding:76px var(--phone-gutter) 16px;background:transparent;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding-inline:var(--phone-gutter);scrollbar-width:thin;scrollbar-color:var(--line) transparent;overscroll-behavior-x:contain;clip-path:none;opacity:1}
   .home-game-story .home-game-frame{flex:0 0 min(86vw,430px);min-width:0;min-height:420px;height:62svh;max-height:560px;position:relative;inset:auto;border-radius:var(--radius-surface);opacity:1;scroll-snap-align:start;overflow:hidden;pointer-events:auto}
-  .home-game-story .home-game-frame:after{background:linear-gradient(transparent 25%,rgb(0 0 0 / .75))}
+  .home-game-story .home-game-frame:after{background:linear-gradient(transparent 25%,color-mix(in srgb,var(--shadow-color) 75%,transparent))}
   .home-game-story .game-backdrop{inset:0;width:100%;height:100%;transform:none;object-position:var(--game-art-position,center)}
   .home-game-story .game-scene-content{min-height:100%;height:100%;padding:28px 22px;transform:none;align-items:flex-end}
   .home-game-story .game-identity{width:100%;max-width:none}

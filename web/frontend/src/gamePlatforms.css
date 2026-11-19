@@ -2,7 +2,7 @@
 .game-platforms{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:7px 0}
 .game-platform-badge,.game-platform-device{display:inline-flex;align-items:center;min-height:22px;padding:2px 6px;border-radius:var(--radius-item);background:var(--subtle);color:var(--muted);font:400 12px/18px var(--font-ui)}
 .game-platform-device{background:transparent;padding-inline:3px}
-.home-game-frame .game-platform-badge,.home-game-frame .game-platform-device{color:var(--game-ink);background:rgb(0 0 0 / .3)}
+.home-game-frame .game-platform-badge,.home-game-frame .game-platform-device{color:var(--game-ink);background:color-mix(in srgb,var(--shadow-color) 30%,transparent)}
 .games-platform-filter,.homepage-platform-filter{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:0 0 24px}
 .games-platform-filter>a,.homepage-platform-filter>button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--control-height);padding:var(--control-pad-y) 12px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--muted);font:400 13px/20px var(--font-ui)}
 .games-platform-filter>a:hover,.homepage-platform-filter>button:hover,.games-platform-filter>a[aria-current=page],.homepage-platform-filter>button[aria-pressed=true]{background:var(--subtle);color:var(--ink)}

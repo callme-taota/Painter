@@ -3,11 +3,12 @@ import './homeWorkJourney.css'
 import {createPointMorph, type PointMorphRect} from './homePointMorph'
 import {registerHomeSnapSource} from './homeSnap'
 
+const activityColors=['var(--activity-0)','var(--activity-1)','var(--activity-2)','var(--activity-3)','var(--activity-4)'] as const
 const clamp=(value:number)=>Math.max(0,Math.min(1,value))
 const smooth=(a:number,b:number,v:number)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)}
 const mix=(a:number,b:number,t:number)=>a+(b-a)*t
 const rect=(element:HTMLElement,stage:DOMRect):PointMorphRect=>{const r=element.getBoundingClientRect();return{left:r.left-stage.left,top:r.top-stage.top,width:r.width,height:r.height}}
-type CardFrame={element:HTMLElement;link:HTMLAnchorElement;box:PointMorphRect;day?:HTMLElement;target?:PointMorphRect;color:string}
+type CardFrame={element:HTMLElement;link:HTMLAnchorElement;box:PointMorphRect;day?:HTMLElement;target?:PointMorphRect}
 
 // One real card and one real day field, held in one scroll-controlled stage.
 export function initHomeWorkJourney(){
@@ -53,14 +54,14 @@ export function initHomeWorkJourney(){
   let points:ReturnType<typeof createPointMorph>|undefined
   let frames:CardFrame[]=[],source:PointMorphRect={left:0,top:0,width:1,height:1},queued=0,near=true,needsMeasure=true,enhanced=false,measuring=false,focusPin:number|undefined
   const end=record?6:4.45
-  const enabled=()=>document.body.dataset.homeMotion!=='false'&&!reduced.matches&&!phone.matches&&CSS.supports('position','sticky')&&CSS.supports('background','color-mix(in srgb,white,black)')
+  const enabled=()=>document.body.dataset.homeMotion!=='false'&&!reduced.matches&&!phone.matches&&CSS.supports('position','sticky')&&CSS.supports('background','color-mix(in srgb,var(--paper),var(--ink))')
   registerHomeSnapSource(journey,()=>{
    if(!enhanced||!enabled())return[]
    const h=stage.clientHeight,start=scrollY+journey.getBoundingClientRect().top
    return [['intro',.2,.1,.3],['projects',2.25,2.13,2.37],['calendar',4.05,3.93,4.17]].map(([key,at,from,to])=>({key:String(key),top:start+Number(at)*h,from:start+Number(from)*h,to:start+Number(to)*h}))
   })
 
-  function clearCard(card:HTMLElement){card.style.removeProperty('transform');card.style.removeProperty('opacity');card.style.removeProperty('--work-repo-alpha');card.style.removeProperty('--work-native-strength');card.style.removeProperty('--work-card-z');const link=card.querySelector<HTMLElement>('.project-card-link');if(link)for(const p of['background','border-radius','box-shadow'])link.style.removeProperty(p)}
+  function clearCard(card:HTMLElement){card.style.removeProperty('transform');card.style.removeProperty('opacity');card.style.removeProperty('--work-repo-alpha');card.style.removeProperty('--work-native-strength');card.style.removeProperty('--work-card-z');const link=card.querySelector<HTMLElement>('.project-card-link');if(link)for(const p of['background','border-radius','box-shadow','--work-day-color'])link.style.removeProperty(p)}
   function reset(){
    enhanced=false;journey.classList.remove('work-journey-ready','work-measuring');next?.classList.remove('has-work-record-bridge');journey.style.removeProperty('--work-height');stage.removeAttribute('style');if(phone.matches){points?.destroy();points=undefined}else points?.reset();cards.forEach(clearCard)
    for(const element of[intro,project,calendar]){element.inert=false;element.removeAttribute('aria-hidden');element.style.removeProperty('opacity');element.style.removeProperty('pointer-events')}
@@ -74,9 +75,9 @@ export function initHomeWorkJourney(){
    const box=stage.getBoundingClientRect(),w=box.width,h=box.height
    const pw=w<=720?Math.min(w*(h<650?.53:.62),250):Math.min(w*.32,400),ph=pw*1.25
    source={left:w<=720?(w-pw)/2-20:w*.75-pw/2,top:w<=720?h-ph-(h<650?34:74):(h-ph)/2,width:pw,height:ph}
-   frames=cards.map(element=>({element,link:element.querySelector<HTMLAnchorElement>('.project-card-link')!,box:rect(element,box),color:''}))
+   frames=cards.map(element=>({element,link:element.querySelector<HTMLAnchorElement>('.project-card-link')!,box:rect(element,box)}))
    const morph=points||(points=createPointMorph(stage,calendar,record));morph.measure();const targets=morph.cardTargets(cards.length)
-   frames.forEach((frame,index)=>{frame.day=targets[index%targets.length];frame.target=frame.day?morph.dayRect(frame.day):undefined;frame.color=frame.day?getComputedStyle(frame.day).backgroundColor:'var(--subtle)';if(frame.day)frame.link.dataset.workTargetDate=frame.day.dataset.date||''})
+   frames.forEach((frame,index)=>{frame.day=targets[index%targets.length];frame.target=frame.day?morph.dayRect(frame.day):undefined;frame.link.style.setProperty('--work-day-color',activityColors[Math.max(0,Math.min(4,Number(frame.day?.dataset.level)||0))]!);if(frame.day)frame.link.dataset.workTargetDate=frame.day.dataset.date||''})
    journey.classList.remove('work-measuring');journey.dataset.workMeasured='true';needsMeasure=false;measuring=false
   }
   function phase(u:number){return u<1?'intro':u<2?'paper-project':u<2.65?'projects':u<3.75?'project-calendar':u<4.4?'calendar':u<5.6&&record?'calendar-record':u<end?'records':'handoff'}
@@ -116,9 +117,9 @@ export function initHomeWorkJourney(){
     frame.element.style.transform=`translate3d(calc(${target.left-box.left}px + var(--dodge-x,0px) * var(--work-native-strength,0)),calc(${target.top-box.top}px + var(--card-lift,0px) * var(--work-native-strength,0)),0) rotate(calc(${angle}deg + var(--work-hover-turn,0deg) * var(--work-native-strength,0))) scale(${target.width/box.width},${target.height/box.height})`
     frame.element.style.opacity=String((index===0?1:smooth(.34,.8,paper))*(toCalendar>=.999?0:1))
     frame.element.style.setProperty('--work-repo-alpha',String((index===0?smooth(.3,.9,paper):smooth(.35,.9,paper))*(1-smooth(0,.22,toCalendar))))
-    frame.link.style.background=index===0?`color-mix(in srgb,color-mix(in srgb,var(--hero-sheet),var(--paper) ${paper*100}%),${frame.color} ${toCalendar*100}%)`:`color-mix(in srgb,var(--paper),${frame.color} ${toCalendar*100}%)`
+    frame.link.style.background=index===0?`color-mix(in srgb,color-mix(in srgb,var(--hero-sheet),var(--paper) ${paper*100}%),var(--work-day-color) ${toCalendar*100}%)`:`color-mix(in srgb,var(--paper),var(--work-day-color) ${toCalendar*100}%)`
     frame.link.style.borderRadius=`${mix(12,3,toCalendar)/(target.width/box.width)}px / ${mix(12,3,toCalendar)/(target.height/box.height)}px`
-    frame.link.style.boxShadow=`0 ${mix(24,7,paper)}px ${mix(60,24,paper)}px rgb(0 0 0 / ${.12*(1-toCalendar)})`
+    frame.link.style.boxShadow=`0 ${mix(24,7,paper)}px ${mix(60,24,paper)}px color-mix(in srgb,var(--shadow-color) ${12*(1-toCalendar)}%,transparent)`
    }
    if(caption)caption.style.opacity=smooth(.78,1,toRecords).toFixed(5)
    dispatchEvent(new Event('painter:home-media-layout'))

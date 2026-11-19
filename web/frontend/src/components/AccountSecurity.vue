@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {colorValue} from "../color-tokens"
 import {t} from "../i18n"
 
 import {nextTick,onBeforeUnmount,onMounted,ref} from 'vue'
@@ -21,7 +22,7 @@ async function begin(){
  try{
   setup.value=await api<Setup>('/me/mfa/setup',{method:'POST',body:body({current_password:current.value})})
   current.value='';code.value='';await nextTick()
-  try{const QRCode=(await import('qrcode')).default;if(canvas.value)await QRCode.toCanvas(canvas.value,setup.value.otpauth_uri,{width:200,margin:2,errorCorrectionLevel:'M'})}catch{qrError.value=t("二维码未能生成，可手动输入下方密钥。")}
+  try{const QRCode=(await import('qrcode')).default;if(canvas.value)await QRCode.toCanvas(canvas.value,setup.value.otpauth_uri,{width:200,margin:2,errorCorrectionLevel:'M',color:{dark:colorValue('qr-ink'),light:colorValue('qr-paper')}})}catch{qrError.value=t("二维码未能生成，可手动输入下方密钥。")}
  }catch(e){mutationError(e)}finally{busy.value=false}
 }
 async function enable(){
@@ -92,5 +93,5 @@ onBeforeUnmount(()=>{window.removeEventListener('beforeunload',beforeLeave);canc
 </template>
 
 <style scoped>
-.security-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.security-heading h2{margin:0}.security-state{color:var(--muted);font-size:var(--control-font-size,13px)}.account-security>p{max-width:70ch}.security-form{display:grid;gap:12px;max-width:480px;margin-top:20px}.security-form h3{margin:0}.security-form label,.mfa-setup-fields>label{display:grid;gap:8px}.security-form .form-actions{margin-top:4px}.mfa-setup{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;margin-top:24px}.mfa-qr{align-self:start;background:#fff;border-radius:var(--radius-surface,12px);overflow:hidden;width:200px;height:200px}.mfa-setup-fields{min-width:0}.mfa-setup-fields>p:first-child{margin-top:0}.security-secret{font-family:var(--mono,monospace);font-size:13px!important;letter-spacing:.02em;min-width:0;max-width:100%}.recovery-display{margin-top:24px}.recovery-codes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;list-style:none;padding:16px 0;margin:0;max-width:560px}.recovery-codes code{font-size:13px;overflow-wrap:anywhere;user-select:all}.account-security .form-actions{flex-wrap:wrap;gap:8px}.account-security small{line-height:1.6}@media(max-width:600px){.mfa-setup{grid-template-columns:minmax(0,1fr)}.recovery-codes{grid-template-columns:minmax(0,1fr);gap:8px}.security-form{max-width:none}}
+.security-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.security-heading h2{margin:0}.security-state{color:var(--muted);font-size:var(--control-font-size,13px)}.account-security>p{max-width:70ch}.security-form{display:grid;gap:12px;max-width:480px;margin-top:20px}.security-form h3{margin:0}.security-form label,.mfa-setup-fields>label{display:grid;gap:8px}.security-form .form-actions{margin-top:4px}.mfa-setup{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;margin-top:24px}.mfa-qr{align-self:start;background:var(--qr-paper);border-radius:var(--radius-surface,12px);overflow:hidden;width:200px;height:200px}.mfa-setup-fields{min-width:0}.mfa-setup-fields>p:first-child{margin-top:0}.security-secret{font-family:var(--mono,monospace);font-size:13px!important;letter-spacing:.02em;min-width:0;max-width:100%}.recovery-display{margin-top:24px}.recovery-codes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;list-style:none;padding:16px 0;margin:0;max-width:560px}.recovery-codes code{font-size:13px;overflow-wrap:anywhere;user-select:all}.account-security .form-actions{flex-wrap:wrap;gap:8px}.account-security small{line-height:1.6}@media(max-width:600px){.mfa-setup{grid-template-columns:minmax(0,1fr)}.recovery-codes{grid-template-columns:minmax(0,1fr);gap:8px}.security-form{max-width:none}}
 </style>

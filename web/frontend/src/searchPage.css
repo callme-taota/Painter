@@ -2,8 +2,8 @@
 input[type=checkbox],input[type=radio]{appearance:none;-webkit-appearance:none;display:inline-grid;place-content:center;flex:none;width:var(--choice-mark);height:var(--choice-mark);min-height:0;padding:0;margin:0;border:1px solid var(--muted);border-radius:var(--radius-item);background:var(--paper);cursor:pointer;vertical-align:middle}
 input[type=radio]{border-radius:50%}
 input[type=checkbox]:checked,input[type=radio]:checked{background:var(--accent);border-color:var(--accent)}
-input[type=checkbox]:checked:after{content:'';width:8px;height:5px;border:solid #fff;border-width:0 0 2px 2px;transform:rotate(-45deg) translateY(-1px)}
-input[type=radio]:checked:after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+input[type=checkbox]:checked:after{content:'';width:8px;height:5px;border:solid var(--link-ink);border-width:0 0 2px 2px;transform:rotate(-45deg) translateY(-1px)}
+input[type=radio]:checked:after{content:'';width:6px;height:6px;border-radius:50%;background:var(--link-ink)}
 html[data-theme=dark] input:is([type=checkbox],[type=radio]):checked:after{border-color:var(--paper)}
 html[data-theme=dark] input[type=radio]:checked:after{background:var(--paper)}
 input:is([type=checkbox],[type=radio]):disabled{cursor:not-allowed;opacity:.5}

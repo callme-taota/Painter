@@ -41,7 +41,7 @@ export function initHomeControlGlass(){
   const media=Array.from(document.querySelectorAll<HTMLElement>('[data-game-window],.home-record-stage,.point-record-surface'))
   if(!control||!media.length||control.dataset.mediaGlassReady==='true')return
   const rail:HTMLElement=control
-  if(!CSS.supports('background','color-mix(in srgb,white 50%,transparent)'))return
+  if(!CSS.supports('background','color-mix(in srgb,var(--paper) 50%,transparent)'))return
   if(!CSS.supports('backdrop-filter','blur(1px)')&&!CSS.supports('-webkit-backdrop-filter','blur(1px)'))return
   rail.dataset.mediaGlassReady='true'
   rail.classList.add('has-media-glass')

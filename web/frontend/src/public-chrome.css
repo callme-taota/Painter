@@ -1,6 +1,4 @@
-/* V31: retain the current publication, change only navigation and link color. */
-:root{--link:#0066cc;--link-hover:#004d99;--link-soft:#e5f0ff}
-html[data-theme=dark]{--link:#2997ff;--link-hover:#72bbff;--link-soft:#15324c}
+
 
 /* Blue signals an explicit reading action; navigation and linked content keep
    the neutral page hierarchy instead of turning every destination blue. */
@@ -26,7 +24,7 @@ html[data-theme=dark]{--link:#2997ff;--link-hover:#72bbff;--link-soft:#15324c}
 .site-header .brand{position:relative;z-index:1;min-height:44px;padding-block:8px;color:var(--ink)}
 .site-header .brand:hover{color:var(--ink)}
 .site-header .search-trigger{position:relative;z-index:1;width:44px;min-width:44px;min-height:44px;padding:11px;border-radius:50%;color:var(--ink)}
-.site-header .search-trigger:hover{background:rgb(128 128 128 / .1);color:var(--link)}
+.site-header .search-trigger:hover{background:color-mix(in srgb,var(--muted) 10%,transparent);color:var(--link)}
 .site-header .search-shortcut-hint{right:0;top:calc(100% + 14px)}
 
 /* The container is deliberately clear: each functional item owns its lens. */
@@ -54,7 +52,7 @@ html[data-theme=dark]{--link:#2997ff;--link-hover:#72bbff;--link-soft:#15324c}
 .site-dock :is(a,button,summary).dock-glass:active{transform:scale(.94)}
 .site-dock :is([aria-current=page],[aria-pressed=true],details[open]>summary).dock-glass{color:var(--link-hover)}
 html[data-theme=dark] .site-dock :is([aria-current=page],[aria-pressed=true],details[open]>summary).dock-glass,
-html[data-theme=dark] .site-dock .dock-glass:hover{color:#8cc6ff}
+html[data-theme=dark] .site-dock .dock-glass:hover{color:var(--link-hover)}
 .site-dock :is(a,button,summary).dock-glass:focus-visible{outline:2px solid var(--link);outline-offset:4px}
 .site-dock :is(.floating-theme,.floating-create)[open]{z-index:5}
 .site-dock .floating-like{flex-direction:column;gap:0;padding:4px 8px}

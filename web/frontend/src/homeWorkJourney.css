@@ -7,7 +7,7 @@
 .work-content-jumps:focus-within{position:fixed;left:24px;bottom:24px;width:auto;height:auto;clip:auto;overflow:visible;white-space:normal;display:flex;gap:18px;z-index:45;padding:12px 18px;background:var(--paper);color:var(--ink);border-radius:var(--radius-menu)}
 .work-content-jumps a:focus-visible{outline-offset:4px}
 .work-journey-ready{height:var(--work-height,700svh);z-index:4;pointer-events:none}
-.work-journey-ready>.home-work-stage{display:block;position:sticky;top:0;height:100svh;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--home-surface,var(--bg)),#09090b calc(var(--work-record-progress,0)*100%));pointer-events:auto}
+.work-journey-ready>.home-work-stage{display:block;position:sticky;top:0;height:100svh;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--home-surface,var(--bg)),var(--media-canvas) calc(var(--work-record-progress,0)*100%));pointer-events:auto}
 .work-journey-ready .home-story{position:absolute;inset:0;height:100%;z-index:2;pointer-events:none}
 .work-journey-ready .story-stage{position:absolute;inset:0;height:100%;min-height:0;background:transparent;overflow:visible}
 .work-journey-ready .story-art{display:none}
