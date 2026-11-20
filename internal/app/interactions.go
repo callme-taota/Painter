@@ -113,6 +113,7 @@ func (a *App) RegisterInteractions() {
 		a.Handle("DELETE /api/v1/posts/{id}/"+k, func(w http.ResponseWriter, r *http.Request) error { return a.interactionPostRelation(w, r, k, false) })
 	}
 	a.Handle("GET /api/v1/posts/{id}/comments", a.interactionComments)
+	a.Handle("GET /api/v1/comments/{id}/replies", a.interactionReplies)
 	a.Handle("POST /api/v1/posts/{id}/comments", a.interactionCreateComment)
 	a.Handle("DELETE /api/v1/comments/{id}", a.interactionDeleteComment)
 	a.Handle("PUT /api/v1/comments/{id}/like", func(w http.ResponseWriter, r *http.Request) error { return a.interactionCommentLike(w, r, true) })
@@ -216,6 +217,97 @@ func (a *App) interactionPostRelation(w http.ResponseWriter, r *http.Request, ki
 	}
 	return e
 }
+
+// Every public representation checks its root as well as its own visibility.
+// A reply target's identity is joined only while that target remains visible.
+const interactionCommentSelect = `SELECT c.id::text,c.body,c.created_at_ms,u.id::text,u.display_name,u.avatar_url,
+ (SELECT count(*) FROM comment_likes l WHERE l.comment_id=c.id),
+ EXISTS(SELECT 1 FROM comment_likes l WHERE l.comment_id=c.id AND l.user_id=$1),
+ c.user_id=pp.author_user_id,c.parent_id::text,target.id::text,target.user_id::text,tu.display_name,
+ (SELECT count(*) FROM comments reply WHERE reply.parent_id=COALESCE(c.parent_id,c.id) AND reply.state='visible'),
+ c.reply_to_id IS NOT NULL AND target.id IS NULL
+ FROM comments c JOIN users u ON u.id=c.user_id JOIN public_posts pp ON pp.post_id=c.post_id
+ LEFT JOIN comments root ON root.id=c.parent_id AND root.post_id=c.post_id
+ LEFT JOIN comments target ON target.id=c.reply_to_id AND target.post_id=c.post_id AND target.state='visible'
+ LEFT JOIN users tu ON tu.id=target.user_id
+ WHERE c.state='visible' AND (c.parent_id IS NULL OR root.state='visible')`
+
+func interactionCommentItems(rows pgx.Rows, viewer string) ([]map[string]any, error) {
+	defer rows.Close()
+	items := []map[string]any{}
+	for rows.Next() {
+		var id, body, uid, name, avatar string
+		var ms, likes, replies int64
+		var liked, author, targetDeleted bool
+		var parent, target, targetUser, targetName *string
+		if e := rows.Scan(&id, &body, &ms, &uid, &name, &avatar, &likes, &liked, &author, &parent, &target, &targetUser, &targetName, &replies, &targetDeleted); e != nil {
+			return nil, e
+		}
+		var parentID, replyTo any
+		rootReplies := replies
+		if parent != nil {
+			parentID = *parent
+			rootReplies = 0
+		}
+		if target != nil {
+			replyTo = map[string]any{"id": *target, "user": map[string]any{"id": *targetUser, "display_name": *targetName}}
+		}
+		items = append(items, map[string]any{"id": id, "body": body, "user": map[string]any{"id": uid, "display_name": name, "avatar_url": avatar}, "created_at": interactionTime(ms), "like_count": likes, "liked": liked, "is_self": viewer == uid, "is_author": author, "parent_id": parentID, "reply_to": replyTo, "reply_to_deleted": targetDeleted, "reply_count": rootReplies, "thread_reply_count": replies})
+	}
+	return items, rows.Err()
+}
+
+func interactionCommentObject(ctx context.Context, db contentQuerier, id, viewer string) (map[string]any, error) {
+	rows, e := db.Query(ctx, interactionCommentSelect+` AND c.id=$2`, viewer, id)
+	if e != nil {
+		return nil, e
+	}
+	items, e := interactionCommentItems(rows, viewer)
+	if e != nil {
+		return nil, e
+	}
+	if len(items) != 1 {
+		return nil, NotFound()
+	}
+	return items[0], nil
+}
+
+func (a *App) interactionCommentPage(w http.ResponseWriter, r *http.Request, post, root, scope string) error {
+	c, e := a.interactionCursor(r, scope)
+	if e != nil {
+		return e
+	}
+	p, _ := a.Principal(r)
+	uid := p.ID
+	if uid == "" {
+		uid = "0"
+	}
+	filter := "c.parent_id IS NULL"
+	args := []any{uid, post, c.Time, c.ID, Limit(r) + 1}
+	if root != "" {
+		filter = "c.parent_id=$6"
+		args = append(args, root)
+	}
+	rows, e := a.Pool.Query(r.Context(), interactionCommentSelect+` AND c.post_id=$2 AND (c.created_at_ms,c.id)>($3,$4::bigint) AND `+filter+` ORDER BY c.created_at_ms,c.id LIMIT $5`, args...)
+	if e != nil {
+		return e
+	}
+	items, e := interactionCommentItems(rows, p.ID)
+	if e != nil {
+		return e
+	}
+	next := ""
+	if len(items) > Limit(r) {
+		items = items[:Limit(r)]
+		last := items[len(items)-1]
+		stamp, _ := time.Parse(time.RFC3339Nano, last["created_at"].(string))
+		next = a.interactionNext(scope, last["id"].(string), stamp.UnixMilli())
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	JSON(w, 200, interactionPage(items, next))
+	return nil
+}
+
 func (a *App) interactionComments(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if e := interactionID(id); e != nil {
@@ -228,49 +320,28 @@ func (a *App) interactionComments(w http.ResponseWriter, r *http.Request) error 
 	if !ok {
 		return NotFound()
 	}
-	scope := "comments:" + id
-	c, e := a.interactionCursor(r, scope)
+	return a.interactionCommentPage(w, r, id, "", "comments:"+id)
+}
+
+func (a *App) interactionReplies(w http.ResponseWriter, r *http.Request) error {
+	id := r.PathValue("id")
+	if e := interactionID(id); e != nil {
+		return e
+	}
+	var post string
+	e := a.Pool.QueryRow(r.Context(), `SELECT c.post_id::text FROM comments c JOIN public_posts pp ON pp.post_id=c.post_id WHERE c.id=$1 AND c.parent_id IS NULL AND c.state='visible'`, id).Scan(&post)
+	if e == pgx.ErrNoRows {
+		return NotFound()
+	}
 	if e != nil {
 		return e
 	}
-	p, _ := a.Principal(r)
-	uid := p.ID
-	if uid == "" {
-		uid = "0"
-	}
-	rows, e := a.Pool.Query(r.Context(), `SELECT c.id::text,c.body,c.created_at_ms,u.id::text,u.display_name,u.avatar_url,(SELECT count(*) FROM comment_likes l WHERE l.comment_id=c.id),EXISTS(SELECT 1 FROM comment_likes l WHERE l.comment_id=c.id AND l.user_id=$4) FROM comments c JOIN users u ON u.id=c.user_id JOIN public_posts pp ON pp.post_id=c.post_id WHERE c.post_id=$1 AND c.state='visible' AND (c.created_at_ms,c.id)>($2,$3::bigint) ORDER BY c.created_at_ms,c.id LIMIT $5`, id, c.Time, c.ID, uid, Limit(r)+1)
-	if e != nil {
-		return e
-	}
-	defer rows.Close()
-	items := []map[string]any{}
-	var lastID string
-	var lastTime int64
-	next := ""
-	for rows.Next() {
-		var cid, body, userid, name, avatar string
-		var ms, count int64
-		var liked bool
-		if e = rows.Scan(&cid, &body, &ms, &userid, &name, &avatar, &count, &liked); e != nil {
-			return e
-		}
-		if len(items) == Limit(r) {
-			next = a.interactionNext(scope, lastID, lastTime)
-			break
-		}
-		items = append(items, map[string]any{"id": cid, "body": body, "user": map[string]any{"id": userid, "display_name": name, "avatar_url": avatar}, "created_at": interactionTime(ms), "like_count": count, "liked": liked, "is_self": p.ID == userid})
-		lastID = cid
-		lastTime = ms
-	}
-	if e = rows.Err(); e != nil {
-		return e
-	}
-	JSON(w, 200, interactionPage(items, next))
-	return nil
+	return a.interactionCommentPage(w, r, post, id, "comment-replies:"+post+":"+id)
 }
 func (a *App) interactionCreateComment(w http.ResponseWriter, r *http.Request) error {
 	var d struct {
-		Body string `json:"body"`
+		Body      string  `json:"body"`
+		ReplyToID *string `json:"reply_to_id"`
 	}
 	if e := Decode(r, &d); e != nil {
 		return e
@@ -278,6 +349,11 @@ func (a *App) interactionCreateComment(w http.ResponseWriter, r *http.Request) e
 	d.Body = strings.TrimSpace(d.Body)
 	if n := utf8.RuneCountInString(d.Body); n < 1 || n > 5000 {
 		return E(400, "VALIDATION_FAILED", "评论需1至5000字")
+	}
+	if d.ReplyToID != nil {
+		if e := interactionID(*d.ReplyToID); e != nil {
+			return e
+		}
 	}
 	id := r.PathValue("id")
 	data, e := a.Write(r, nil, false, true, func(tx pgx.Tx, p Principal) (any, error) {
@@ -291,20 +367,44 @@ func (a *App) interactionCreateComment(w http.ResponseWriter, r *http.Request) e
 		if !enabled {
 			return nil, E(403, "FEATURE_DISABLED", "评论已关闭")
 		}
+		var parentID *string
+		if d.ReplyToID != nil {
+			var root string
+			e := tx.QueryRow(r.Context(), `SELECT COALESCE(c.parent_id,c.id)::text FROM comments c LEFT JOIN comments root ON root.id=c.parent_id AND root.post_id=c.post_id WHERE c.id=$1 AND c.post_id=$2 AND c.state='visible' AND (c.parent_id IS NULL OR root.state='visible')`, *d.ReplyToID, id).Scan(&root)
+			if e == pgx.ErrNoRows {
+				return nil, NotFound()
+			}
+			if e != nil {
+				return nil, e
+			}
+			parentID = &root
+		}
 		var cid string
 		now := NowMillis()
-		if e := tx.QueryRow(r.Context(), `INSERT INTO comments(post_id,user_id,body,created_at_ms,updated_at_ms) VALUES($1,$2,$3,$4,$4) RETURNING id::text`, id, p.ID, d.Body, now).Scan(&cid); e != nil {
+		if e := tx.QueryRow(r.Context(), `INSERT INTO comments(post_id,user_id,body,created_at_ms,updated_at_ms,parent_id,reply_to_id) VALUES($1,$2,$3,$4,$4,$5,$6) RETURNING id::text`, id, p.ID, d.Body, now, parentID, d.ReplyToID).Scan(&cid); e != nil {
 			return nil, e
 		}
 		if e := interactionFact(tx, r, p, "comment.created.v1", "comment", cid, "comment.created:"+cid, map[string]any{"post_id": id}); e != nil {
 			return nil, e
 		}
-		return map[string]any{"id": cid, "body": d.Body, "user": map[string]any{"id": p.ID, "display_name": p.DisplayName}, "created_at": interactionTime(now), "like_count": 0, "liked": false, "is_self": true}, nil
+		return interactionCommentObject(r.Context(), tx, cid, p.ID)
 	})
-	if e == nil {
-		JSON(w, 201, data)
+	if e != nil {
+		return e
 	}
-	return e
+	// A replay retains the created ID, but cannot resurrect a subsequently hidden
+	// thread or disclose a reply target's previously visible identity.
+	p, e := a.Principal(r)
+	if e != nil {
+		return e
+	}
+	current, e := interactionCommentObject(r.Context(), a.Pool, data.(map[string]any)["id"].(string), p.ID)
+	if e != nil {
+		return e
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	JSON(w, 201, current)
+	return nil
 }
 func (a *App) interactionDeleteComment(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
@@ -357,10 +457,11 @@ func (a *App) interactionCommentLike(w http.ResponseWriter, r *http.Request, put
 			return nil, e
 		}
 		var state string
-		if e := tx.QueryRow(r.Context(), `SELECT state FROM comments WHERE id=$1 FOR UPDATE`, id).Scan(&state); e != nil {
+		var rootVisible bool
+		if e := tx.QueryRow(r.Context(), `SELECT c.state,c.parent_id IS NULL OR root.state='visible' FROM comments c LEFT JOIN comments root ON root.id=c.parent_id AND root.post_id=c.post_id WHERE c.id=$1 FOR UPDATE OF c`, id).Scan(&state, &rootVisible); e != nil {
 			return nil, e
 		}
-		if state != "visible" {
+		if state != "visible" || !rootVisible {
 			return nil, NotFound()
 		}
 		var err error
@@ -511,7 +612,7 @@ func (a *App) interactionMetrics(w http.ResponseWriter, r *http.Request) error {
 		return e
 	}
 	var likes, comments, reads, legacy int64
-	e := a.Pool.QueryRow(r.Context(), `SELECT (SELECT count(*) FROM post_likes WHERE post_id=pp.post_id),(SELECT count(*) FROM comments WHERE post_id=pp.post_id AND state='visible'),COALESCE((SELECT sum(post_reads) FROM analytics_daily WHERE post_id=pp.post_id),0),COALESCE((SELECT sum(count_value) FROM legacy_counters WHERE post_id=pp.post_id AND metric='article_read_count'),0) FROM public_posts pp WHERE pp.post_id=$1`, id).Scan(&likes, &comments, &reads, &legacy)
+	e := a.Pool.QueryRow(r.Context(), `SELECT (SELECT count(*) FROM post_likes WHERE post_id=pp.post_id),(SELECT count(*) FROM comments c LEFT JOIN comments root ON root.id=c.parent_id AND root.post_id=c.post_id WHERE c.post_id=pp.post_id AND c.state='visible' AND (c.parent_id IS NULL OR root.state='visible')),COALESCE((SELECT sum(post_reads) FROM analytics_daily WHERE post_id=pp.post_id),0),COALESCE((SELECT sum(count_value) FROM legacy_counters WHERE post_id=pp.post_id AND metric='article_read_count'),0) FROM public_posts pp WHERE pp.post_id=$1`, id).Scan(&likes, &comments, &reads, &legacy)
 	if e == pgx.ErrNoRows {
 		return NotFound()
 	}

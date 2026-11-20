@@ -610,7 +610,7 @@ func (a *App) adminComments(w http.ResponseWriter, r *http.Request) error {
 	if e != nil {
 		return e
 	}
-	rows, e := a.Pool.Query(r.Context(), `SELECT c.id::text,c.post_id::text,c.body,c.state,c.created_at_ms,u.id::text,u.display_name FROM comments c JOIN users u ON u.id=c.user_id WHERE c.id>$1::bigint AND ($2='' OR c.state=$2) AND ($3::bigint=0 OR c.post_id=$3::bigint) ORDER BY c.id LIMIT $4`, c.ID, state, post, Limit(r)+1)
+	rows, e := a.Pool.Query(r.Context(), `SELECT c.id::text,c.post_id::text,c.body,c.state,c.created_at_ms,u.id::text,u.display_name,c.parent_id::text,c.reply_to_id::text FROM comments c JOIN users u ON u.id=c.user_id WHERE c.id>$1::bigint AND ($2='' OR c.state=$2) AND ($3::bigint=0 OR c.post_id=$3::bigint) ORDER BY c.id LIMIT $4`, c.ID, state, post, Limit(r)+1)
 	if e != nil {
 		return e
 	}
@@ -619,15 +619,16 @@ func (a *App) adminComments(w http.ResponseWriter, r *http.Request) error {
 	next, last := "", ""
 	for rows.Next() {
 		var id, pid, body, s, uid, name string
+		var parent, replyTo *string
 		var ms int64
-		if e = rows.Scan(&id, &pid, &body, &s, &ms, &uid, &name); e != nil {
+		if e = rows.Scan(&id, &pid, &body, &s, &ms, &uid, &name, &parent, &replyTo); e != nil {
 			return e
 		}
 		if len(items) == Limit(r) {
 			next = a.interactionNext(scope, last, 0)
 			break
 		}
-		items = append(items, map[string]any{"id": id, "post_id": pid, "body": body, "state": s, "created_at": interactionTime(ms), "user": map[string]any{"id": uid, "display_name": name}})
+		items = append(items, map[string]any{"id": id, "post_id": pid, "body": body, "state": s, "created_at": interactionTime(ms), "user": map[string]any{"id": uid, "display_name": name}, "parent_id": parent, "reply_to_id": replyTo, "is_reply": parent != nil})
 		last = id
 	}
 	if e = rows.Err(); e != nil {
