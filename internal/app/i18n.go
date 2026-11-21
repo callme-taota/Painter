@@ -218,7 +218,7 @@ func localeTemplateFuncs(locale string) template.FuncMap {
 
 func localizePageChrome(p *webPage) {
 	switch p.Kind {
-	case "discover", "posts", "series-list", "products", "games", "search", "about", "login", "register", "setup", "studio", "phrases", "moments", "error":
+	case "discover", "following", "posts", "series-list", "products", "games", "search", "about", "login", "register", "setup", "studio", "phrases", "moments", "error":
 		p.Title = translateUI(p.Locale, p.Title)
 	}
 	if p.Kind == "series-list" || p.Kind == "games" || p.Kind == "moments" {

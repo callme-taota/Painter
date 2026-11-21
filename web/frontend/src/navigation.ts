@@ -26,6 +26,7 @@ export function navigation(role:string):NavigationGroup[]{
   {id:'personal',label:t("个人空间"),icon:'user',children:[
    {id:'profile',label:t("个人中心"),url:'/me'},
    {id:'bookmarks',label:t("收藏文章"),url:'/me/bookmarks'},
+   {id:'following-feed',label:t("关注更新"),url:'/following'},
    {id:'following',label:t("关注与粉丝"),url:'/me/following',aliases:['/me/followers']},
    {id:'history',label:t("阅读足迹"),url:'/me/history'},
    {id:'media',label:t("我的媒体"),url:'/me/media'},

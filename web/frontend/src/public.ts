@@ -3,7 +3,7 @@ import {initLocaleLinks} from './i18n'
 initLocaleLinks()
 import './infiniteScroll.css'
 import {initPublicInfinite} from './publicInfinite'
-initPublicInfinite()
+if(!document.querySelector('[data-following-feed]'))initPublicInfinite()
 import './style.css'
 import './controls.css'
 import './homeStory.css'
@@ -100,6 +100,25 @@ import './discover.css'
 import './products.css'
 import './dockCompact.css'
 import './momentsPublic.css'
+import './followingFeed.css'
+const followingTarget=document.querySelector<HTMLElement>('[data-following-feed]')
+if(followingTarget){
+ let mounted=false
+ // Conceal private SSR content before a document can enter the back-forward cache,
+ // including the fallback where an optional component chunk could not load.
+ addEventListener('pagehide',()=>{followingTarget.hidden=true})
+ addEventListener('pageshow',event=>{if(event.persisted&&!mounted)location.reload()})
+ void (async()=>{
+  const bootstrap=document.getElementById('following-feed-data')
+  if(!bootstrap)return
+  const initial=JSON.parse(bootstrap.textContent||'{}')
+  const [{createApp},{default:FollowingFeed}]=await Promise.all([import('vue'),import('./components/FollowingFeed.vue')])
+  followingTarget.hidden=true
+  createApp(FollowingFeed,{initial,viewerId:followingTarget.dataset.viewerId||''}).mount(followingTarget)
+  bootstrap.remove();mounted=true
+  followingTarget.closest('main')?.querySelector('[data-infinite-next]')?.remove()
+ })().catch(()=>{/* Native SSR links and the initial list remain usable. */})
+}
 import {initPWA} from './pwa'
 initPWA()
 import {initSharing} from './sharing'

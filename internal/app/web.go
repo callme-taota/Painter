@@ -39,6 +39,8 @@ type webPage struct {
 	HomeHasIntro                                                                                                 bool
 	Authors                                                                                                      []map[string]any
 	AuthorTab                                                                                                    string
+	Feed                                                                                                         map[string]any
+	FollowingBootstrap                                                                                           template.JS
 }
 
 const siteFaviconPath = "images/painter-favicon-d4d342f8b170.ico"
@@ -331,6 +333,36 @@ func (a *App) RegisterWeb() {
 		}
 		p.NoIndex = r.URL.Query().Get("cursor") != ""
 		render(w, r, p)
+	})
+	a.Mux.HandleFunc("GET /following", func(w http.ResponseWriter, r *http.Request) {
+		// The followed-author set is private even though each content item is
+		// public. Set policy before authentication, including redirects/errors.
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+		viewer, err := a.Require(r)
+		if err != nil {
+			var authError *APIError
+			if errors.As(err, &authError) && authError.Status == http.StatusUnauthorized {
+				http.Redirect(w, r, "/login?return_to="+url.QueryEscape(internalReturn(r.URL.RequestURI())), http.StatusSeeOther)
+			} else {
+				failure(w, r, err)
+			}
+			return
+		}
+		data, err := a.followingFeedPage(r, viewer)
+		if err != nil {
+			failure(w, r, err)
+			return
+		}
+		bootstrap, err := json.Marshal(data)
+		if err != nil {
+			failure(w, r, err)
+			return
+		}
+		render(w, r, webPage{Kind: "following", Title: "关注更新", NoIndex: true,
+			Items: webMaps(data["items"]), Next: webNext(r, data), Feed: data,
+			// json.Marshal escapes HTML characters, including script terminators.
+			FollowingBootstrap: template.JS(bootstrap)})
 	})
 	a.Mux.HandleFunc("GET /series", func(w http.ResponseWriter, r *http.Request) {
 		data, err := a.PublicSeries(r.Context(), r.URL.Query())
@@ -788,7 +820,7 @@ func (a *App) RegisterWeb() {
 	})
 	a.Mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, _ = fmt.Fprint(w, "User-agent: *\nDisallow: /studio\nDisallow: /me\nDisallow: /search\nSitemap: "+a.Config.PublicBaseURL+"/sitemap.xml\n")
+		_, _ = fmt.Fprint(w, "User-agent: *\nDisallow: /studio\nDisallow: /me\nDisallow: /following\nDisallow: /search\nSitemap: "+a.Config.PublicBaseURL+"/sitemap.xml\n")
 	})
 	a.Mux.HandleFunc("GET /article", func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")

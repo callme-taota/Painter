@@ -105,6 +105,7 @@ func interactionPublicPost(tx pgx.Tx, r *http.Request, id string) (string, error
 }
 
 func (a *App) RegisterInteractions() {
+	a.Handle("GET /api/v1/me/feed", a.followingFeed)
 	a.Handle("GET /api/v1/users/{id}/follow-state", a.followState)
 	a.Handle("GET /api/v1/me/post-states", a.interactionStates)
 	for _, kind := range []string{"like", "bookmark"} {
