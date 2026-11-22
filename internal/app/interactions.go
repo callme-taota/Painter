@@ -69,8 +69,7 @@ func interactionAudit(tx pgx.Tx, r *http.Request, p Principal, action, kind, id,
 	if utf8.RuneCountInString(reason) > 500 {
 		return E(400, "VALIDATION_FAILED", "原因最多500字")
 	}
-	_, e := tx.Exec(r.Context(), `INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,request_id,reason,created_at_ms) VALUES($1,$2,$3,$4,$5,$6,$7)`, p.ID, action, kind, id, RandID(), reason, NowMillis())
-	return e
+	return audit(r.Context(), tx, p, action, kind, id, reason)
 }
 func interactionFact(tx pgx.Tx, r *http.Request, p Principal, topic, kind, id, dedupe string, payload map[string]any) error {
 	eid := RandID()

@@ -572,8 +572,7 @@ func contentSetRelations(ctx context.Context, tx pgx.Tx, id string, d draftInput
 	return nil
 }
 func contentAudit(ctx context.Context, tx pgx.Tx, p Principal, action, id string) error {
-	_, e := tx.Exec(ctx, "INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,request_id,created_at_ms) VALUES($1,$2,'post',$3,$4,$5)", p.ID, action, id, RequestID(ctx), NowMillis())
-	return e
+	return audit(ctx, tx, p, action, "post", id, "")
 }
 func contentEvent(ctx context.Context, tx pgx.Tx, p Principal, topic, id string, version int64, revision string) error {
 	eventID := RandID()
