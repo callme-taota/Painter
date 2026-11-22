@@ -3,7 +3,9 @@ import {t, formatNumber} from "./i18n"
 
 import InfiniteList from './components/InfiniteList.vue'
 import {ref,reactive,onMounted,onBeforeUnmount,computed,defineAsyncComponent,nextTick,watch} from 'vue'
-import {appendUnique,api,body,loadSession,session,list,date,type Row} from './api'
+import {api,body,loadSession,session,list,date,type Row} from './api'
+import {useCursorList} from './useCursorList'
+import {withCursor} from './pagination'
 import {clearRecovery} from './storage'
 import {initLiquidGlass} from './liquidGlass'
 import {registerMobileOverlay} from './mobileOverlays'
@@ -32,7 +34,13 @@ const MarkdownEditor=defineAsyncComponent(()=>import('./components/MarkdownEdito
 const path=location.pathname.replace(/\/$/,'')||'/me',editing=/^\/studio\/posts\/(new|[^/]+)$/.test(path),postId=path.split('/')[3]==='new'?undefined:path.split('/')[3]
 const allowAnalytics=ref(localStorage.getItem('painter-analytics')!=='off')
 function privacyChange(){localStorage.setItem('painter-analytics',allowAnalytics.value?'on':'off');toast.success(allowAnalytics.value?t("已允许本浏览器的访问统计。"):t("已关闭本浏览器的访问统计。"))}
-const error=ref(''),errorCode=ref(''),dataLoaded=ref(false),loading=ref(true),busy=ref(false),rows=ref<Row[]>([]),cursor=ref<string|null>(null),hasMore=ref(false),profile=reactive<Row>({}),settings=reactive<Row>({}),site=reactive<Row>({}),report=ref<Row>({}),moderationReason=ref(''),range=reactive({from:new Date(Date.now()-6*86400000).toISOString().slice(0,10),to:new Date().toISOString().slice(0,10)})
+const error=ref(''),errorCode=ref(''),dataLoaded=ref(false),busy=ref(false),profile=reactive<Row>({}),settings=reactive<Row>({}),site=reactive<Row>({}),report=ref<Row>({}),moderationReason=ref(''),range=reactive({from:new Date(Date.now()-6*86400000).toISOString().slice(0,10),to:new Date().toISOString().slice(0,10)})
+const {items:rows,loading,hasMore,load:loadRows}=useCursorList({
+ request:(cursor,signal)=>api(withCursor(endpoint(),cursor),{signal}),
+ disabled:()=>busy.value,
+ error,
+ failed:show,
+})
 const navigationGroups=computed(()=>navigation(session.user?.role||''))
 const introRolesText=ref('')
 const profileBaseline=ref(''),siteBaseline=ref(''),settingsBaseline=ref('')
@@ -97,9 +105,8 @@ async function task(fn:()=>Promise<void>){busy.value=true;error.value='';errorCo
 function endpoint(){if(path==='/studio/members')return '/admin/users';if(path==='/studio/comments')return '/admin/comments';return path.startsWith('/me/')?path:''}
 let listReadVersion=0
 onBeforeUnmount(()=>{listReadVersion++})
-async function load(append=false){if(append&&(loading.value||busy.value||!cursor.value))return;const generation=++listReadVersion;loading.value=true;error.value='';errorCode.value='';try{
- const ep=endpoint();if(ep){const data=await api(ep+(append&&cursor.value?(ep.includes('?')?'&':'?')+'cursor='+encodeURIComponent(cursor.value):''));if(generation!==listReadVersion)return;rows.value=append?appendUnique(rows.value,list(data)):list(data);cursor.value=data.next_cursor;hasMore.value=data.has_more}
- else if(path==='/me'){Object.assign(profile,await api('/me'));profileBaseline.value=profileSnapshot()}
+async function load(append=false){errorCode.value='';if(endpoint()){if(await loadRows(append))dataLoaded.value=true;return}const generation=++listReadVersion;loading.value=true;error.value='';try{
+ if(path==='/me'){Object.assign(profile,await api('/me'));profileBaseline.value=profileSnapshot()}
  else if(path==='/studio/settings'){const [a,b]=await Promise.all([api('/admin/site-profile'),api('/admin/settings')]);Object.assign(site,a);site.social_links=a.social_links||[];site.intro_roles=a.intro_roles||[];introRolesText.value=site.intro_roles.join('、');Object.assign(settings,b);settings.floating_controls=b.floating_controls||{home:['theme','top','account'],article:['theme','top','bottom','like','account'],other:['theme','top','account']}}
  else if(path==='/studio/analytics'){const ep=session.user?.role==='owner'?'/admin/analytics':'/me/analytics';report.value=await api(ep+`?day_from=${range.from}&day_to=${range.to}`);rows.value=list(report.value)}
  else if(path==='/studio/operations'){const [storage,jobs]=await Promise.all([api('/admin/storage'),api('/admin/jobs')]);report.value={storage,jobs}}

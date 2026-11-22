@@ -2,19 +2,23 @@
 import {t, formatDate} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
-import {onMounted,ref,onBeforeUnmount} from 'vue'
-import {appendUnique,api,list,type Row} from '../api'
+import {onMounted,ref} from 'vue'
+import {type Row} from '../api'
+import {posts} from '../contentClient'
+import {useCursorList} from '../useCursorList'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import Icon from './Icon.vue'
 import RowMenu from './RowMenu.vue'
 const props=defineProps<{owner:boolean}>()
-const scope=ref(props.owner?'site':'mine'),status=ref('all'),query=ref(''),appliedQuery=ref(''),rows=ref<Row[]>([]),loading=ref(true),busy=ref(false),error=ref(''),next=ref('')
-let seq=0,controller:AbortController|undefined
+const scope=ref(props.owner?'site':'mine'),status=ref('all'),query=ref(''),appliedQuery=ref(''),busy=ref(false)
+const {items:rows,loading,error,cursor:next,load}=useCursorList({
+ request:(cursor,signal)=>posts.list(new URLSearchParams({scope:scope.value,status:status.value,limit:'20',q:appliedQuery.value}),cursor,{signal}),
+ disabled:()=>busy.value,
+})
 const states=[{id:'all',name:t("全部")},{id:'published',name:t("已发布")},{id:'draft',name:t("草稿")},{id:'trashed',name:t("回收站")}]
 function label(row:Row){return row.status==='published'?t("已发布"):row.status==='trashed'?t("回收站"):t("草稿")}
 function timestamp(value:string){if(!value)return '—';return formatDate(value,{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
-async function load(append=false){if(append&&(loading.value||busy.value||!next.value))return;const at=++seq;controller?.abort();controller=new AbortController();loading.value=true;error.value='';try{const q=new URLSearchParams({scope:scope.value,status:status.value,limit:'20',q:appliedQuery.value});if(append&&next.value)q.set('cursor',next.value);const data=await api('/me/posts?'+q,{signal:controller.signal});if(at!==seq)return;rows.value=append?appendUnique(rows.value,list(data)):list(data);next.value=data.next_cursor||''}catch(e){if(at===seq&&(e as Error).name!=='AbortError')error.value=(e as Error).message}finally{if(at===seq)loading.value=false}}
 function reset(){void load()}
 function search(){appliedQuery.value=query.value.trim();reset()}
 async function action(row:Row,kind:'trash'|'recover'|'withdraw'){
@@ -22,9 +26,9 @@ async function action(row:Row,kind:'trash'|'recover'|'withdraw'){
  const prompt=kind==='trash'?[t("移入回收站？"),t("文章将从公开页面和搜索中移除，草稿和历史版本会保留。"),t("移入回收站")]:kind==='withdraw'?[t("撤回文章？"),t("公开版本会被撤下，草稿和历史版本会保留。"),t("撤回文章")]:null
  if(prompt&&!await confirmAction(prompt[0],prompt[1],prompt[2]))return
  busy.value=true;error.value=''
- try{await api(`/studio/posts/${row.id}`+(kind==='recover'?'/recover':kind==='withdraw'?'/publication':''),{method:kind==='recover'?'POST':'DELETE',version:row.version});toast.success(kind==='recover'?t("文章已恢复为草稿。"):kind==='withdraw'?t("文章已撤回。"):t("文章已移入回收站。"));await load()}catch(e){toast.error((e as Error).message)}finally{busy.value=false}
+ try{await (kind==='recover'?posts.recover(row.id,row.version):kind==='withdraw'?posts.withdraw(row.id,{version:row.version}):posts.remove(row.id,{version:row.version}));toast.success(kind==='recover'?t("文章已恢复为草稿。"):kind==='withdraw'?t("文章已撤回。"):t("文章已移入回收站。"));await load()}catch(e){toast.error((e as Error).message)}finally{busy.value=false}
 }
-onMounted(load);onBeforeUnmount(()=>{seq++;controller?.abort()})
+onMounted(()=>{void load()})
 </script>
 <template>
 <section class="content-manager" :aria-label="t('文章列表')">

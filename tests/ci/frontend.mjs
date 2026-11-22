@@ -14,8 +14,9 @@ const suites = {
     'tests/browser/article-links-unit.mjs',
     'tests/browser/article-social-video-unit.mjs',
     'tests/browser/v49-request-coordination.cjs',
+    'tests/browser/content-state-unit.cjs',
   ],
-  browser: ['tests/browser/toast-core.cjs', 'tests/browser/comment-replies.cjs', 'tests/browser/following-feed.cjs'],
+  browser: ['tests/browser/toast-core.cjs', 'tests/browser/comment-replies.cjs', 'tests/browser/following-feed.cjs', 'tests/browser/content-managers.cjs'],
 }
 const group = process.argv[2]
 if (!Object.hasOwn(suites, group)) {

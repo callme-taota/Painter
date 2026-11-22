@@ -12,6 +12,7 @@ import {HighlightStyle,syntaxHighlighting} from '@codemirror/language'
 import {tags as syntaxTags} from '@lezer/highlight'
 import {searchKeymap,highlightSelectionMatches,openSearchPanel} from '@codemirror/search'
 import {api,body,session,onSessionEnd,APIError,list,download,date,allPages,type Row} from '../api'
+import {posts} from '../contentClient'
 import {track} from '../telemetry'
 import Icon from './Icon.vue'
 import SelectField from './SelectField.vue'
@@ -146,9 +147,9 @@ async function performSave(manual=false,restoreFlush=false,silent=false){if(endi
  saving.value=true;error.value='';state.value=t("正在保存…")
  const command=pendingSave||{key:randomID(),snapshot:snapshot(),seq};pendingSave=command
  try{let res:Row|undefined;const oldKey=!draft.id?recoveryKey.value:''
-  if(!draft.id&&resolveNewMapping){try{res=await api<Row>(`/me/posts/by-client-id/${encodeURIComponent(clientID.value)}`);draft.id=String(res.id||res.post_id);draft.version=res.version;draft.draft_version=res.draft_version;draft.publication=res.publication||null;historyReplace(draft.id);sessionStorage.removeItem('painter-new-draft');resolveNewMapping=false;if(comparable(res)!==comparable(command.snapshot)){conflict.value=res;pendingSave=null;state.value=t("存在编辑冲突");notice.value=t("已找回这篇新稿的服务器记录。请比较本地内容与服务器版本后再保存。");await finishMapping(oldKey);return}}catch(e){if((e as APIError).status!==404)throw e;resolveNewMapping=false}}
-  if(!res){if(!draft.id){res=await api<Row>('/posts',{method:'POST',key:command.key,body:body({...command.snapshot,client_draft_id:clientID.value})});requireSaveAck(res,command.key);if(!res.id&&!res.post_id)throw new Error(t("服务器尚未确认新稿，请重试保存。"));draft.id=String(res.id||res.post_id);historyReplace(draft.id);sessionStorage.removeItem('painter-new-draft')}
-   else res=await api<Row>(`/studio/posts/${draft.id}/draft`,{method:'PUT',version:draft.version,key:command.key,body:body({...command.snapshot,expected_draft_version:draft.draft_version})})}
+  if(!draft.id&&resolveNewMapping){try{res=await posts.byClientID(clientID.value);draft.id=String(res.id||res.post_id);draft.version=res.version;draft.draft_version=res.draft_version;draft.publication=res.publication||null;historyReplace(draft.id);sessionStorage.removeItem('painter-new-draft');resolveNewMapping=false;if(comparable(res)!==comparable(command.snapshot)){conflict.value=res;pendingSave=null;state.value=t("存在编辑冲突");notice.value=t("已找回这篇新稿的服务器记录。请比较本地内容与服务器版本后再保存。");await finishMapping(oldKey);return}}catch(e){if((e as APIError).status!==404)throw e;resolveNewMapping=false}}
+  if(!res){if(!draft.id){res=await posts.create({...command.snapshot,client_draft_id:clientID.value},command.key);requireSaveAck(res,command.key);if(!res.id&&!res.post_id)throw new Error(t("服务器尚未确认新稿，请重试保存。"));draft.id=String(res.id||res.post_id);historyReplace(draft.id);sessionStorage.removeItem('painter-new-draft')}
+   else res=await posts.saveDraft(draft.id,{...command.snapshot,expected_draft_version:draft.draft_version},{version:draft.version,key:command.key})}
   requireSaveAck(res,command.key)
   draft.version=res.version;draft.draft_version=res.draft_version;savedBy.value=manual?'manual':'auto';ackSeq=command.seq;pendingSave=null;lastSavedAt=Date.now();const merged=mergePending.value&&ackSeq===seq;if(merged){mergePending.value=false;conflict.value=null;notice.value=''}state.value=ackSeq===seq?t("已保存"):mergePending.value?t("合并中 · 需手动保存"):t("有未保存的修改");if(oldKey)await finishMapping(oldKey);else await persist();
   if(manual){toast.dismiss(autoSaveToastID);autoSaveFailed=false;if(ackSeq===seq)toast.success(merged?t("合并后的内容已手动保存。"):t("草稿已保存。"),{id:saveToastID});else toast.info(t("此版本已保存，仍有新修改待保存。"),{id:saveToastID})}
@@ -162,19 +163,19 @@ function enqueueSave(manual:boolean){if(editorLocked.value||(!manual&&(working.v
 function save(){documentEditor.value?.flush();return enqueueSave(true)}
 function autoSave(){return enqueueSave(false)}
 async function flush(restoreFlush=false){if(endingSession.value||!initialized.value||loading.value||restoreNeedsReload.value)throw new Error(t("编辑器尚未安全加载，请先重新加载。"));clearTimeout(saveTimer);await queue.catch(()=>{});if(uploadCount.value)throw new Error(t("图片仍在上传，请稍后发布。"));if(composing())throw new Error(t("请先完成中文输入，再继续操作。"));if(conflict.value||mergePending.value)throw new Error(t("请先比较并合并内容，再手动保存草稿。"));if(/\[图片上传(?:失败|中)|blob:/.test(draft.markdown))throw new Error(t("请先处理正文中的图片上传占位，再发布。"));if(draft.cover.mode==='upload'&&!draft.cover.media_id){coverError.value=t("请先上传封面，或选择自动封面。");throw new Error(coverError.value)}if(seq!==ackSeq||!draft.id)await performSave(false,restoreFlush,true);if(seq!==ackSeq||!draft.id)throw new Error(t("修改尚未保存。请联网后重试。"))}
-async function command(action:string){if(editorLocked.value||working.value||saving.value)return;documentEditor.value?.flush();working.value=true;error.value='';try{await flush();const res=await api<Row>(`/studio/posts/${draft.id}/${action}`,{method:action==='publication'?'DELETE':'POST',version:draft.version,idempotent:true,body:body({expected_draft_version:draft.draft_version})});if(!Number.isSafeInteger(Number(res.version))||Number(res.version)<1||action!=='publication'&&!res.revision_id)throw new Error(t("服务器尚未确认操作结果，请重新载入核对后重试。"));draft.version=res.version;if(res.draft_version)draft.draft_version=res.draft_version;if(action==='publish'){draft.publication={revision_id:res.revision_id};toast.success(t("文章已发布。后续草稿修改不会改变当前公开版本。"))}else if(action==='publication'){draft.publication=null;toast.success(t("文章已撤回，草稿和历史版本保留。"))}else{toast.success(t("已创建历史版本，可随时恢复为草稿。"));await loadRevisions()}}catch(e){if(fieldFailure(e)||!(e instanceof APIError)&&!(e instanceof TypeError))error.value=(e as Error).message;toast.error((action==='publish'?t("发布未完成："):action==='publication'?t("撤回未完成："):t("历史版本保存未完成："))+(e as Error).message)}finally{working.value=false;if(seq!==ackSeq&&!conflict.value&&!mergePending.value)saveTimer=setTimeout(()=>void autoSave(),1000)}}
+async function command(action:'publish'|'publication'|'checkpoints'){if(editorLocked.value||working.value||saving.value)return;documentEditor.value?.flush();working.value=true;error.value='';try{await flush();const res=await (action==='checkpoints'?posts.checkpoint(draft.id,draft.version,{expected_draft_version:draft.draft_version}):posts[action==='publication'?'withdraw':'publish'](draft.id,{version:draft.version},{expected_draft_version:draft.draft_version}));if(!Number.isSafeInteger(Number(res.version))||Number(res.version)<1||action!=='publication'&&!res.revision_id)throw new Error(t("服务器尚未确认操作结果，请重新载入核对后重试。"));draft.version=res.version;if(res.draft_version)draft.draft_version=res.draft_version;if(action==='publish'){draft.publication={revision_id:res.revision_id};toast.success(t("文章已发布。后续草稿修改不会改变当前公开版本。"))}else if(action==='publication'){draft.publication=null;toast.success(t("文章已撤回，草稿和历史版本保留。"))}else{toast.success(t("已创建历史版本，可随时恢复为草稿。"));await loadRevisions()}}catch(e){if(fieldFailure(e)||!(e instanceof APIError)&&!(e instanceof TypeError))error.value=(e as Error).message;toast.error((action==='publish'?t("发布未完成："):action==='publication'?t("撤回未完成："):t("历史版本保存未完成："))+(e as Error).message)}finally{working.value=false;if(seq!==ackSeq&&!conflict.value&&!mergePending.value)saveTimer=setTimeout(()=>void autoSave(),1000)}}
 function insert(before:string,after=''){if(editorLocked.value)return;if(viewMode.value==='document'){documentEditor.value?.insertMarkdown(before+after);return}if(!editor)return;const {from,to}=editor.state.selection.main;const selected=editor.state.sliceDoc(from,to);editor.dispatch({changes:{from,to,insert:before+selected+after},selection:{anchor:from+before.length,head:from+before.length+selected.length}});editor.focus()}
 async function upload(file:File){if(editorLocked.value)return;if(file.size>10*1024*1024){toast.error(t("图片超过 10 MiB，请压缩后重试。"));return}const token=t("[图片上传中 {value1}]", {value1:randomID()});insert(`\n\n${token}\n\n`);uploadCount.value++;const form=new FormData();form.append('file',file);try{const res=await api<Row>('/media',{method:'POST',body:form,idempotent:true});if(!res.media_id)throw new Error(t("服务器尚未确认图片上传，请重试。"));replaceUpload(token,`![${file.name.replace(/[\[\]\\]/g,'')}](/media/${res.media_id})`);toast.success(t("图片已上传。请确认正文后保存。"))}catch(e){replaceUpload(token,t("[图片上传失败：{value1}]", {value1:file.name.replace(/[\[\]\\]/g,'')}));toast.error(t("图片上传失败：{value1}。请删除正文中的上传占位后重试。", {value1:(e as Error).message}))}finally{uploadCount.value--}}
 function replaceUpload(token:string,replacement:string){if(viewMode.value==='document'&&documentEditor.value?.replaceText(token,replacement))return;if(!editor)return;const text=editor.state.doc.toString(),at=text.indexOf(token);if(at>=0)editor.dispatch({changes:{from:at,to:at+token.length,insert:replacement}})}
 function pickFile(event:Event){const file=(event.target as HTMLInputElement).files?.[0];if(file)void upload(file);(event.target as HTMLInputElement).value=''}
-async function loadRevisions(){if(!draft.id)return;revisionsError.value='';try{revisionList.value=list(await api(`/studio/posts/${draft.id}/revisions`))}catch{revisionsError.value=t("历史版本暂未载入。当前草稿仍保留，请重试。")}}
+async function loadRevisions(){if(!draft.id)return;revisionsError.value='';try{revisionList.value=list(await posts.revisions(draft.id))}catch{revisionsError.value=t("历史版本暂未载入。当前草稿仍保留，请重试。")}}
 async function reloadAfterRestore(){
  if(!restoreNeedsReload.value||restoring.value)return
  restoring.value=true;error.value=''
  try{await applyRestoredDraft();toast.success(t("已载入服务器当前草稿。恢复操作不会自动发布。"))}catch(e){error.value=t("无法确认恢复后的草稿：{value1}", {value1:(e as Error).message});toast.error(error.value)}finally{restoring.value=false}
 }
 async function applyRestoredDraft(){
- const current=await api(`/studio/posts/${draft.id}`)
+ const current=await posts.read(draft.id)
  if(stopped)return
  requireServerDraft(current,draft.id)
  loading.value=true
@@ -190,7 +191,7 @@ async function restore(rid:string){
   await flush(true);await persist()
   // Once a restore is sent, do not reopen stale inputs until a fresh GET succeeds.
   restoreNeedsReload.value=true;state.value=t("正在恢复历史版本…")
-  await api<Row>(`/studio/posts/${draft.id}/restore`,{method:'POST',version:draft.version,idempotent:true,body:body({revision_id:rid})})
+  await posts.restore(draft.id,draft.version,rid)
   await applyRestoredDraft();toast.success(t("历史版本已恢复为草稿，尚未发布。"))
  }catch(e){if(restoreNeedsReload.value||fieldFailure(e))error.value=(e as Error).message;toast.error(t("恢复尚未确认：{value1}", {value1:(e as Error).message}));if(restoreNeedsReload.value)state.value=t("恢复状态待确认 · 编辑已暂停")}finally{working.value=false;restoring.value=false}
 }
@@ -211,7 +212,7 @@ async function useRecovery(){
 const validConflict=computed(()=>validServerDraft(conflict.value,draft.id))
 async function refreshConflict(){
  conflictLoading.value=true
- try{const current=await api(`/studio/posts/${draft.id}`);requireServerDraft(current,draft.id);conflict.value=current}catch{conflict.value={};notice.value=t("无法载入服务器版本。本地内容已保留，请重试载入后再合并。")}finally{conflictLoading.value=false}
+ try{const current=await posts.read(draft.id);requireServerDraft(current,draft.id);conflict.value=current}catch{conflict.value={};notice.value=t("无法载入服务器版本。本地内容已保留，请重试载入后再合并。")}finally{conflictLoading.value=false}
 }
 async function mergeConflict(){
  if(editorLocked.value||saving.value||working.value||!validConflict.value||mergePending.value)return
@@ -224,7 +225,7 @@ async function initializeEditor(){
  loading.value=true;initializationError.value='';error.value='';state.value=t("正在载入…")
  try{
   if(!clientID.value){clientID.value=props.postId||randomID();if(!props.postId)sessionStorage.setItem('painter-new-draft',clientID.value)}
-  const values=await Promise.all([allPages('/tags?limit=50'),props.postId?api(`/studio/posts/${props.postId}`):Promise.resolve(null)])
+  const values=await Promise.all([allPages('/tags?limit=50'),props.postId?posts.read(props.postId):Promise.resolve(null)])
   if(stopped)return
   if(props.postId)requireServerDraft(values[1] as Row,props.postId)
   tags.value=list(values[0]);if(values[1])applyServer(values[1]);editor?.destroy();editor=new EditorView({parent:host.value,state:EditorState.create({doc:draft.markdown,extensions:[sourceAccess.of([EditorState.readOnly.of(true),EditorView.editable.of(false)]),lineNumbers(),history(),drawSelection(),highlightActiveLine(),markdown(),syntaxHighlighting(editorHighlight),highlightSelectionMatches(),keymap.of([...defaultKeymap,...historyKeymap,...searchKeymap,indentWithTab,{key:'Mod-s',run:()=>{void save();return true}}]),EditorView.lineWrapping,EditorView.contentAttributes.of({'aria-label':t("Markdown 正文")}),EditorView.theme({'&':{backgroundColor:'var(--paper)',color:'var(--ink)'},'.cm-cursor':{borderLeftColor:'var(--accent)'},'.cm-activeLine':{backgroundColor:'var(--accent-soft)'},'.cm-selectionBackground':{background:'var(--accent-soft)'}}),EditorView.updateListener.of(update=>{if(update.docChanged&&sourceCardOpen.value&&sourceCardRange){const range=sourceCardRange,from=update.changes.mapPos(range.from,1);sourceCardRange={from,to:range.from===range.to?from:Math.max(from,update.changes.mapPos(range.to,-1))}}if(update.docChanged&&!syncingSource&&!editorLocked.value){draft.markdown=update.state.doc.toString();changed()}}),EditorView.domEventHandlers({compositionend:()=>{setTimeout(()=>{if(seq!==ackSeq)void autoSave();schedulePreview()},30);return false},paste:(e)=>{const file=Array.from(e.clipboardData?.files||[]).find(f=>f.type.startsWith('image/'));if(file){void upload(file);return true}return false},drop:(e)=>{const file=Array.from(e.dataTransfer?.files||[]).find(f=>f.type.startsWith('image/'));if(file){e.preventDefault();void upload(file);return true}return false}})]})})

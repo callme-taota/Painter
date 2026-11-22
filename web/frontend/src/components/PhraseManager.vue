@@ -3,18 +3,24 @@ import {t} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
 import {computed,onMounted,onBeforeUnmount,reactive,ref} from 'vue'
-import {appendUnique,api,body,list,type Row,APIError} from '../api'
+import {api,body,type Row,APIError} from '../api'
+import {useCursorList} from '../useCursorList'
+import {withCursor} from '../pagination'
 import {randomID} from '../random'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import SelectField from './SelectField.vue'
-const items=ref<Row[]>([]),loading=ref(true),busy=ref(false),reloading=ref(false),error=ref(''),conflict=ref(false),cursor=ref(''),more=ref(false),query=ref(''),filter=ref('all'),textInput=ref<HTMLTextAreaElement>()
+const busy=ref(false),reloading=ref(false),error=ref(''),conflict=ref(false),query=ref(''),filter=ref('all'),textInput=ref<HTMLTextAreaElement>()
 const form=reactive({id:'',version:0,text:'',source:'',kind:'sentence',published:false})
 const initial=ref('');let createKey=randomID()
 const snapshot=()=>JSON.stringify({text:form.text,source:form.source,kind:form.kind,published:form.published})
 initial.value=snapshot()
 const dirty=computed(()=>snapshot()!==initial.value),length=computed(()=>Array.from(form.text).length),visible=computed(()=>items.value.filter(r=>(filter.value==='all'||r.published===(filter.value==='published'))&&(!query.value||(r.text+' '+r.source).toLocaleLowerCase().includes(query.value.toLocaleLowerCase()))))
-async function load(append=false){if(append&&(loading.value||busy.value||!cursor.value))return;loading.value=true;error.value='';try{const data=await api('/admin/phrases?limit=20'+(append?'&cursor='+encodeURIComponent(cursor.value):''));items.value=append?appendUnique(items.value,list(data)):list(data);cursor.value=data.next_cursor||'';more.value=data.has_more;return true}catch(e){error.value=(e as Error).message;return false}finally{loading.value=false}}
+const {items,loading,hasMore:more,load}=useCursorList({
+ request:(cursor,signal)=>api(withCursor('/admin/phrases?limit=20',cursor),{signal}),
+ disabled:()=>busy.value,
+ error,
+})
 function fill(row?:Row){Object.assign(form,row?{id:row.id,version:row.version,text:row.text,source:row.source,kind:row.kind,published:row.published}:{id:'',version:0,text:'',source:'',kind:'sentence',published:false});initial.value=snapshot();createKey=randomID();conflict.value=false}
 async function edit(row?:Row){if(busy.value)return;if(dirty.value&&!await confirmAction(t("放弃未保存的修改？"),t("切换片语前，请确认当前内容已经保存。"),t("放弃修改")))return;fill(row);error.value='';textInput.value?.focus()}
 async function save(){if(busy.value||conflict.value)return;busy.value=true;error.value='';try{const data={text:form.text,kind:form.kind,source:form.source,published:form.published};const result=await api(form.id?'/admin/phrases/'+form.id:'/admin/phrases',{method:form.id?'PUT':'POST',...(form.id?{version:form.version}:{key:createKey}),body:body(data)});const index=items.value.findIndex(r=>r.id===result.id);if(index>=0)items.value[index]=result;else items.value.unshift(result);fill(result);toast.success(result.published?t("片语已公开，可以在展示页读到。"):t("草稿已保存，仅站长可见。"))}catch(e){conflict.value=!!form.id&&e instanceof APIError&&e.status===409;if(conflict.value||(e instanceof APIError&&e.code==='VALIDATION_FAILED'))error.value=(e as Error).message;else toast.error((e as Error).message)}finally{busy.value=false}}

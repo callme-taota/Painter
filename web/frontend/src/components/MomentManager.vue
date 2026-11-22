@@ -3,7 +3,9 @@ import {t, formatDate} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId} from 'vue'
-import {appendUnique,api, APIError, body, list, type Row} from '../api'
+import {api, APIError, type Row} from '../api'
+import {moments} from '../contentClient'
+import {useCursorList} from '../useCursorList'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import {randomID} from '../random'
@@ -17,10 +19,10 @@ type SelectedImage = MomentImage & {localID:string;state:'ready'|'queued'|'uploa
 type Moment = Row & {id:string;version:number;text:string;images:MomentImage[];public_text:string|null;public_images:MomentImage[];published:boolean;status:string}
 const props = defineProps<{owner:boolean}>()
 const uid = useId(), textarea = ref<HTMLTextAreaElement>(), fileInput = ref<HTMLInputElement>()
-const rows = ref<Moment[]>([]), loading = ref(true), busy = ref(false)
+const busy = ref(false)
 const scope = ref(props.owner ? 'site' : 'mine'), status = ref('all')
-const listError = ref(''), error = ref(''), conflict = ref(false), latest = ref<Moment|null>(null)
-const maxLength = ref(500), maxImages = ref(9), maxImageBytes = ref(10*1024*1024), nextCursor = ref('')
+const error = ref(''), conflict = ref(false), latest = ref<Moment|null>(null)
+const maxLength = ref(500), maxImages = ref(9), maxImageBytes = ref(10*1024*1024)
 const form = reactive<Moment>({id:'',version:0,text:'',images:[],public_text:null,public_images:[],published:false,status:'draft'})
 const images = ref<SelectedImage[]>([])
 const imageInputs = (value:Array<MomentImage|SelectedImage>):ImageInput[] => value.map(image => ({media_id:image.media_id,alt:image.alt}))
@@ -36,7 +38,7 @@ const deleted = computed(() => form.status === 'deleted' || !!form.deleted_at)
 const valid = computed(() => (!!form.text.trim() || images.value.length > 0) && length.value <= maxLength.value && images.value.length <= maxImages.value && !pendingImages.value && images.value.every(image => Array.from(image.alt).length <= 200))
 const publishChanged = computed(() => !form.published || snapshot(currentPayload()) !== snapshot({text:form.public_text || '',images:imageInputs(form.public_images)}))
 const statusOptions = [{value:'all',label:t("全部状态")},{value:'draft',label:t("草稿")},{value:'published',label:t("已发布")},{value:'deleted',label:t("已删除")}]
-let sequence = 0, controller:AbortController|undefined, stopped = false
+let stopped = false
 let createKey = randomID(), pendingCreate:{key:string;payload:MomentPayload}|null = null
 let uploadRunning = false, uploadController:AbortController|undefined
 
@@ -171,29 +173,18 @@ function mutationError(cause:unknown) {
   } else if(cause instanceof APIError&&cause.code==='VALIDATION_FAILED')error.value=cause.message
   else toast.error(cause instanceof Error ? cause.message : t("操作失败，请重试。"))
 }
-async function load(append=false) {
-  if(append&&(loading.value||locked.value||!nextCursor.value))return
-  const at = ++sequence
-  controller?.abort()
-  controller = new AbortController()
-  loading.value = true
-  listError.value = ''
-  try {
-    const query = new URLSearchParams({scope:scope.value,status:status.value,limit:'20'})
-    if (append&&nextCursor.value) query.set('cursor',nextCursor.value)
-    const data = await api('/me/moments?' + query,{signal:controller.signal})
-    if (stopped || at !== sequence) return
-    rows.value = append?appendUnique(rows.value,list(data).map(parseMoment)):list(data).map(parseMoment)
-    nextCursor.value = data.has_more === false ? '' : data.next_cursor || ''
+const {items:rows,loading,error:listError,cursor:nextCursor,load} = useCursorList<Moment>({
+  request:(cursor,signal)=>moments.list(new URLSearchParams({scope:scope.value,status:status.value,limit:'20'}),cursor,{signal}),
+  disabled:()=>locked.value,
+  parse:parseMoment,
+  received(data) {
     const limit = Number(data.max_text_length || data.max_length)
     if (Number.isSafeInteger(limit) && limit > 0) maxLength.value = limit
     const imageCount = Number(data.max_images), imageBytes = Number(data.max_image_bytes)
     if (Number.isSafeInteger(imageCount) && imageCount > 0) maxImages.value = imageCount
     if (Number.isSafeInteger(imageBytes) && imageBytes > 0) maxImageBytes.value = imageBytes
-  } catch (cause) {
-    if (at === sequence && (cause as Error).name !== 'AbortError') listError.value = (cause as Error).message
-  } finally { if (!stopped && at === sequence) loading.value = false }
-}
+  },
+})
 function filter() { void load() }
 function changeScope(value:string) { if (locked.value || loading.value) return; scope.value = value; filter() }
 function changeStatus(value:string|number) { if (locked.value || loading.value) return; status.value = String(value); filter() }
@@ -204,7 +195,7 @@ async function edit(row?:Moment) {
   busy.value = true
   try {
     if (dirty.value && !await confirmAction(t("放弃未保存的动态？"),t("切换前，请确认当前文字和图片已经保存。"),t("放弃修改"))) return
-    const result = row ? parseMoment(await api('/studio/moments/' + encodeURIComponent(row.id))) : undefined
+    const result = row ? parseMoment(await moments.read(row.id)) : undefined
     if (stopped) return
     fill(result)
     error.value = ''
@@ -219,12 +210,12 @@ async function save() {
   try {
     let result:Moment
     if (form.id) {
-      result = parseMoment(await api('/studio/moments/' + encodeURIComponent(form.id) + '/draft',{method:'PUT',version:form.version,body:body(currentPayload())}))
+      result = parseMoment(await moments.saveDraft(form.id,currentPayload(),{version:form.version}))
     } else {
       // An uncertain create is retried with its original key and payload, even if
       // the user has continued typing. Once acknowledged, newer input stays dirty.
       pendingCreate ||= {key:createKey,payload:currentPayload()}
-      result = parseMoment(await api('/moments',{method:'POST',key:pendingCreate.key,body:body(pendingCreate.payload)}))
+      result = parseMoment(await moments.create(pendingCreate.payload,pendingCreate.key))
       pendingCreate = null
     }
     if (stopped) return
@@ -239,7 +230,7 @@ async function publish() {
   if (locked.value || !form.id || dirty.value || conflict.value || deleted.value || !valid.value || !publishChanged.value) return
   busy.value = true; error.value = ''
   try {
-    const result = parseMoment(await api('/studio/moments/' + encodeURIComponent(form.id) + '/publish',{method:'POST',version:form.version}))
+    const result = parseMoment(await moments.publish(form.id,{version:form.version}))
     if (stopped) return
     fill(result); toast.success(t("动态已发布。"))
     await load()
@@ -252,7 +243,7 @@ async function withdraw() {
   try {
     if (!await confirmAction(t("撤回这条动态？"),t("公开内容将被撤下，已保存的草稿会保留。"),t("撤回动态"))) return
     error.value = ''
-    const result = parseMoment(await api('/studio/moments/' + encodeURIComponent(form.id) + '/publication',{method:'DELETE',version:form.version}))
+    const result = parseMoment(await moments.withdraw(form.id,{version:form.version}))
     if (stopped) return
     fill(result); toast.success(t("动态已撤回，草稿已保留。"))
     await load()
@@ -266,7 +257,7 @@ async function remove(row:Moment) {
     const selected = form.id === row.id
     if (!await confirmAction(t("删除这条动态？"),selected && dirty.value ? t("当前未保存的文字、图片顺序和说明也会放弃；公开内容将被移除。此操作不能撤销。") : t("动态会从公开页面移除，此操作不能撤销。"),t("删除动态"))) return
     error.value = ''
-    await api('/studio/moments/' + encodeURIComponent(row.id),{method:'DELETE',version:selected ? form.version : row.version})
+    await moments.remove(row.id,{version:selected ? form.version : row.version})
     if (stopped) return
     if (selected) fill()
     rows.value = rows.value.filter(item => item.id !== row.id)
@@ -281,7 +272,7 @@ async function readLatest() {
   if (locked.value || !form.id) return
   busy.value = true; error.value = ''
   try {
-    const result = parseMoment(await api('/studio/moments/' + encodeURIComponent(form.id)))
+    const result = parseMoment(await moments.read(form.id))
     if (!stopped) latest.value = result
   } catch (cause) { error.value = t("无法读取最新版本，当前输入已保留。{value1}", {value1:(cause as Error).message}) }
   finally { busy.value = false }
@@ -301,7 +292,7 @@ async function useLatest() {
 }
 function beforeLeave(event:BeforeUnloadEvent) { if (dirty.value || uploading.value) { event.preventDefault(); event.returnValue = '' } }
 onMounted(() => { void load(); if(new URLSearchParams(location.search).get('compose')==='1')void nextTick(()=>textarea.value?.focus()); window.addEventListener('beforeunload',beforeLeave) })
-onBeforeUnmount(() => { stopped = true; sequence++; controller?.abort(); uploadController?.abort(); clearImages(); window.removeEventListener('beforeunload',beforeLeave) })
+onBeforeUnmount(() => { stopped = true; uploadController?.abort(); clearImages(); window.removeEventListener('beforeunload',beforeLeave) })
 </script>
 
 <template>
