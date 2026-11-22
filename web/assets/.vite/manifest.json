@@ -5,33 +5,33 @@
     "src": "../locales/en.json",
     "isDynamicEntry": true
   },
-  "_Icon.vue_vue_type_script_setup_true_lang-CU-oTjCo.js": {
-    "file": "chunks/Icon.vue_vue_type_script_setup_true_lang-CU-oTjCo.js",
+  "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js": {
+    "file": "chunks/Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
     "name": "Icon.vue_vue_type_script_setup_true_lang",
     "imports": [
-      "_runtime-core.esm-bundler-qc5HP1O4.js"
+      "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
-  "_InfiniteList.vue_vue_type_script_setup_true_lang-BaodQXBC.js": {
-    "file": "chunks/InfiniteList.vue_vue_type_script_setup_true_lang-BaodQXBC.js",
+  "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js": {
+    "file": "chunks/InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
     "name": "InfiniteList.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_i18n-CPzi8dqi.js",
       "_infiniteScroll-CcHvAPba.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js"
+      "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
   "__plugin-vue_export-helper-DNkIjL55.js": {
     "file": "chunks/_plugin-vue_export-helper-DNkIjL55.js",
     "name": "_plugin-vue_export-helper"
   },
-  "_api-CasRY4Q6.js": {
-    "file": "chunks/api-CasRY4Q6.js",
+  "_api-CyyuXRrr.js": {
+    "file": "chunks/api-CyyuXRrr.js",
     "name": "api",
     "imports": [
       "_i18n-CPzi8dqi.js",
       "_publicSession-DWb38Ywr.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js"
+      "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
   "_browser-CqDbEFy1.js": {
@@ -68,15 +68,15 @@
       "contentCards-DA_JMMNo.css"
     ]
   },
-  "_contentClient-I6VqEUcr.js": {
-    "file": "chunks/contentClient-I6VqEUcr.js",
+  "_contentClient-Cg5hSaza.js": {
+    "file": "chunks/contentClient-Cg5hSaza.js",
     "name": "contentClient",
     "imports": [
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
-      "_Icon.vue_vue_type_script_setup_true_lang-CU-oTjCo.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
-      "_api-CasRY4Q6.js"
+      "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
+      "_api-CyyuXRrr.js"
     ]
   },
   "_i18n-CPzi8dqi.js": {
@@ -106,15 +106,15 @@
       "_i18n-CPzi8dqi.js"
     ]
   },
-  "_runtime-core.esm-bundler-qc5HP1O4.js": {
-    "file": "chunks/runtime-core.esm-bundler-qc5HP1O4.js",
+  "_runtime-core.esm-bundler-CDRlNly_.js": {
+    "file": "chunks/runtime-core.esm-bundler-CDRlNly_.js",
     "name": "runtime-core.esm-bundler"
   },
-  "_runtime-dom.esm-bundler-D_yAudSc.js": {
-    "file": "chunks/runtime-dom.esm-bundler-D_yAudSc.js",
+  "_runtime-dom.esm-bundler-BXIHxHO-.js": {
+    "file": "chunks/runtime-dom.esm-bundler-BXIHxHO-.js",
     "name": "runtime-dom.esm-bundler",
     "imports": [
-      "_runtime-core.esm-bundler-qc5HP1O4.js"
+      "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
   "_shadcn-theme-B5CNli52.js": {
@@ -146,13 +146,13 @@
     "src": "_toast-BzwSDx_8.css"
   },
   "node_modules/vue/dist/vue.runtime.esm-bundler.js": {
-    "file": "chunks/vue.runtime.esm-bundler-C8cjx9Kr.js",
+    "file": "chunks/vue.runtime.esm-bundler-CuMZ9mXm.js",
     "name": "vue.runtime.esm-bundler",
     "src": "node_modules/vue/dist/vue.runtime.esm-bundler.js",
     "isDynamicEntry": true,
     "imports": [
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js"
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
   "src/assets/geist-latin.woff2": {
@@ -160,14 +160,14 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-BBjdqAgR.js",
+    "file": "chunks/AuthForm-BXeP1uxr.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
       "__plugin-vue_export-helper-DNkIjL55.js"
     ],
     "css": [
@@ -175,52 +175,52 @@
     ]
   },
   "src/components/FollowIsland.vue": {
-    "file": "chunks/FollowIsland-D3ppuRfe.js",
+    "file": "chunks/FollowIsland-CK5JW3A5.js",
     "name": "FollowIsland",
     "src": "src/components/FollowIsland.vue",
     "isDynamicEntry": true,
     "imports": [
       "_i18n-CPzi8dqi.js",
-      "_api-CasRY4Q6.js",
+      "_api-CyyuXRrr.js",
       "_postLike-C803EENV.js",
       "_toast-1uiiU817.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
       "_publicSession-DWb38Ywr.js"
     ]
   },
   "src/components/FollowingFeed.vue": {
-    "file": "chunks/FollowingFeed-CnM513rB.js",
+    "file": "chunks/FollowingFeed-D1CFJOWN.js",
     "name": "FollowingFeed",
     "src": "src/components/FollowingFeed.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_api-CasRY4Q6.js",
+      "_api-CyyuXRrr.js",
       "_publicSession-DWb38Ywr.js",
       "_i18n-CPzi8dqi.js",
       "_toast-1uiiU817.js",
-      "_InfiniteList.vue_vue_type_script_setup_true_lang-BaodQXBC.js",
-      "_Icon.vue_vue_type_script_setup_true_lang-CU-oTjCo.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
+      "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
+      "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
       "_infiniteScroll-CcHvAPba.js"
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor-CNCwrzCp.js",
+    "file": "chunks/MarkdownEditor-CkulxC43.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
       "_publicSession-DWb38Ywr.js",
-      "_api-CasRY4Q6.js",
-      "_contentClient-I6VqEUcr.js",
+      "_api-CyyuXRrr.js",
+      "_contentClient-Cg5hSaza.js",
       "_contentCards-DPedXL_j.js",
-      "_Icon.vue_vue_type_script_setup_true_lang-CU-oTjCo.js",
+      "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
       "_confirm-B0tl4rln.js",
       "_toast-1uiiU817.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
-      "_InfiniteList.vue_vue_type_script_setup_true_lang-BaodQXBC.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
+      "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
       "__plugin-vue_export-helper-DNkIjL55.js",
       "_infiniteScroll-CcHvAPba.js"
     ],
@@ -229,16 +229,16 @@
     ]
   },
   "src/components/PostIsland.vue": {
-    "file": "chunks/PostIsland-e21fRff_.js",
+    "file": "chunks/PostIsland-DHwKTHBR.js",
     "name": "PostIsland",
     "src": "src/components/PostIsland.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
-      "_InfiniteList.vue_vue_type_script_setup_true_lang-BaodQXBC.js",
-      "_api-CasRY4Q6.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
+      "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
+      "_api-CyyuXRrr.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
       "_confirm-B0tl4rln.js",
       "_postLike-C803EENV.js",
       "_publicSession-DWb38Ywr.js",
@@ -318,7 +318,7 @@
     ]
   },
   "src/public.ts": {
-    "file": "public-DZWYzP_2.js",
+    "file": "public-DqPOIAhz.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
@@ -358,15 +358,15 @@
     ]
   },
   "src/setup.ts": {
-    "file": "setup-CGPbTYXY.js",
+    "file": "setup-CYZS9KDn.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
     "imports": [
       "_shadcn-theme-B5CNli52.js",
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
       "__plugin-vue_export-helper-DNkIjL55.js"
     ],
     "css": [
@@ -383,20 +383,20 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-C904-zLH.js",
+    "file": "studio-ILcxzjI1.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
     "imports": [
       "_shadcn-theme-B5CNli52.js",
       "src/public.ts",
-      "_runtime-dom.esm-bundler-D_yAudSc.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
-      "_InfiniteList.vue_vue_type_script_setup_true_lang-BaodQXBC.js",
-      "_api-CasRY4Q6.js",
-      "_runtime-core.esm-bundler-qc5HP1O4.js",
-      "_contentClient-I6VqEUcr.js",
-      "_Icon.vue_vue_type_script_setup_true_lang-CU-oTjCo.js",
+      "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
+      "_api-CyyuXRrr.js",
+      "_runtime-core.esm-bundler-CDRlNly_.js",
+      "_contentClient-Cg5hSaza.js",
+      "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
       "_toast-1uiiU817.js",
       "_confirm-B0tl4rln.js",
       "__plugin-vue_export-helper-DNkIjL55.js",
@@ -410,7 +410,7 @@
       "src/components/MarkdownEditor.vue"
     ],
     "css": [
-      "studio-0esg_UTI.css",
+      "studio-C1fLdepD.css",
       "sharing-DwcSP9Ku.css"
     ]
   }

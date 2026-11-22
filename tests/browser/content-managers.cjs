@@ -20,7 +20,7 @@ async function bundle(){
  return {js:result.outputFiles.find(f=>f.path.endsWith('.js')).text,css:result.outputFiles.find(f=>f.path.endsWith('.css')).text};
 }
 async function fixture(browser,assets,route,options={}){
- const state={posts:[post(1,'published'),post(2)],moment:null,requests:[],failList:0,failMomentSave:0,...options};
+ const state={posts:[post(1,'published'),post(2)],moment:null,phrases:[{id:'5',version:1,text:'合成片语',source:'',kind:'sentence',published:false}],friends:[],series:[],ledger:new Map(),lostReplies:{},malformedReplies:{},requests:[],failList:0,failMomentSave:0,...options};
  const page=await browser.newPage({viewport:{width:1200,height:900},reducedMotion:'reduce'});page.setDefaultTimeout(10000);
  await page.addInitScript(()=>localStorage.setItem('painter-analytics','off'));
  page.on('pageerror',error=>errors.push(error.message));
@@ -34,6 +34,15 @@ async function fixture(browser,assets,route,options={}){
   if(url.pathname==='/assets/images/painter-logo.png')return intercepted.fulfill({contentType:'image/png',body:fs.readFileSync(path.join(src,'../public/images/painter-logo.png'))});
   if(url.pathname.startsWith('/assets/'))return intercepted.fulfill({status:204,body:''});
   const entry={path:url.pathname,query:url.search,method,headers:request.headers(),body:request.postData()?JSON.parse(request.postData()):null};state.requests.push(entry);
+  const once=(create,status=200)=>{
+   const key=method+' '+url.pathname+' '+entry.headers['idempotency-key'],signature=JSON.stringify([entry.body,entry.headers['if-match']]);
+   let saved=state.ledger.get(key);
+   if(saved&&saved.signature!==signature)return send({error:{code:'IDEMPOTENCY_KEY_REUSED',message:'幂等键对应不同请求'}},409);
+   if(!saved){saved={signature,value:copy(create())};state.ledger.set(key,saved)}
+   if(state.lostReplies[url.pathname]>0){state.lostReplies[url.pathname]--;return send({error:{code:'FIXTURE_LOST_REPLY',message:'合成已提交但响应中断'}},503)}
+   if(state.malformedReplies[url.pathname]>0){state.malformedReplies[url.pathname]--;return send({})}
+   return send(saved.value,status);
+  };
   if(url.pathname==='/api/v1/session')return send({authenticated:true,user:{id:'7',username:'fixture',display_name:'合成站长',role:'owner'},csrf_token:'synthetic-csrf'});
   if(url.pathname==='/api/v1/me/posts'){
    if(state.failList-->0)return send({error:{code:'FIXTURE_FAILURE',message:'合成列表加载失败'}},503);
@@ -50,8 +59,17 @@ async function fixture(browser,assets,route,options={}){
   if(url.pathname==='/api/v1/studio/moments/9/publication'){Object.assign(state.moment,{version:state.moment.version+1,published:false,status:'draft',public_text:null});return send(state.moment)}
   if(url.pathname==='/api/v1/studio/moments/9'&&method==='GET')return send(state.moment);
   if(url.pathname==='/api/v1/studio/moments/9'&&method==='DELETE'){state.moment=null;return intercepted.fulfill({status:204,body:''})}
-  if(url.pathname==='/api/v1/admin/phrases')return send(pageOf([{id:'5',version:1,text:'合成片语',source:'',kind:'sentence',published:false}]));
-  if(url.pathname==='/api/v1/me/series')return send(pageOf([]));
+  if(url.pathname==='/api/v1/admin/phrases'&&method==='GET')return send(pageOf(state.phrases));
+  if(url.pathname==='/api/v1/admin/phrases'&&method==='POST')return once(()=>{const row={id:'6',version:1,...entry.body};state.phrases.push(row);return row},201);
+  if(url.pathname==='/api/v1/admin/phrases/6'&&method==='PUT'){const row=state.phrases.find(row=>row.id==='6');assert.equal(entry.headers['if-match'],'"'+row.version+'"');Object.assign(row,entry.body,{version:row.version+1});return send(row)}
+  if(url.pathname==='/api/v1/studio/friends'&&method==='GET')return send(pageOf(state.friends));
+  if(url.pathname==='/api/v1/studio/friend-settings')return send({enabled:true,title:'友链',description:'',version:1});
+  if(url.pathname==='/api/v1/studio/friends'&&method==='POST')return once(()=>{const row={id:'8',version:1,...entry.body};state.friends.push(row);return row},201);
+  if(url.pathname==='/api/v1/studio/friends/8'&&method==='PUT'){const row=state.friends[0];assert.equal(entry.headers['if-match'],'"'+row.version+'"');Object.assign(row,entry.body,{version:row.version+1});return send(row)}
+  if(url.pathname==='/api/v1/me/series')return send(pageOf(state.series));
+  const seriesResult=(id,version)=>({id,version,...entry.body,slug:entry.body.slug||'synthetic-series',chapters:entry.body.chapter_post_ids.map(id=>({...post(id),post_id:id}))});
+  if(url.pathname==='/api/v1/series'&&method==='POST')return once(()=>{const row=seriesResult('10',1);state.series.push(row);return row},201);
+  if(url.pathname==='/api/v1/studio/series/10'&&method==='PUT')return once(()=>{const row=state.series[0];assert.equal(entry.headers['if-match'],'"'+row.version+'"');Object.assign(row,seriesResult('10',row.version+1));return row});
   if(url.pathname==='/api/v1/tags')return send(pageOf([]));
   if(url.pathname==='/api/v1/editor/preview')return send({sanitized_html:'<p>正文</p>'});
   if(url.pathname==='/api/v1/me/bookmarks'){
@@ -115,6 +133,37 @@ async function capture(page,name){
   {
    const {page,state}=await fixture(browser,assets,'/studio/series');await page.getByRole('button',{name:'新建专栏',exact:true}).click();await page.getByRole('button',{name:'添加文章',exact:true}).click();await page.locator('.series-post-options li').filter({hasText:'文章 1'}).waitFor();
    check('chapter picker uses the same article list client',state.requests.filter(r=>r.path==='/api/v1/me/posts').length===1);await page.close();
+  }
+  {
+   const path='/api/v1/admin/phrases', {page,state}=await fixture(browser,assets,'/studio/phrases',{lostReplies:{[path]:1}}),form=page.locator('.phrase-composer');
+   await form.locator('#phrase-text').fill('首次片语');await form.getByRole('button',{name:'保存草稿',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
+   await page.evaluate(()=>document.querySelectorAll('.painter-toast-close').forEach(button=>button.click()));await capture(page,'phrase-pending-desktop.png');await page.setViewportSize({width:390,height:844});await capture(page,'phrase-pending-mobile.png');await page.setViewportSize({width:1200,height:900});
+   await form.locator('#phrase-text').fill('后续片语');await form.getByRole('checkbox').check();await page.getByRole('button',{name:'重试确认保存',exact:true}).click();await page.getByText('上次保存已确认，当前新修改仍未保存。',{exact:true}).waitFor();
+   const requests=writes(state,path);check('phrase uncertain create retries original key and body exactly',requests.length===2&&requests[0].headers['idempotency-key']===requests[1].headers['idempotency-key']&&JSON.stringify(requests[0].body)===JSON.stringify(requests[1].body));
+   check('phrase retry confirms one draft and preserves newer unpublished input',state.phrases.filter(row=>row.id==='6').length===1&&state.phrases.at(-1).text==='首次片语'&&!state.phrases.at(-1).published&&await form.locator('#phrase-text').inputValue()==='后续片语'&&await form.getByRole('checkbox').isChecked());
+   await form.getByRole('button',{name:'保存并公开',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.phrase-unsaved')===null);
+   check('phrase subsequent update uses acknowledged ID and version',writes(state,'/api/v1/admin/phrases/6').length===1&&state.phrases.at(-1).text==='后续片语'&&state.phrases.at(-1).published);await page.close();
+  }
+  {
+   const path='/api/v1/studio/friends',{page,state}=await fixture(browser,assets,'/studio/friends',{malformedReplies:{[path]:1}}),form=page.getByRole('form',{name:'友链编辑'});
+   await form.getByLabel('网站名称',{exact:true}).fill('首次友链');await form.getByLabel('网站地址',{exact:true}).fill('https://example.org');await form.getByRole('button',{name:'添加友链',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
+   await form.getByLabel('网站名称',{exact:true}).fill('后续友链');await form.getByLabel('网站地址',{exact:true}).fill('not-a-url');await page.getByRole('button',{name:'重试确认保存',exact:true}).click();await page.getByText('上次保存已确认，当前新修改仍未保存。',{exact:true}).waitFor();
+   const requests=writes(state,path);check('malformed friend acknowledgement retains exact create attempt',requests.length===2&&requests[0].headers['idempotency-key']===requests[1].headers['idempotency-key']&&JSON.stringify(requests[0].body)===JSON.stringify(requests[1].body)&&state.friends.length===1);
+   check('friend can confirm old valid command while newer input is invalid',await form.getByLabel('网站名称',{exact:true}).inputValue()==='后续友链'&&await form.getByLabel('网站地址',{exact:true}).inputValue()==='not-a-url'&&state.friends[0].name==='首次友链');
+   await form.getByLabel('网站地址',{exact:true}).fill('https://example.net');
+   await form.getByRole('button',{name:'保存修改',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.friends-composer .friends-unsaved')===null);
+   check('friend update protocol remains versioned PUT',writes(state,'/api/v1/studio/friends/8').length===1&&state.friends[0].name==='后续友链');await page.close();
+  }
+  {
+   const path='/api/v1/series',{page,state}=await fixture(browser,assets,'/studio/series',{lostReplies:{[path]:1}});
+   await page.getByRole('button',{name:'新建专栏',exact:true}).click();const form=page.locator('.series-editor');await form.getByLabel('专栏名称',{exact:true}).fill('首次专栏');await page.getByRole('button',{name:'添加文章',exact:true}).click();await page.locator('.series-post-options li').filter({hasText:'文章 1'}).getByRole('button',{name:'加入',exact:true}).click();
+   await form.getByRole('button',{name:'保存专栏',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
+   await page.getByRole('button',{name:'新建专栏',exact:true}).click();await confirm(page,'取消');check('cancelled navigation retains uncertain series command',await page.getByRole('button',{name:'重试确认保存',exact:true}).isVisible()&&writes(state,path).length===1);
+   await form.getByLabel('专栏名称',{exact:true}).fill('后续专栏');await page.getByRole('button',{name:'重试确认保存',exact:true}).click();await page.getByText('上次保存已确认，当前新修改仍未保存。',{exact:true}).waitFor();
+   const requests=writes(state,path);check('series lost reply never creates a second series',requests.length===2&&requests[0].headers['idempotency-key']===requests[1].headers['idempotency-key']&&state.series.length===1&&state.series[0].title==='首次专栏');
+   check('series retry preserves title edits and chapter order',await form.getByLabel('专栏名称',{exact:true}).inputValue()==='后续专栏'&&await form.locator('.series-chapter-name strong').innerText()==='文章 1');
+   state.lostReplies['/api/v1/studio/series/10']=1;await form.getByRole('button',{name:'保存专栏',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).click();await page.waitForFunction(()=>!document.body.textContent.includes('暂未确认保存结果'));
+   const updates=writes(state,'/api/v1/studio/series/10');check('series update retries retain version and command identity',updates.length===2&&updates[0].headers['if-match']==='"1"'&&updates[1].headers['if-match']==='"1"'&&updates[0].headers['idempotency-key']===updates[1].headers['idempotency-key']&&state.series[0].version===2);await page.close();
   }
   {
    const {page,state}=await fixture(browser,assets,'/me/bookmarks',{failList:1});await page.getByRole('button',{name:'重新加载',exact:true}).click();await page.getByText('文章 1',{exact:true}).waitFor();

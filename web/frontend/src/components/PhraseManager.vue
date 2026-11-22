@@ -6,13 +6,15 @@ import {computed,onMounted,onBeforeUnmount,reactive,ref} from 'vue'
 import {api,body,type Row,APIError} from '../api'
 import {useCursorList} from '../useCursorList'
 import {withCursor} from '../pagination'
-import {randomID} from '../random'
+import {useMutationAttempt} from '../useMutationAttempt'
+import PendingSaveNotice from './PendingSaveNotice.vue'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import SelectField from './SelectField.vue'
 const busy=ref(false),reloading=ref(false),error=ref(''),conflict=ref(false),query=ref(''),filter=ref('all'),textInput=ref<HTMLTextAreaElement>()
 const form=reactive({id:'',version:0,text:'',source:'',kind:'sentence',published:false})
-const initial=ref('');let createKey=randomID()
+const initial=ref(''),createAttempt=useMutationAttempt()
+const {pending:pendingSave}=createAttempt
 const snapshot=()=>JSON.stringify({text:form.text,source:form.source,kind:form.kind,published:form.published})
 initial.value=snapshot()
 const dirty=computed(()=>snapshot()!==initial.value),length=computed(()=>Array.from(form.text).length),visible=computed(()=>items.value.filter(r=>(filter.value==='all'||r.published===(filter.value==='published'))&&(!query.value||(r.text+' '+r.source).toLocaleLowerCase().includes(query.value.toLocaleLowerCase()))))
@@ -21,18 +23,32 @@ const {items,loading,hasMore:more,load}=useCursorList({
  disabled:()=>busy.value,
  error,
 })
-function fill(row?:Row){Object.assign(form,row?{id:row.id,version:row.version,text:row.text,source:row.source,kind:row.kind,published:row.published}:{id:'',version:0,text:'',source:'',kind:'sentence',published:false});initial.value=snapshot();createKey=randomID();conflict.value=false}
-async function edit(row?:Row){if(busy.value)return;if(dirty.value&&!await confirmAction(t("放弃未保存的修改？"),t("切换片语前，请确认当前内容已经保存。"),t("放弃修改")))return;fill(row);error.value='';textInput.value?.focus()}
-async function save(){if(busy.value||conflict.value)return;busy.value=true;error.value='';try{const data={text:form.text,kind:form.kind,source:form.source,published:form.published};const result=await api(form.id?'/admin/phrases/'+form.id:'/admin/phrases',{method:form.id?'PUT':'POST',...(form.id?{version:form.version}:{key:createKey}),body:body(data)});const index=items.value.findIndex(r=>r.id===result.id);if(index>=0)items.value[index]=result;else items.value.unshift(result);fill(result);toast.success(result.published?t("片语已公开，可以在展示页读到。"):t("草稿已保存，仅站长可见。"))}catch(e){conflict.value=!!form.id&&e instanceof APIError&&e.status===409;if(conflict.value||(e instanceof APIError&&e.code==='VALIDATION_FAILED'))error.value=(e as Error).message;else toast.error((e as Error).message)}finally{busy.value=false}}
+function fill(row?:Row){Object.assign(form,row?{id:row.id,version:row.version,text:row.text,source:row.source,kind:row.kind,published:row.published}:{id:'',version:0,text:'',source:'',kind:'sentence',published:false});initial.value=snapshot();createAttempt.clear();conflict.value=false}
+async function edit(row?:Row){if(busy.value)return;if((dirty.value||pendingSave.value)&&!await confirmAction(t("放弃未保存的修改？"),pendingSave.value?t("有一次保存尚未确认。切换前建议重试确认保存；继续切换会保留服务器已收到的内容。"):t("切换片语前，请确认当前内容已经保存。"),t("放弃修改")))return;fill(row);error.value='';textInput.value?.focus()}
+async function save(){
+ if(busy.value||conflict.value)return
+ busy.value=true;error.value=''
+ try{
+  const data=JSON.parse(snapshot()),attempt=!form.id?createAttempt.begin(()=>({path:'/admin/phrases',method:'POST',payload:data})):null
+  const result=attempt?await api(attempt.path,{method:attempt.method,key:attempt.key,body:attempt.body}):await api('/admin/phrases/'+form.id,{method:'PUT',version:form.version,body:body(data)})
+  if(!result||typeof result.id!=='string'||!Number.isSafeInteger(result.version)||result.version<1||typeof result.text!=='string'||typeof result.source!=='string'||!['sentence','word'].includes(result.kind)||typeof result.published!=='boolean')throw new Error(t("保存结果不完整，请刷新列表确认；当前输入已保留。"))
+  const local=JSON.parse(snapshot()),preserve=!!attempt&&snapshot()!==attempt.body
+  const index=items.value.findIndex(r=>r.id===result.id);if(index>=0)items.value[index]=result;else items.value.unshift(result)
+  fill(result)
+  if(preserve){Object.assign(form,local);toast.warning(t("上次保存已确认，当前新修改仍未保存。"))}
+  else toast.success(result.published?t("片语已公开，可以在展示页读到。"):t("草稿已保存，仅站长可见。"))
+ }catch(e){createAttempt.failed(e);conflict.value=!!form.id&&e instanceof APIError&&e.status===409;if(conflict.value||(e instanceof APIError&&e.code==='VALIDATION_FAILED'))error.value=(e as Error).message;else toast.error((e as Error).message)}finally{busy.value=false}
+}
 async function reloadCurrent(){if(busy.value||!form.id)return;const id=form.id;busy.value=true;reloading.value=true;try{if(dirty.value&&!await confirmAction(t("载入服务器版本？"),t("当前输入将被服务器最新内容替换。"),t("载入最新")))return;error.value='';const latest=await api('/admin/phrases/'+encodeURIComponent(id));if(String(latest.id)!==id||!Number.isSafeInteger(Number(latest.version))||Number(latest.version)<1||typeof latest.text!=='string'||typeof latest.source!=='string'||!['sentence','word'].includes(latest.kind)||typeof latest.published!=='boolean')throw new Error(t("服务器片语数据不完整，当前输入已保留。"));const index=items.value.findIndex(r=>r.id===id);if(index>=0)items.value[index]=latest;fill(latest);toast.success(t("已载入服务器最新版本。"))}catch(e){error.value=e instanceof APIError&&e.status===404?t("这条片语已删除，当前输入已保留。你可以复制内容后新建。"):(e as Error).message;conflict.value=true}finally{busy.value=false;reloading.value=false}}
 async function remove(row:Row){if(busy.value||!await confirmAction(t("删除这条片语？"),t("删除后无法恢复，公开展示页也会移除它。"),t("删除片语")))return;busy.value=true;error.value='';try{await api('/admin/phrases/'+row.id,{method:'DELETE',version:row.version});items.value=items.value.filter(r=>r.id!==row.id);if(form.id===row.id)fill();toast.success(t("片语已删除。"))}catch(e){toast.error((e as Error).message)}finally{busy.value=false}}
-function beforeLeave(e:BeforeUnloadEvent){if(dirty.value){e.preventDefault();e.returnValue=''}}
+function beforeLeave(e:BeforeUnloadEvent){if(dirty.value||pendingSave.value){e.preventDefault();e.returnValue=''}}
 onMounted(()=>{void load();window.addEventListener('beforeunload',beforeLeave)})
 onBeforeUnmount(()=>window.removeEventListener('beforeunload',beforeLeave))
 </script>
 <template>
  <div class="phrase-management-toolbar"><p>{{t("短句与词语，构成文章之外的另一面。")}}</p><a class="button" href="/phrases" target="_blank" rel="noopener">{{t("查看片语页")}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 19 19 5M7 5h12v12"/></svg></a></div>
  <div v-if="error" class="notice error" role="alert">{{error}}<button v-if="conflict" type="button" class="quiet" :disabled="busy" @click="reloadCurrent">{{t("载入最新版本")}}</button><button v-else type="button" class="quiet" :disabled="busy||loading" @click="load()">{{t("刷新列表")}}</button></div>
+ <PendingSaveNotice v-if="pendingSave&&!busy" :busy="busy" @retry="save"/>
  <div class="phrase-management"><form class="panel phrase-composer" @submit.prevent="save"><div class="phrase-composer-heading"><h2>{{form.id?t("编辑片语"):t("写一条片语")}}</h2><button v-if="form.id" type="button" class="quiet" :disabled="busy" @click="edit()">{{t("新建")}}</button></div><p v-if="dirty" class="phrase-unsaved" role="status">{{t("有未保存的修改")}}</p><SelectField v-model="form.kind" :label="t('内容类型')" :disabled="busy" :options="[{value:'sentence',label:t('句子')},{value:'word',label:t('词语')}]"/><label for="phrase-text">{{form.kind==='word'?t("词语"):t("句子")}}</label><textarea id="phrase-text" ref="textInput" v-model="form.text" rows="6" required :disabled="busy" aria-describedby="phrase-length" :placeholder="t('留下一点此刻的想法…')"></textarea><span id="phrase-length" class="phrase-length" :class="{danger:length>280}">{{t("{value1} / 280 字", {value1:(length)})}}</span><label for="phrase-source">{{t("来源或署名")}} <span class="muted">{{t("选填")}}</span></label><input id="phrase-source" v-model="form.source" :disabled="busy" maxlength="120" :placeholder="t('例如书名、作者，或留空')"><label class="check phrase-publish"><input type="checkbox" v-model="form.published" :disabled="busy">{{t("在片语页公开展示")}}</label><p class="muted">{{t("不勾选时保存为草稿，仅站长可见。")}}</p><div class="form-actions"><button class="primary" :disabled="busy||loading||conflict||!form.text.trim()||length>280">{{reloading?t("正在载入…"):busy?t("正在保存…"):form.published?t("保存并公开"):t("保存草稿")}}</button><button v-if="dirty" type="button" class="quiet" :disabled="busy" @click="edit()">{{t("取消修改")}}</button></div></form>
  <section class="phrase-library" :aria-label="t('片语列表')"><div class="phrase-library-tools"><div class="tabs" :aria-label="t('片语状态')"><button v-for="f in [{id:'all',label:t('全部')},{id:'published',label:t('公开')},{id:'draft',label:t('草稿')}]" :key="f.id" type="button" :class="{active:filter===f.id}" :aria-pressed="filter===f.id" @click="filter=f.id">{{f.label}}</button></div><label class="sr-only" for="phrase-search">{{t("筛选已加载片语")}}</label><input id="phrase-search" v-model="query" type="search" :placeholder="t('筛选已加载的片语')"></div><p v-if="loading" role="status" class="muted">{{t("正在加载片语…")}}</p><div v-for="row in visible" :key="row.id" class="phrase-library-row" :class="{'is-editing':form.id===row.id}"><div class="phrase-row-meta"><span>{{row.kind==='word'?t("词语"):t("句子")}}</span><span class="status" :class="{published:row.published}">{{row.published?t("公开"):t("草稿")}}</span></div><p>{{row.text}}</p><span v-if="row.source" class="phrase-source">{{row.source}}</span><div class="phrase-row-actions"><button type="button" class="quiet" :disabled="busy" @click="edit(row)">{{form.id===row.id?t("正在编辑"):t("编辑")}}</button><button type="button" class="quiet danger" :disabled="busy||loading" @click="remove(row)">{{t("删除")}}</button></div></div><div v-if="!loading&&!visible.length" class="phrase-empty"><h2>{{items.length?t("没有匹配的片语"):t("这里还没有片语")}}</h2><p>{{items.length?t("试试其他关键词，或切换状态。"):t("从左侧写下一句话，保存为草稿或直接公开。")}}</p></div><InfiniteList :has-more="more" :loading="loading" :disabled="busy" :error="error" @load="load(true)"/></section></div>
 </template>

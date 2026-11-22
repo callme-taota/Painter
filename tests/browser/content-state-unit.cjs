@@ -23,7 +23,7 @@ function harness(){
   return module.exports;
  }
  const sharedAPI=load('api');
- api.list=sharedAPI.list;api.appendUnique=sharedAPI.appendUnique;
+ api.list=sharedAPI.list;api.appendUnique=sharedAPI.appendUnique;api.APIError=sharedAPI.APIError;
  return{calls,load,respond:fn=>respond=fn};
 }
 function setup(options){const h=harness(),scope=vue.effectScope();const state=scope.run(()=>h.load('useCursorList').useCursorList(options));return{state,scope}}
@@ -31,6 +31,28 @@ function setup(options){const h=harness(),scope=vue.effectScope();const state=sc
  const {withCursor}=harness().load('pagination');
  equal(withCursor('/me/posts?tag_id=1&tag_id=2&q=a+b&cursor=old','x+y/='),'/me/posts?tag_id=1&tag_id=2&q=a+b&cursor=x%2By%2F%3D','cursor replacement preserves repeated filters and encoding');
  equal(withCursor('/me/posts?cursor=old'),'/me/posts','refresh removes previous cursor');
+ {
+  const h=harness(),{APIError}=h.load('api'),attempt=h.load('useMutationAttempt').useMutationAttempt();
+  const payload={title:'original',chapters:['1','2']};
+  const first=attempt.begin(()=>({path:'/series',method:'POST',version:3,payload}));
+  payload.title='newer';payload.chapters.reverse();
+  equal(JSON.parse(first.body),{title:'original',chapters:['1','2']},'pending command snapshots nested input at the wire boundary');
+  equal(attempt.begin(()=>{throw new Error('must not rebuild pending command')}),first,'retry reuses exact pending command without rebuilding');
+  ok(Object.isFrozen(first),'pending command cannot be mutated');
+  for(const failure of [new TypeError('network failed'),new Error('malformed acknowledgement'),... [408,429,500,503].map(status=>new APIError(status,'FAILURE','unconfirmed'))]){
+   attempt.failed(failure);equal(attempt.pending.value.key,first.key,'ambiguous failure preserves original key');
+  }
+  equal(attempt.pending.value.version,3,'retry preserves optimistic version');
+  for(const status of [400,401,403,409,412,413,422]){
+   attempt.failed(new APIError(status,'REJECTED','rejected'));equal(attempt.pending.value,null,'definitive rejection releases pending command');
+   attempt.begin(()=>({path:'/series',method:'POST',payload}));
+  }
+  attempt.clear();equal(attempt.pending.value,null,'validated acknowledgement or explicit abandonment clears command');
+  const next=attempt.begin(()=>({path:'/series',method:'POST',payload}));ok(next.key!==first.key,'next independent command gets a new key');
+  equal(JSON.parse(next.body),payload,'new independent command captures current edits');
+  attempt.clear();assert.throws(()=>attempt.begin(()=>({path:'/series',method:'POST',payload:undefined})),TypeError);checks++;
+  equal(attempt.pending.value,null,'unserializable command never becomes pending');
+ }
  {
   let phase=0;const calls=[],{state,scope}=setup({request:async cursor=>{calls.push(cursor);if(phase===1)throw new Error('retry me');return phase===0?{items:[{id:'1'}],next_cursor:'two',has_more:true}:{items:[{id:'1'},{id:'2'},{id:'2'}],next_cursor:'ignored',has_more:false}}});
   await state.load();phase=1;

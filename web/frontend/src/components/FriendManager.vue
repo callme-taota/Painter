@@ -3,7 +3,8 @@ import {t} from "../i18n"
 
 import {computed,nextTick,onBeforeUnmount,onMounted,reactive,ref} from 'vue'
 import {api,APIError,body,type Row} from '../api'
-import {randomID} from '../random'
+import {useMutationAttempt} from '../useMutationAttempt'
+import PendingSaveNotice from './PendingSaveNotice.vue'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import SelectField from './SelectField.vue'
@@ -13,7 +14,8 @@ const items=ref<Row[]>([]),loading=ref(true),ready=ref(false),busy=ref(false),er
 const nameInput=ref<HTMLInputElement>(),formElement=ref<HTMLFormElement>()
 const form=reactive({id:'',version:0,name:'',url:'',description:'',avatar_url:'',sort_order:0,visible:true})
 const settings=reactive({enabled:true,title:t("友链"),description:'',version:0})
-const initial=ref(''),settingsInitial=ref('');let createKey=randomID()
+const initial=ref(''),settingsInitial=ref(''),createAttempt=useMutationAttempt()
+const {pending:pendingSave}=createAttempt
 const fields=()=>({name:form.name,url:form.url,description:form.description,avatar_url:form.avatar_url,sort_order:Number(form.sort_order),visible:form.visible})
 const settingsFields=()=>({enabled:settings.enabled,title:settings.title,description:settings.description})
 initial.value=JSON.stringify(fields());settingsInitial.value=JSON.stringify(settingsFields())
@@ -27,19 +29,32 @@ function imageState(event:Event){(event.target as HTMLImageElement).hidden=event
 function validRow(r:Row){return r&&typeof r.id==='string'&&/^\d+$/.test(r.id)&&Number.isSafeInteger(r.version)&&r.version>0&&['name','url','description','avatar_url'].every(k=>typeof r[k]==='string')&&typeof r.visible==='boolean'&&Number.isInteger(r.sort_order)}
 function checkedList(data:Row){if(!Array.isArray(data.items)||!data.items.every(validRow))throw new Error(t("友链列表不完整，请重试。当前输入已保留。"));return data.items as Row[]}
 function applySettings(data:Row){if(typeof data.enabled!=='boolean'||typeof data.title!=='string'||typeof data.description!=='string'||!Number.isSafeInteger(data.version)||data.version<1)throw new Error(t("页面设置不完整，当前输入已保留。"));Object.assign(settings,data);publicEnabled.value=data.enabled;settingsInitial.value=JSON.stringify(settingsFields());settingsConflict.value=false}
-function fill(row?:Row){Object.assign(form,row?{id:row.id,version:row.version,...Object.fromEntries(Object.keys(fields()).map(k=>[k,row[k]]))}:{id:'',version:0,name:'',url:'',description:'',avatar_url:'',sort_order:Math.min(100000,Math.max(0,...items.value.map(r=>r.sort_order))+10),visible:true});initial.value=JSON.stringify(fields());createKey=randomID();conflict.value=false}
+function fill(row?:Row){Object.assign(form,row?{id:row.id,version:row.version,...Object.fromEntries(Object.keys(fields()).map(k=>[k,row[k]]))}:{id:'',version:0,name:'',url:'',description:'',avatar_url:'',sort_order:Math.min(100000,Math.max(0,...items.value.map(r=>r.sort_order))+10),visible:true});initial.value=JSON.stringify(fields());createAttempt.clear();conflict.value=false}
 function message(e:unknown){return e instanceof Error?e.message:t("操作失败，请稍后重试。")}
 async function load(){if(busy.value)return;loading.value=true;error.value='';try{const [links,configuration]=await Promise.all([api('/studio/friends'),api('/studio/friend-settings')]);const checked=checkedList(links);applySettings(configuration);items.value=checked;fill();ready.value=true}catch(e){error.value=message(e)}finally{loading.value=false}}
-async function edit(row?:Row){if(busy.value||!ready.value)return;if(dirty.value&&!await confirmAction(t("放弃未保存的友链修改？"),t("切换前请先保存，或确认放弃当前输入。"),t("放弃修改")))return;fill(row);error.value='';tab.value='links';await nextTick();formElement.value?.scrollIntoView({block:'nearest',behavior:'instant'});nameInput.value?.focus({preventScroll:true})}
-async function save(){if(busy.value||conflict.value||!ready.value)return;busy.value=true;error.value='';try{const result=await api(form.id?'/studio/friends/'+form.id:'/studio/friends',{method:form.id?'PUT':'POST',...(form.id?{version:form.version}:{key:createKey}),body:body(fields())});if(!validRow(result))throw new Error(t("保存结果不完整，请刷新列表确认；当前输入已保留。"));const index=items.value.findIndex(r=>r.id===result.id);if(index<0)items.value.push(result);else items.value[index]=result;fill(result);toast.success(result.visible?(publicEnabled.value?t("友链已保存并展示。"):t("友链已保存，开启页面后会展示。")):t("友链已保存，仅后台可见。"))}catch(e){conflict.value=!!form.id&&e instanceof APIError&&e.status===409;if(conflict.value||(e instanceof APIError&&e.code==='VALIDATION_FAILED'))error.value=message(e);else toast.error(message(e))}finally{busy.value=false}}
+async function edit(row?:Row){if(busy.value||!ready.value)return;if((dirty.value||pendingSave.value)&&!await confirmAction(t("放弃未保存的友链修改？"),pendingSave.value?t("有一次保存尚未确认。切换前建议重试确认保存；继续切换会保留服务器已收到的内容。"):t("切换前请先保存，或确认放弃当前输入。"),t("放弃修改")))return;fill(row);error.value='';tab.value='links';await nextTick();formElement.value?.scrollIntoView({block:'nearest',behavior:'instant'});nameInput.value?.focus({preventScroll:true})}
+async function save(){
+ if(busy.value||conflict.value||!ready.value)return
+ busy.value=true;error.value=''
+ try{
+  const attempt=!form.id?createAttempt.begin(()=>({path:'/studio/friends',method:'POST',payload:fields()})):null
+  const result=attempt?await api(attempt.path,{method:attempt.method,key:attempt.key,body:attempt.body}):await api('/studio/friends/'+form.id,{method:'PUT',version:form.version,body:body(fields())})
+  if(!validRow(result))throw new Error(t("保存结果不完整，请刷新列表确认；当前输入已保留。"))
+  const local=fields(),preserve=!!attempt&&JSON.stringify(local)!==attempt.body
+  const index=items.value.findIndex(r=>r.id===result.id);if(index<0)items.value.push(result);else items.value[index]=result
+  fill(result)
+  if(preserve){Object.assign(form,local);toast.warning(t("上次保存已确认，当前新修改仍未保存。"))}
+  else toast.success(result.visible?(publicEnabled.value?t("友链已保存并展示。"):t("友链已保存，开启页面后会展示。")):t("友链已保存，仅后台可见。"))
+ }catch(e){createAttempt.failed(e);conflict.value=!!form.id&&e instanceof APIError&&e.status===409;if(conflict.value||(e instanceof APIError&&e.code==='VALIDATION_FAILED'))error.value=message(e);else toast.error(message(e))}finally{busy.value=false}
+}
 async function latest(){if(busy.value||!form.id)return;if(dirty.value&&!await confirmAction(t("载入服务器最新友链？"),t("当前输入将被服务器最新版本替换。"),t("载入最新")))return;busy.value=true;error.value='';try{const rows=checkedList(await api('/studio/friends'));const selected=rows.find(r=>r.id===form.id);if(!selected)throw new Error(t("这条友链已删除，当前输入已保留。可以复制内容或另存为新友链。"));items.value=rows;fill(selected);toast.success(t("已载入最新版本。"))}catch(e){error.value=message(e);conflict.value=true}finally{busy.value=false}}
-function saveAsNew(){form.id='';form.version=0;createKey=randomID();conflict.value=false;error.value='';toast.info(t("内容已保留，保存后创建一条新友链。"))}
+function saveAsNew(){form.id='';form.version=0;createAttempt.clear();conflict.value=false;error.value='';toast.info(t("内容已保留，保存后创建一条新友链。"))}
 async function refreshList(){if(busy.value)return;busy.value=true;error.value='';try{items.value=checkedList(await api('/studio/friends'));toast.success(t("列表已刷新，当前编辑内容保留。"))}catch(e){error.value=message(e)}finally{busy.value=false}}
 async function remove(row:Row){if(busy.value)return;const local=form.id===row.id&&dirty.value;if(!await confirmAction(t("删除「{value1}」？", {value1:row.name}),local?t("这条友链和当前未保存的修改都会移除，删除后无法恢复。"):t("公开页也会移除这条友链，删除后无法恢复。"),t("删除友链")))return;busy.value=true;error.value='';try{await api('/studio/friends/'+row.id,{method:'DELETE',version:row.version});items.value=items.value.filter(r=>r.id!==row.id);if(form.id===row.id)fill();toast.success(t("友链已删除。"))}catch(e){if(form.id===row.id&&e instanceof APIError&&e.status===409){conflict.value=true;error.value=message(e)}else toast.error(message(e))}finally{busy.value=false}}
 async function saveSettings(){if(busy.value||settingsConflict.value||!ready.value)return;busy.value=true;error.value='';try{applySettings(await api('/studio/friend-settings',{method:'PUT',version:settings.version,body:body(settingsFields())}));toast.success(settings.enabled?t("页面设置已保存。"):t("友链页面已关闭，入口也会隐藏，已有友链保留。"))}catch(e){settingsConflict.value=e instanceof APIError&&e.status===409;if(settingsConflict.value||(e instanceof APIError&&e.code==='VALIDATION_FAILED'))error.value=message(e);else toast.error(message(e))}finally{busy.value=false}}
 async function latestSettings(){if(busy.value)return;if(settingsDirty.value&&!await confirmAction(t("载入最新页面设置？"),t("当前设置输入将被服务器最新版本替换。"),t("载入最新")))return;busy.value=true;error.value='';try{applySettings(await api('/studio/friend-settings'));toast.success(t("已载入最新页面设置。"))}catch(e){error.value=message(e)}finally{busy.value=false}}
 function tabsKey(e:KeyboardEvent){const buttons=Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role=tab]'));let n=buttons.indexOf(e.target as HTMLButtonElement);if(e.key==='ArrowRight')n=(n+1)%buttons.length;else if(e.key==='ArrowLeft')n=(n+buttons.length-1)%buttons.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=buttons.length-1;else return;e.preventDefault();buttons[n].click();buttons[n].focus()}
-function beforeLeave(e:BeforeUnloadEvent){if(dirty.value||settingsDirty.value){e.preventDefault();e.returnValue=''}}
+function beforeLeave(e:BeforeUnloadEvent){if(dirty.value||settingsDirty.value||pendingSave.value){e.preventDefault();e.returnValue=''}}
 onMounted(()=>{void load();window.addEventListener('beforeunload',beforeLeave)})
 onBeforeUnmount(()=>window.removeEventListener('beforeunload',beforeLeave))
 </script>
@@ -49,6 +64,7 @@ onBeforeUnmount(()=>window.removeEventListener('beforeunload',beforeLeave))
   <div class="friends-manager-bar"><div class="settings-tabs" role="tablist" :aria-label="t('友链管理分区')" @keydown="tabsKey"><button id="friends-links-tab" role="tab" :tabindex="tab==='links'?0:-1" :aria-selected="tab==='links'" aria-controls="friends-links-panel" @click="tab='links'">{{t("友链列表")}}</button><button id="friends-settings-tab" role="tab" :tabindex="tab==='settings'?0:-1" :aria-selected="tab==='settings'" aria-controls="friends-settings-panel" @click="tab='settings'">{{t("页面设置")}}</button></div><a v-if="ready&&publicEnabled" class="button quiet" href="/friends" target="_blank" rel="noopener">{{t("查看友链页")}}<Icon name="arrow" :size="16"/></a></div>
   <div v-if="error" class="notice error" role="alert">{{error}}<div class="friends-error-actions"><template v-if="conflict&&tab==='links'"><button :disabled="busy" @click="latest">{{t("载入最新版本")}}</button><button :disabled="busy" @click="saveAsNew">{{t("另存为新友链")}}</button></template><button v-else-if="settingsConflict" :disabled="busy" @click="latestSettings">{{t("载入最新设置")}}</button><button v-else :disabled="busy||loading" @click="ready?refreshList():load()">{{t("重试读取")}}</button></div></div>
 
+  <PendingSaveNotice v-if="pendingSave&&!busy" :busy="busy" @retry="save"/>
   <p v-if="loading" role="status" class="muted">{{t("正在加载友链与页面设置…")}}</p>
   <div id="friends-links-panel" v-show="tab==='links'" role="tabpanel" aria-labelledby="friends-links-tab" class="friends-workspace">
    <section class="friends-library" :aria-label="t('已保存的友链')">
