@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {uploadMedia,imageFileIssue} from '../mediaUpload'
 import {t} from "../i18n"
 
 import {computed,onBeforeUnmount,onMounted,reactive,ref} from 'vue'
@@ -34,10 +35,11 @@ async function upload(event:Event){
  const input=event.target as HTMLInputElement,file=input.files?.[0]
  if(!file||busy.value||!ready.value){input.value='';return}
  error.value=''
- if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)){error.value=t("请选择 PNG、JPEG、WebP 或 GIF 图片。");input.value='';return}
- if(file.size>10*1024*1024){error.value=t("图片不能超过 10 MB。");input.value='';return}
+ const issue=imageFileIssue(file)
+ if(issue==='type'){error.value=t("请选择 PNG、JPEG、WebP 或 GIF 图片。");input.value='';return}
+ if(issue==='size'){error.value=t("图片不能超过 10 MB。");input.value='';return}
  busy.value=true
- try{const data=new FormData();data.append('file',file);const result=await api('/media',{method:'POST',body:data});if(result.state!=='ready'||typeof result.media_id!=='string')throw new Error(t("图片尚未上传完成，请稍后重试。"));form.background_media_id=result.media_id;toast.success(t("图片已上传，保存主页背景后生效。"))}catch(e){toast.error((e as Error).message)}finally{busy.value=false;input.value=''}
+ try{const result=await uploadMedia(file);if(result.state!=='ready'||typeof result.media_id!=='string')throw new Error(t("图片尚未上传完成，请稍后重试。"));form.background_media_id=result.media_id;toast.success(t("图片已上传，保存主页背景后生效。"))}catch(e){toast.error((e as Error).message)}finally{busy.value=false;input.value=''}
 }
 function leave(event:BeforeUnloadEvent){if(dirty.value){event.preventDefault();event.returnValue=''}}
 onMounted(()=>{window.addEventListener('beforeunload',leave);void load()})

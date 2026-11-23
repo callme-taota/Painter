@@ -9,7 +9,7 @@
 | 类型 | 代表入口 | 环境和准备 |
 | --- | --- | --- |
 | Node 编解码与请求协调 | `v24-cards-unit.mjs`、`v39-cards-unit.mjs`、`v49-request-coordination.cjs` | Node 24 与已安装的前端锁定依赖；不连接应用、数据库或供应商 |
-| 内容与分页公共状态 | `content-state-unit.cjs`、`content-managers.cjs` | 前者使用真实 Vue 作用域测试取消、竞态、重试与写入协议；后者编译真实工作台，在 Chromium 中拦截全部请求，覆盖文章、动态、片语、专栏、收藏与文章编辑器；无须应用或数据库 |
+| 内容与分页公共状态 | `content-state-unit.cjs`、`content-managers.cjs` | 前者使用真实 Vue 作用域测试取消、竞态、重试与写入协议；后者编译真实工作台，在 Chromium 中拦截全部请求，覆盖文章、动态、片语、专栏、收藏与文章编辑器；新增上传状态测试涵盖格式/大小、原文件重试、串行队列、卸载取消与不完整确认；页面回归验证动态、产品和首页上传后仍需显式保存。无须应用或数据库 |
 | 独立浏览器运行时 | `v24-card-runtime.cjs`、`v27-image-viewer.cjs`、`v33-guest-interactions.cjs`、`v33-home-snap.cjs`、`v35-home-snap.cjs`、`v39-cards-runtime.cjs`、`v39-game-selection.cjs` | Playwright 与对应浏览器；使用合成 DOM / 拦截响应，部分用例会在临时目录转译前端源码 |
 | 独立组件或模板 | `v39-cards-fixture-build.mjs` → `v39-cards-editor.cjs`、`v43-identity-consent.cjs` | 先生成临时组件构建或 Go 模板夹具，再运行浏览器；准备流程见文件头及对应 Go 测试 |
 | 带模拟响应的页面回归 | `v11-editor-safety.cjs`、`v11-state-paths.cjs`、`v12-editor-polish.cjs`、`v16-editor.cjs`、`v24-editor-cards.cjs`、`v45-login-regression.cjs` | 通常需要可访问的候选页面；业务响应由用例模拟，但导航、登录态或纯计算预览仍可能依赖候选服务 |

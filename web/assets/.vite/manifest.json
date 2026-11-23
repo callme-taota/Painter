@@ -21,8 +21,8 @@
       "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
-  "__plugin-vue_export-helper-DNkIjL55.js": {
-    "file": "chunks/_plugin-vue_export-helper-DNkIjL55.js",
+  "__plugin-vue_export-helper-DxfA4p8d.js": {
+    "file": "chunks/_plugin-vue_export-helper-DxfA4p8d.js",
     "name": "_plugin-vue_export-helper"
   },
   "_api-CyyuXRrr.js": {
@@ -68,15 +68,15 @@
       "contentCards-DA_JMMNo.css"
     ]
   },
-  "_contentClient-Cg5hSaza.js": {
-    "file": "chunks/contentClient-Cg5hSaza.js",
+  "_contentClient-CYyfSXkJ.js": {
+    "file": "chunks/contentClient-CYyfSXkJ.js",
     "name": "contentClient",
     "imports": [
-      "_runtime-dom.esm-bundler-BXIHxHO-.js",
+      "_api-CyyuXRrr.js",
       "_i18n-CPzi8dqi.js",
+      "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
-      "_runtime-core.esm-bundler-CDRlNly_.js",
-      "_api-CyyuXRrr.js"
+      "_runtime-core.esm-bundler-CDRlNly_.js"
     ]
   },
   "_i18n-CPzi8dqi.js": {
@@ -160,7 +160,7 @@
     "src": "src/assets/geist-latin.woff2"
   },
   "src/components/AuthForm.vue": {
-    "file": "chunks/AuthForm-BXeP1uxr.js",
+    "file": "chunks/AuthForm-Bks7ywwY.js",
     "name": "AuthForm",
     "src": "src/components/AuthForm.vue",
     "isDynamicEntry": true,
@@ -168,7 +168,7 @@
       "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
       "_runtime-core.esm-bundler-CDRlNly_.js",
-      "__plugin-vue_export-helper-DNkIjL55.js"
+      "__plugin-vue_export-helper-DxfA4p8d.js"
     ],
     "css": [
       "AuthForm-bn5EmRSo.css"
@@ -205,27 +205,27 @@
     ]
   },
   "src/components/MarkdownEditor.vue": {
-    "file": "chunks/MarkdownEditor-CkulxC43.js",
+    "file": "chunks/MarkdownEditor-MUcZtwiw.js",
     "name": "MarkdownEditor",
     "src": "src/components/MarkdownEditor.vue",
     "isDynamicEntry": true,
     "imports": [
       "_runtime-dom.esm-bundler-BXIHxHO-.js",
+      "_contentClient-CYyfSXkJ.js",
       "_i18n-CPzi8dqi.js",
       "_publicSession-DWb38Ywr.js",
       "_api-CyyuXRrr.js",
-      "_contentClient-Cg5hSaza.js",
       "_contentCards-DPedXL_j.js",
       "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
       "_confirm-B0tl4rln.js",
       "_toast-1uiiU817.js",
       "_runtime-core.esm-bundler-CDRlNly_.js",
       "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
-      "__plugin-vue_export-helper-DNkIjL55.js",
+      "__plugin-vue_export-helper-DxfA4p8d.js",
       "_infiniteScroll-CcHvAPba.js"
     ],
     "css": [
-      "MarkdownEditor-LQuzesca.css"
+      "MarkdownEditor-BHNfy9yv.css"
     ]
   },
   "src/components/PostIsland.vue": {
@@ -318,7 +318,7 @@
     ]
   },
   "src/public.ts": {
-    "file": "public-DqPOIAhz.js",
+    "file": "public-C6KEO2Ec.js",
     "name": "public",
     "src": "src/public.ts",
     "isEntry": true,
@@ -358,7 +358,7 @@
     ]
   },
   "src/setup.ts": {
-    "file": "setup-CYZS9KDn.js",
+    "file": "setup-Bwpfe-g8.js",
     "name": "setup",
     "src": "src/setup.ts",
     "isEntry": true,
@@ -367,7 +367,7 @@
       "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
       "_runtime-core.esm-bundler-CDRlNly_.js",
-      "__plugin-vue_export-helper-DNkIjL55.js"
+      "__plugin-vue_export-helper-DxfA4p8d.js"
     ],
     "css": [
       "setup-QHd9GIxQ.css"
@@ -383,7 +383,7 @@
     ]
   },
   "src/studio.ts": {
-    "file": "studio-ILcxzjI1.js",
+    "file": "studio-C8LFhe6S.js",
     "name": "studio",
     "src": "src/studio.ts",
     "isEntry": true,
@@ -392,14 +392,14 @@
       "src/public.ts",
       "_runtime-dom.esm-bundler-BXIHxHO-.js",
       "_i18n-CPzi8dqi.js",
+      "_contentClient-CYyfSXkJ.js",
       "_InfiniteList.vue_vue_type_script_setup_true_lang-Dur1MH-l.js",
       "_api-CyyuXRrr.js",
       "_runtime-core.esm-bundler-CDRlNly_.js",
-      "_contentClient-Cg5hSaza.js",
       "_Icon.vue_vue_type_script_setup_true_lang-BFVtvGuY.js",
       "_toast-1uiiU817.js",
       "_confirm-B0tl4rln.js",
-      "__plugin-vue_export-helper-DNkIjL55.js",
+      "__plugin-vue_export-helper-DxfA4p8d.js",
       "_publicSession-DWb38Ywr.js",
       "_infiniteScroll-CcHvAPba.js",
       "_contentCards-DPedXL_j.js",
@@ -410,7 +410,7 @@
       "src/components/MarkdownEditor.vue"
     ],
     "css": [
-      "studio-C1fLdepD.css",
+      "studio-3gpON0RQ.css",
       "sharing-DwcSP9Ku.css"
     ]
   }

@@ -28,6 +28,63 @@ function harness(){
 }
 function setup(options){const h=harness(),scope=vue.effectScope();const state=scope.run(()=>h.load('useCursorList').useCursorList(options));return{state,scope}}
 (async()=>{
+ {
+  const h=harness(),{imageFileIssue,uploadMedia,releaseUploadPreview}=h.load('mediaUpload');
+  const file=new File(['pixels'],'photo.png',{type:'image/png'});
+  equal(imageFileIssue(file,6),undefined,'image exactly at size limit is accepted');
+  equal(imageFileIssue(file,5),'size','image size uses the page limit');
+  equal(imageFileIssue(new File([],'empty.png',{type:'image/png'})),'empty','empty image is rejected');
+  equal(imageFileIssue(new File(['x'],'image.svg',{type:'image/svg+xml'})),'type','unsupported image format is rejected');
+  for(const type of ['image/jpeg','image/png','image/webp','image/gif'])equal(imageFileIssue(new File(['x'],'image',{type})),undefined,'supported image format '+type);
+  h.respond(async()=>({state:'ready',media_id:'image-1'}));
+  const controller=new AbortController();
+  equal(await uploadMedia(file,{key:'same-file-key',signal:controller.signal}),{state:'ready',media_id:'image-1'},'only confirmed media is returned');
+  const call=h.calls[0];
+  equal([call.path,call.options.method,call.options.key],['/media','POST','same-file-key'],'upload retains endpoint, method and caller key');
+  equal(call.options.signal,controller.signal,'upload retains cancellation signal');
+  equal(await call.options.body.get('file').text(),'pixels','multipart retains exact file bytes');
+  equal(call.options.body.get('file').name,'photo.png','multipart retains filename');
+  for(const response of [null,{}, {media_id:'x'}, {state:'staging',media_id:'x'}, {state:'ready',media_id:''}, {state:'ready',media_id:1}]){
+   h.respond(async()=>response);await assert.rejects(()=>uploadMedia(file));checks++;
+  }
+  const preview={preview:URL.createObjectURL(file)};releaseUploadPreview(preview);releaseUploadPreview(preview);
+  equal(preview.preview,'','preview release is idempotent');
+ }
+ {
+  const h=harness(),scope=vue.effectScope(),first=deferred(),uploads=[1,2].map(id=>({id,state:'queued',error:'',file:new File(['bytes-'+id],'image-'+id+'.png',{type:'image/png'}),key:'key-'+id})),attached=[];
+  h.respond(async(_path,options)=>{if(options.key==='key-1')return first.promise;return{state:'ready',media_id:'second'}});
+  const queue=scope.run(()=>h.load('useMediaUploadQueue').useMediaUploadQueue({next:()=>uploads.find(u=>u.state==='queued'),file:u=>u.file,key:u=>u.key,uploaded:(u,result)=>attached.push([u.id,result.media_id])}));
+  const running=queue.run();await queue.run();
+  equal(h.calls.length,1,'concurrent queue runs do not duplicate requests');
+  equal(uploads.map(u=>u.state),['uploading','queued'],'second file waits for the first');
+  first.reject(new Error('lost reply'));await running;
+  equal(uploads.map(u=>u.state),['failed','ready'],'failed upload stays retryable while later files proceed');
+  equal(attached,[[2,'second']],'failed upload never attaches media');
+  uploads[0].state='queued';h.respond(async()=>({state:'ready',media_id:'first'}));await queue.run();
+  equal(h.calls.map(c=>c.options.key),['key-1','key-2','key-1'],'manual retry reuses the original file key');
+  equal(await h.calls[2].options.body.get('file').text(),'bytes-1','manual retry sends the original file');
+  equal(attached,[[2,'second'],[1,'first']],'retry attaches confirmed file exactly once');
+  scope.stop();
+ }
+ {
+  const h=harness(),scope=vue.effectScope(),pending=deferred(),uploads=[1,2].map(id=>({id,state:'queued',error:'',file:new File(['x'],'image.png'),key:'key-'+id}));let attached=false;
+  h.respond(()=>pending.promise);
+  const queue=scope.run(()=>h.load('useMediaUploadQueue').useMediaUploadQueue({next:()=>uploads.find(u=>u.state==='queued'),file:u=>u.file,key:u=>u.key,uploaded:()=>{attached=true}}));
+  const running=queue.run(),signal=h.calls[0].options.signal;scope.stop();
+  ok(signal.aborted,'disposing a page aborts its active upload');
+  pending.resolve({state:'ready',media_id:'late'});await running;
+  equal(attached,false,'late success after disposal cannot change attachments');
+  equal(h.calls.length,1,'disposing a page prevents queued uploads');
+  equal(await queue.send(uploads[1]),false,'disposed queues cannot start a single upload');
+ }
+ {
+  const h=harness(),scope=vue.effectScope(),upload={state:'queued',error:'',file:new File(['x'],'image.png'),key:'original'};let attached=false;
+  h.respond(async()=>({state:'ready',media_id:''}));
+  const queue=scope.run(()=>h.load('useMediaUploadQueue').useMediaUploadQueue({next:()=>undefined,file:u=>u.file,key:u=>u.key,uploaded:()=>{attached=true}}));
+  equal(await queue.send(upload),false,'incomplete success cannot finish single upload');
+  equal([upload.state,attached],['failed',false],'incomplete success keeps the file without attaching it');
+  scope.stop();
+ }
  const {withCursor}=harness().load('pagination');
  equal(withCursor('/me/posts?tag_id=1&tag_id=2&q=a+b&cursor=old','x+y/='),'/me/posts?tag_id=1&tag_id=2&q=a+b&cursor=x%2By%2F%3D','cursor replacement preserves repeated filters and encoding');
  equal(withCursor('/me/posts?cursor=old'),'/me/posts','refresh removes previous cursor');

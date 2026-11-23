@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {uploadMedia} from '../mediaUpload'
 import {t} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
@@ -102,13 +103,13 @@ async function uploadLayoutImage(node:ArticleLayoutImage,event:Event){
  const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file||props.disabled||busy.value)return
  if(file.size>10*1024*1024){error.value=t("图片超过 10 MiB，请压缩后重试。");toast.error(error.value);return}
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
- try{const data=new FormData();data.append('file',file);const result=await api<{media_id:string;state?:string}>('/media',{method:'POST',body:data,signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[/]media[/][a-fA-F0-9-]{16,128}$/.test('/media/'+result.media_id)||result.state&&result.state!=='ready')throw new Error(t("图片尚未上传完成，请重试。"));node.src='/media/'+result.media_id;if(!node.alt)node.alt=Array.from(file.name).slice(0,200).join('');toast.success(t("图片已上传到卡片，插入草稿后仍需保存。"))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=t("图片上传失败：{value1}", {value1:(e as Error).message});toast.error(error.value)}}finally{if(at===request)busy.value=false}
+ try{const result=await uploadMedia(file,{signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[/]media[/][a-fA-F0-9-]{16,128}$/.test('/media/'+result.media_id)||result.state&&result.state!=='ready')throw new Error(t("图片尚未上传完成，请重试。"));node.src='/media/'+result.media_id;if(!node.alt)node.alt=Array.from(file.name).slice(0,200).join('');toast.success(t("图片已上传到卡片，插入草稿后仍需保存。"))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=t("图片上传失败：{value1}", {value1:(e as Error).message});toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
 async function uploadReferenceImage(event:Event){
  const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file||props.disabled||busy.value)return
  if(file.size>10*1024*1024){toast.error(t('图片超过 10 MiB，请压缩后重试。'));return}
  const at=++request;controller?.abort();controller=new AbortController();busy.value=true;error.value=''
- try{const data=new FormData();data.append('file',file);const result=await api<{media_id:string;state?:string}>('/media',{method:'POST',body:data,signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[a-fA-F0-9-]{16,128}$/.test(result.media_id)||result.state&&result.state!=='ready')throw new Error(t('图片尚未上传完成，请重试。'));form.image_url='/media/'+result.media_id;toast.success(t('图片已上传到卡片，插入草稿后仍需保存。'))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
+ try{const result=await uploadMedia(file,{signal:controller.signal});if(at!==request)return;if(typeof result.media_id!=='string'||!/^[a-fA-F0-9-]{16,128}$/.test(result.media_id)||result.state&&result.state!=='ready')throw new Error(t('图片尚未上传完成，请重试。'));form.image_url='/media/'+result.media_id;toast.success(t('图片已上传到卡片，插入草稿后仍需保存。'))}catch(e){if(at===request&&(e as Error).name!=='AbortError'){error.value=(e as Error).message;toast.error(error.value)}}finally{if(at===request)busy.value=false}
 }
 function referenceLabel(card:ArticleCard){return [form.emoji.trim(),form.label.trim()||articleCardTitle(card)].filter(Boolean).join(' ')}
 async function showPreview(card:ArticleCard,signal?:AbortSignal){const at=request,carrier=(value:ArticleCard)=>isLink.value&&form.display==='inline'?articleReferenceMarkdown(value,referenceLabel(value)):articleCardMarkdown(value),markdown=carrier(card);const result=await api<{sanitized_html:string}>('/editor/preview',{method:'POST',body:body({markdown,seq:0}),signal});if(at===request&&!signal?.aborted){try{if(carrier(candidate())!==markdown)return}catch{return}preview.value=result.sanitized_html;await nextTick();if(previewRoot.value)initArticleCards(previewRoot.value)}}

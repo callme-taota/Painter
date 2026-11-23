@@ -3,8 +3,10 @@ import {t, formatDate} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId} from 'vue'
-import {api, APIError, type Row} from '../api'
+import {APIError, type Row} from '../api'
 import {moments} from '../contentClient'
+import {imageFileIssue,releaseUploadPreview} from '../mediaUpload'
+import {useMediaUploadQueue} from '../useMediaUploadQueue'
 import {useCursorList} from '../useCursorList'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
@@ -40,7 +42,7 @@ const publishChanged = computed(() => !form.published || snapshot(currentPayload
 const statusOptions = [{value:'all',label:t("全部状态")},{value:'draft',label:t("草稿")},{value:'published',label:t("已发布")},{value:'deleted',label:t("已删除")}]
 let stopped = false
 let createKey = randomID(), pendingCreate:{key:string;payload:MomentPayload}|null = null
-let uploadRunning = false, uploadController:AbortController|undefined
+
 
 function parseImages(value:unknown):MomentImage[] {
   if (!Array.isArray(value) || value.some(image => !image || typeof image.media_id !== 'string' || !image.media_id || typeof image.url !== 'string' || typeof image.alt !== 'string')) {
@@ -51,50 +53,32 @@ function parseImages(value:unknown):MomentImage[] {
 function selectedImage(image:MomentImage):SelectedImage {
   return {...image,localID:randomID(),state:'ready',key:'',preview:'',error:'',retryable:false,descriptionOpen:false}
 }
-function releasePreview(image:SelectedImage) {
-  if (image.preview) { URL.revokeObjectURL(image.preview); image.preview = '' }
-}
+const releasePreview=releaseUploadPreview
 function clearImages() { images.value.forEach(releasePreview); images.value = [] }
 function fileProblem(file:File) {
-  if (!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)) return t("请选择 JPEG、PNG、WebP 或 GIF 图片。")
-  if (file.size > maxImageBytes.value) return t("图片超过 {value1} 上限，请压缩后重新选择。", {value1:imageLimitLabel.value})
-  if (!file.size) return t("图片文件为空，请重新选择。")
+  const issue=imageFileIssue(file,maxImageBytes.value)
+  if (issue==='type') return t("请选择 JPEG、PNG、WebP 或 GIF 图片。")
+  if (issue==='size') return t("图片超过 {value1} 上限，请压缩后重新选择。", {value1:imageLimitLabel.value})
+  if (issue==='empty') return t("图片文件为空，请重新选择。")
   return ''
 }
 const imageLimitLabel = computed(() => `${Number((maxImageBytes.value / 1048576).toFixed(1))} MiB`)
-async function processUploads() {
-  if (uploadRunning || stopped) return
-  uploadRunning = true
-  try {
-    while (!stopped) {
-      const image = images.value.find(item => item.state === 'queued')
-      if (!image || !image.file) break
-      image.state = 'uploading'; image.error = ''
-      uploadController = new AbortController()
-      try {
-        const data = new FormData()
-        data.append('file',image.file,image.file.name)
-        const result = await api('/media',{method:'POST',body:data,key:image.key,signal:uploadController.signal})
-        if (stopped) return
-        if (result.state !== 'ready' || typeof result.media_id !== 'string' || !result.media_id) throw new Error(t("服务器尚未确认图片可用，请重试。"))
-        if (images.value.some(item => item !== image && item.state === 'ready' && item.media_id === result.media_id)) {
-          image.retryable = false
-          throw new Error(t("这张图片已经添加，请移除重复项。"))
-        }
-        image.media_id = result.media_id
-        image.url = result.private_preview_url || '/media/' + result.media_id
-        image.state = 'ready'
-        image.file = undefined
-        await nextTick()
-        releasePreview(image)
-      } catch (cause) {
-        if (stopped) return
-        image.state = 'failed'
-        image.error = (cause as Error).message || t("网络未确认上传结果，请重试。")
-      } finally { uploadController = undefined }
+const {run:processUploads}=useMediaUploadQueue<SelectedImage>({
+  next:()=>images.value.find(image=>image.state==='queued'),
+  file:image=>image.file,
+  key:image=>image.key,
+  async uploaded(image,result){
+    if (images.value.some(item=>item!==image&&item.state==='ready'&&item.media_id===result.media_id)) {
+      image.retryable=false
+      throw new Error(t("这张图片已经添加，请移除重复项。"))
     }
-  } finally { uploadRunning = false }
-}
+    image.media_id=result.media_id
+    image.url=result.private_preview_url||'/media/'+result.media_id
+    image.state='ready';image.file=undefined
+    await nextTick()
+    releasePreview(image)
+  },
+})
 function pickImages(event:Event) {
   const input = event.target as HTMLInputElement, files = Array.from(input.files || [])
   input.value = ''
@@ -292,7 +276,7 @@ async function useLatest() {
 }
 function beforeLeave(event:BeforeUnloadEvent) { if (dirty.value || uploading.value) { event.preventDefault(); event.returnValue = '' } }
 onMounted(() => { void load(); if(new URLSearchParams(location.search).get('compose')==='1')void nextTick(()=>textarea.value?.focus()); window.addEventListener('beforeunload',beforeLeave) })
-onBeforeUnmount(() => { stopped = true; uploadController?.abort(); clearImages(); window.removeEventListener('beforeunload',beforeLeave) })
+onBeforeUnmount(() => { stopped = true; clearImages(); window.removeEventListener('beforeunload',beforeLeave) })
 </script>
 
 <template>

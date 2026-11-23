@@ -4,6 +4,8 @@ import {t} from "../i18n"
 import {computed,nextTick,onBeforeUnmount,onMounted,reactive,ref,useId} from 'vue'
 import {api,APIError,body,type Row} from '../api'
 import {randomID} from '../random'
+import {imageFileIssue,releaseUploadPreview} from '../mediaUpload'
+import {useMediaUploadQueue} from '../useMediaUploadQueue'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import SelectField from './SelectField.vue'
@@ -26,7 +28,7 @@ const fields=(value:Product=form):Row=>({slug:value.slug,name:value.name,summary
 const snapshot=()=>JSON.stringify(fields()),dirty=computed(()=>snapshot()!==initial.value||uploads.value.length>0||!!customPlatform.value.trim()),uploading=computed(()=>uploads.value.some(u=>u.state==='queued'||u.state==='uploading')),locked=computed(()=>busy.value||uploading.value)
 const filtered=computed(()=>[...items.value].sort((a,b)=>a.position-b.position||Number(a.id)-Number(b.id)).filter(p=>(filter.value==='all'||p.published===(filter.value==='published'))&&(!query.value||[p.name,p.summary,p.slug].join(' ').toLocaleLowerCase().includes(query.value.toLocaleLowerCase()))))
 const publishedCount=computed(()=>items.value.filter(p=>p.published).length),allPlatforms=computed(()=>[...new Set([...platformOptions,...form.platforms])]),pendingImages=computed(()=>uploads.value.length>0)
-let stopped=false,uploadRunning=false,controller:AbortController|undefined,uploadController:AbortController|undefined,pending:Attempt|null=null,pendingDelete:DeleteAttempt|null=null
+let stopped=false,controller:AbortController|undefined,pending:Attempt|null=null,pendingDelete:DeleteAttempt|null=null
 initial.value=snapshot()
 function message(value:unknown){return value instanceof Error?value.message:t("操作未完成，请稍后重试。")}
 function parse(value:Row,detail=true):Product{
@@ -34,7 +36,7 @@ function parse(value:Row,detail=true):Product{
  return {...clone(value),markdown:detail?value.markdown:''} as Product
 }
 function parseList(data:Row){if(!Array.isArray(data.items))throw new Error(t("产品列表未完整载入，请重试。"));return data.items.map((value:Row)=>parse(value,false))}
-function clearUploads(){uploads.value.forEach(u=>{if(u.preview)URL.revokeObjectURL(u.preview)});uploads.value=[]}
+function clearUploads(){uploads.value.forEach(releaseUploadPreview);uploads.value=[]}
 function rememberImages(value:Product){if(value.icon_media_id&&value.icon_url)previewURLs[value.icon_media_id]=value.icon_url;if(value.cover_media_id&&value.cover_url)previewURLs[value.cover_media_id]=value.cover_url;for(const image of value.gallery||[])if(image.media_id&&image.url)previewURLs[image.media_id]=image.url}
 function fill(value?:Product){clearUploads();Object.keys(form).forEach(k=>delete form[k]);Object.assign(form,value?clone(value):blank());if(value)rememberImages(value);initial.value=snapshot();conflict.value=false;error.value='';pending=null;uncertain.value=false;pendingDelete=null;deleteUncertain.value=false;customPlatform.value=''}
 function mediaURL(id:string|null){return id?(previewURLs[id]||'/media/'+id):''}
@@ -68,15 +70,28 @@ async function remove(){
 
 function slugFromName(){if(form.id||form.slug)return;const value=form.name.toLocaleLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,96);if(value)form.slug=value}
 function addPlatform(){const value=customPlatform.value.trim();if(!value)return;if(Array.from(value).length>40||form.platforms.length>=12){error.value=t("平台名称最多40个字符，最多添加12个平台。");return}if(!form.platforms.some(p=>p.toLocaleLowerCase()===value.toLocaleLowerCase()))form.platforms.push(value);customPlatform.value=''}
-function pickImages(event:Event,target:Upload['target']){const input=event.target as HTMLInputElement,files=Array.from(input.files||[]);input.value='';if(locked.value)return;const count=target==='gallery'?12-form.gallery_media_ids.length-uploads.value.filter(u=>u.target==='gallery').length:1;if(files.length>count)toast.warning(target==='gallery'?t("截图最多12张，已保留可添加的图片。"):t("每次选择一张图片。"));for(const file of files.slice(0,count)){const issue=!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)?t("请选择 JPEG、PNG、WebP 或 GIF 图片。"):file.size>10485760?t("图片超过10 MiB，请压缩后重新选择。"):!file.size?t("图片文件为空，请重新选择。"):'';uploads.value.push({id:randomID(),file,key:randomID(),target,state:issue?'failed':'queued',preview:issue?'':URL.createObjectURL(file),error:issue,retryable:!issue})}void processUploads()}
-async function processUploads(){if(uploadRunning||stopped)return;uploadRunning=true;try{while(!stopped){const upload=uploads.value.find(u=>u.state==='queued');if(!upload)break;upload.state='uploading';upload.error='';uploadController=new AbortController();try{const data=new FormData();data.append('file',upload.file,upload.file.name);const result=await api('/media',{method:'POST',body:data,key:upload.key,signal:uploadController.signal});if(stopped)return;if(result.state!=='ready'||typeof result.media_id!=='string'||!result.media_id)throw new Error(t("服务器尚未确认图片可用，请重试。"));previewURLs[result.media_id]=result.private_preview_url||'/media/'+result.media_id;if(upload.target==='icon')form.icon_media_id=result.media_id;else if(upload.target==='cover')form.cover_media_id=result.media_id;else if(!form.gallery_media_ids.includes(result.media_id))form.gallery_media_ids.push(result.media_id);discardUpload(upload);toast.success(t("图片已上传，保存产品后生效。"))}catch(e){if(!stopped){upload.state='failed';upload.error=message(e);toast.error(upload.error)}}finally{uploadController=undefined}}}finally{uploadRunning=false}}
-function discardUpload(upload:Upload){if(upload.preview)URL.revokeObjectURL(upload.preview);uploads.value=uploads.value.filter(u=>u.id!==upload.id)}
+function pickImages(event:Event,target:Upload['target']){const input=event.target as HTMLInputElement,files=Array.from(input.files||[]);input.value='';if(locked.value)return;const count=target==='gallery'?12-form.gallery_media_ids.length-uploads.value.filter(u=>u.target==='gallery').length:1;if(files.length>count)toast.warning(target==='gallery'?t("截图最多12张，已保留可添加的图片。"):t("每次选择一张图片。"));for(const file of files.slice(0,count)){const problem=imageFileIssue(file);const issue=problem==='type'?t("请选择 JPEG、PNG、WebP 或 GIF 图片。"):problem==='size'?t("图片超过10 MiB，请压缩后重新选择。"):problem==='empty'?t("图片文件为空，请重新选择。"):'';uploads.value.push({id:randomID(),file,key:randomID(),target,state:issue?'failed':'queued',preview:issue?'':URL.createObjectURL(file),error:issue,retryable:!issue})}void processUploads()}
+const {run:processUploads}=useMediaUploadQueue<Upload>({
+ next:()=>uploads.value.find(upload=>upload.state==='queued'),
+ file:upload=>upload.file,
+ key:upload=>upload.key,
+ uploaded(upload,result){
+  previewURLs[result.media_id]=result.private_preview_url||'/media/'+result.media_id
+  if(upload.target==='icon')form.icon_media_id=result.media_id
+  else if(upload.target==='cover')form.cover_media_id=result.media_id
+  else if(!form.gallery_media_ids.includes(result.media_id))form.gallery_media_ids.push(result.media_id)
+  discardUpload(upload)
+  toast.success(t("图片已上传，保存产品后生效。"))
+ },
+ failed:upload=>toast.error(upload.error),
+})
+function discardUpload(upload:Upload){releaseUploadPreview(upload);uploads.value=uploads.value.filter(u=>u.id!==upload.id)}
 function retryUpload(upload:Upload){if(locked.value||!upload.retryable)return;upload.state='queued';void processUploads()}
 async function moveScreenshot(index:number,step:number){if(locked.value)return;const to=index+step;if(to<0||to>=form.gallery_media_ids.length)return;const [id]=form.gallery_media_ids.splice(index,1);form.gallery_media_ids.splice(to,0,id);await nextTick();document.getElementById(uid+'-screenshot-'+id)?.focus()}
 function tabKey(event:KeyboardEvent){const buttons=Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role=tab]'));let to=buttons.indexOf(event.target as HTMLButtonElement);if(event.key==='ArrowRight')to=(to+1)%buttons.length;else if(event.key==='ArrowLeft')to=(to+buttons.length-1)%buttons.length;else if(event.key==='Home')to=0;else if(event.key==='End')to=buttons.length-1;else return;event.preventDefault();buttons[to].click();buttons[to].focus()}
 function beforeLeave(event:BeforeUnloadEvent){if(dirty.value||uncertain.value||deleteUncertain.value){event.preventDefault();event.returnValue=''}}
 onMounted(()=>{void load();window.addEventListener('beforeunload',beforeLeave)})
-onBeforeUnmount(()=>{stopped=true;controller?.abort();uploadController?.abort();clearUploads();window.removeEventListener('beforeunload',beforeLeave)})
+onBeforeUnmount(()=>{stopped=true;controller?.abort();clearUploads();window.removeEventListener('beforeunload',beforeLeave)})
 </script>
 
 <template>

@@ -7,6 +7,8 @@ import {appendUnique,api,APIError,body,list,type Row} from '../api'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import {randomID} from '../random'
+import {imageFileIssue,releaseUploadPreview} from '../mediaUpload'
+import {useMediaUploadQueue} from '../useMediaUploadQueue'
 import SelectField from './SelectField.vue'
 import Icon from './Icon.vue'
 import '../gamePlatforms.css'
@@ -48,7 +50,7 @@ const dirty=computed(()=>homeDirty.value||itemDirty.value||photos.value.length>0
 function remotePreview(value:string){try{const url=new URL(value);if(['image.api.playstation.com','image.api.np.km.playstation.net'].includes(url.hostname))return value.length<=2048&&url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&!url.hash&&url.search.length<=513?url.href:'';return url.protocol==='https:'&&/(^|\.)(steamstatic\.com|steamcdn-a\.akamaihd\.net|steamusercontent\.com|mzstatic\.com)$/.test(url.hostname)?url.href:''}catch{return ''}}
 const imageSource=computed(()=>cover.value?.preview||(item.media_id?'/media/'+item.media_id:remotePreview(item.image_url)))
 const credentialsReady=computed(()=>!!steam.steam_id&&(!!apiKey.value||(!clearKey.value&&!!steamStatus.value.api_key_configured)))
-let stopped=false,sequence=0,listController:AbortController|undefined,uploadController:AbortController|undefined,queueRunning=false
+let stopped=false,sequence=0,listController:AbortController|undefined
 let itemKey=randomID(),syncKey=randomID(),pendingItem:{key:string;payload:Row}|null=null,pendingHome:{key:string;version:number;payload:Row;snapshot:string}|null=null
 let pendingPlaylistPreview:{key:string;input:string;refresh:boolean}|null=null,pendingPlaylistImport:{key:string;version:number;preview_id:string}|null=null,playlistSequence=0
 
@@ -98,7 +100,7 @@ async function moveSection(index:number|string,step:number){if(locked.value)retu
 async function editSection(key:string){section.value=key;await nextTick();document.getElementById(uid+'-section-editor')?.focus()}
 function tabKey(event:KeyboardEvent){const buttons=Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role=tab]')),at=buttons.indexOf(event.target as HTMLButtonElement);let to=at;if(event.key==='ArrowRight')to=(at+1)%buttons.length;else if(event.key==='ArrowLeft')to=(at-1+buttons.length)%buttons.length;else if(event.key==='Home')to=0;else if(event.key==='End')to=buttons.length-1;else return;event.preventDefault();buttons[to]?.click();buttons[to]?.focus()}
 function parseItem(data:Row):Row{if(!data||!String(data.id||'')||!Number.isSafeInteger(Number(data.version))||Number(data.version)<1||!['steam','music','photos'].includes(data.kind)||['title','subtitle','alt','url','image_url','hero_url','logo_url','media_id','provider_id'].some(k=>typeof data[k]!=='string')||!(data.playtime_minutes===null||(Number.isSafeInteger(data.playtime_minutes)&&data.playtime_minutes>=0))||!Number.isSafeInteger(data.position)||typeof data.visible!=='boolean')throw new Error(t("条目数据不完整，当前输入已保留。"));const platform=data.kind==='steam'?(data.platform??'steam'):'';const platforms=data.platforms??[];if((data.kind==='steam'&&!['steam','psn'].includes(platform))||!Array.isArray(platforms)||platforms.some((p:unknown)=>p!=='PS4'&&p!=='PS5')||(data.kind!=='steam'&&platforms.length))throw new Error(t("游戏平台信息不完整，当前输入已保留。"));return {...blankItem(data.kind),...data,platform,platforms,id:String(data.id),version:Number(data.version),image_url:data.media_id?'':data.image_url||''}}
-function release(upload:Upload|null){if(upload?.preview){URL.revokeObjectURL(upload.preview);upload.preview=''}}
+const release=releaseUploadPreview
 function resetCover(){release(cover.value);cover.value=null}
 function fillItem(data?:Row,preserve=false){const local=clone(itemValue()),photo=activePhoto.value;if(!preserve)resetCover();Object.keys(item).forEach(k=>delete item[k]);Object.assign(item,data?parseItem(data):blankItem(kind.value));itemInitial.value=JSON.stringify(itemValue());if(preserve)Object.assign(item,local);itemConflict.value=false;if(!preserve){activePhoto.value='';itemKey=randomID();pendingItem=null}else activePhoto.value=photo}
 fillItem()
@@ -169,9 +171,14 @@ async function importPlaylist(){
 async function discardPlaylistPreview(){if(locked.value)return;if(pendingPlaylistImport&&!await confirmAction(t("取消当前歌单预览？"),t("上次保存结果尚未确认。取消预览不会撤销可能已经完成的导入。"),t("取消预览")))return;playlistPreview.value=null;playlistInput.value='';playlistImportedID.value='';playlistExpired.value=false;pendingPlaylistImport=null;pendingPlaylistPreview=null;playlistError.value=''}
 async function importMetadata(){if(locked.value||!importInput.value.trim())return;if(isPlaylist.value){await previewPlaylist();return}busy.value='import';importError.value='';try{const data=await api('/admin/home/import',{method:'POST',body:body({kind:kind.value,input:importInput.value.trim()})});if(!stopped)importPreview.value=data}catch(e){importError.value=t("未能读取链接信息。原预览和当前条目已保留，你仍可手动填写标题、目标链接并上传封面。{value1}", {value1:(e as Error).message})}finally{busy.value=''}}
 async function useImport(){if(locked.value||!importPreview.value)return;if(itemDirty.value&&!await confirmAction(t("使用导入的信息？"),t("当前未保存的条目会被替换，导入结果仍须核对后保存。"),t("使用导入信息")))return;fillItem();Object.assign(item,{...blankItem(kind.value),...importPreview.value,id:'',version:0,visible:false});itemError.value='';toast.info(t("信息已填入新条目。核对后保存，尚未加入首页。"))}
-function fileProblem(file:File){if(!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return t("请选择 JPEG、PNG、WebP 或 GIF 图片。");if(!file.size||file.size>maxBytes.value)return t("文件为空或超过 {value1}，请重新选择。", {value1:sizeLabel.value});return ''}
+function fileProblem(file:File){const issue=imageFileIssue(file,maxBytes.value);if(issue==='type')return t("请选择 JPEG、PNG、WebP 或 GIF 图片。");if(issue)return t("文件为空或超过 {value1}，请重新选择。", {value1:sizeLabel.value});return ''}
 function uploadRecord(file:File):Upload{const error=fileProblem(file);return {id:randomID(),file,key:randomID(),state:error?'failed':'queued',media_id:'',preview:error?'':URL.createObjectURL(file),error,retryable:!error}}
-async function sendUpload(upload:Upload){upload.state='uploading';upload.error='';uploadController=new AbortController();try{const data=new FormData();data.append('file',upload.file,upload.file.name);const result=await api('/media',{method:'POST',key:upload.key,body:data,signal:uploadController.signal});if(stopped)return;if(result.state!=='ready'||typeof result.media_id!=='string')throw new Error(t("服务器尚未确认图片可用，请重试。"));upload.media_id=result.media_id;upload.state='ready'}catch(e){if(!stopped){upload.state='failed';upload.error=(e as Error).message}}finally{uploadController=undefined}}
+const {send:sendUpload,run:photoUploads}=useMediaUploadQueue<Upload>({
+ next:()=>photos.value.find(upload=>upload.state==='queued'),
+ file:upload=>upload.file,
+ key:upload=>upload.key,
+ uploaded(upload,result){upload.media_id=result.media_id},
+})
 async function uploadCover(event:Event){const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';if(locked.value||!file)return;resetCover();cover.value=uploadRecord(file);if(cover.value.state==='queued')await finishCover()}
 async function finishCover(){const upload=cover.value;if(!upload||!upload.retryable||busy.value||uploading.value&&upload.state!=='queued')return;await sendUpload(upload);if(!stopped&&upload.state==='ready'){item.media_id=upload.media_id;resetCover();toast.success(t("图片已上传，保存条目后生效。"))}}
 function removeCustomCover(){
@@ -186,7 +193,6 @@ function removeCustomCover(){
  itemError.value=''
 }
 function cancelCover(){if(locked.value)return;resetCover()}
-async function photoUploads(){if(queueRunning||stopped)return;queueRunning=true;try{while(!stopped){const upload=photos.value.find(p=>p.state==='queued');if(!upload)break;await sendUpload(upload)}}finally{queueRunning=false}}
 function pickPhotos(event:Event){const input=event.target as HTMLInputElement,files=Array.from(input.files||[]);input.value='';if(locked.value)return;photos.value.push(...files.map(uploadRecord));void photoUploads()}
 function retryPhoto(upload:Upload){if(locked.value||!upload.retryable)return;upload.state='queued';void photoUploads()}
 async function cancelPhoto(upload:Upload){if(busy.value||upload.state==='uploading')return;if(activePhoto.value===upload.id){itemError.value=t("这张照片正在编辑。请先保存或新建其他条目。");return}const at=photos.value.indexOf(upload);release(upload);photos.value=photos.value.filter(p=>p.id!==upload.id);await nextTick();document.getElementById(photos.value[Math.min(at,photos.value.length-1)]?uid+'-photo-'+photos.value[Math.min(at,photos.value.length-1)].id:uid+'-photos-add')?.focus()}
@@ -269,7 +275,7 @@ watch(view,value=>{stopPsnPoll();if(value==='steam'){psnPollFailures=0;void load
 
 function beforeLeave(event:BeforeUnloadEvent){if(dirty.value||psnDirty.value||psnPendingAction.value){event.preventDefault();event.returnValue=''}}
 onMounted(()=>{void loadHome();void loadItems();void loadProjects();window.addEventListener('beforeunload',beforeLeave);document.addEventListener('visibilitychange',psnVisibility)})
-onBeforeUnmount(()=>{stopped=true;sequence++;playlistSequence++;stopPsnPoll();psnReadSequence++;psnReadController?.abort();psnNpsso.value='';pendingPsnSave=null;pendingPsnSync=null;pendingPsnDisconnect=null;document.removeEventListener('visibilitychange',psnVisibility);listController?.abort();uploadController?.abort();resetCover();photos.value.forEach(release);window.removeEventListener('beforeunload',beforeLeave)})
+onBeforeUnmount(()=>{stopped=true;sequence++;playlistSequence++;stopPsnPoll();psnReadSequence++;psnReadController?.abort();psnNpsso.value='';pendingPsnSave=null;pendingPsnSync=null;pendingPsnDisconnect=null;document.removeEventListener('visibilitychange',psnVisibility);listController?.abort();resetCover();photos.value.forEach(release);window.removeEventListener('beforeunload',beforeLeave)})
 </script>
 
 <template>

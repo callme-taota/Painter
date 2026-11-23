@@ -1,6 +1,7 @@
 // Render the real workbench with synthetic, fully intercepted API traffic.
 // Includes the editor; never connects to a running Painter or database.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{createRequire}=require('node:module');
+const {createHash}=require('node:crypto');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const frontend=createRequire(path.resolve(__dirname,'../../web/frontend/package.json'));
 const {build}=frontend('esbuild'),{parse,compileScript}=frontend('@vue/compiler-sfc');
@@ -12,6 +13,10 @@ const copy=value=>JSON.parse(JSON.stringify(value));
 const post=(id,status='draft')=>({id:String(id),version:3,draft_version:2,title:'文章 '+id,summary:'摘要',markdown:'正文',tag_ids:[],cover:{mode:'none'},status,updated_at:'2026-11-22T01:00:00Z',author_name:'测试作者',publication:status==='published'?{revision_id:'r1'}:null});
 const moment=()=>({id:'9',version:1,text:'动态草稿',images:[],public_images:[],public_text:null,published:false,status:'draft'});
 const pageOf=items=>({items,next_cursor:'',has_more:false});
+const home=()=>{
+ const order=['intro','articles','steam','music','photos','closing','activity','projects'];
+ return {version:1,max_image_bytes:10485760,config:{order,sections:Object.fromEntries(order.map(key=>[key,{enabled:true,title:key,description:'',limit:0,link_label:'',link_url:''}])),activity:{source:'posts',period:'rolling',timezone:'Asia/Shanghai',year:0},intro_roles:[],intro_card_name:'',use_site_intro:false,motion_enabled:true,warmth_enabled:true,intro_name:'',writing_title:'',writing_description:'',scroll_label:''},steam:{steam_id:'',mode:'owned',auto_sync_enabled:false,api_key_configured:false}};
+};
 // esbuild's inlined dynamic imports need a module marker so Vue unwraps the
 // SFC default export just as it does for Vite's native ESM chunks.
 async function bundle(){
@@ -20,7 +25,7 @@ async function bundle(){
  return {js:result.outputFiles.find(f=>f.path.endsWith('.js')).text,css:result.outputFiles.find(f=>f.path.endsWith('.css')).text};
 }
 async function fixture(browser,assets,route,options={}){
- const state={posts:[post(1,'published'),post(2)],moment:null,phrases:[{id:'5',version:1,text:'合成片语',source:'',kind:'sentence',published:false}],friends:[],series:[],ledger:new Map(),lostReplies:{},malformedReplies:{},requests:[],failList:0,failMomentSave:0,...options};
+ const state={posts:[post(1,'published'),post(2)],moment:null,phrases:[{id:'5',version:1,text:'合成片语',source:'',kind:'sentence',published:false}],friends:[],series:[],ledger:new Map(),lostReplies:{},malformedReplies:{},requests:[],media:new Map(),home:home(),homeItems:[],products:[],failMedia:0,malformedMedia:0,failList:0,failMomentSave:0,...options};
  const page=await browser.newPage({viewport:{width:1200,height:900},reducedMotion:'reduce'});page.setDefaultTimeout(10000);
  await page.addInitScript(()=>localStorage.setItem('painter-analytics','off'));
  page.on('pageerror',error=>errors.push(error.message));
@@ -33,7 +38,21 @@ async function fixture(browser,assets,route,options={}){
   if(request.isNavigationRequest())return intercepted.fulfill({contentType:'text/html',body:'<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"><body data-page-kind="studio"><div id="workbench"></div><script type="module" src="/fixture.js"></script></html>'});
   if(url.pathname==='/assets/images/painter-logo.png')return intercepted.fulfill({contentType:'image/png',body:fs.readFileSync(path.join(src,'../public/images/painter-logo.png'))});
   if(url.pathname.startsWith('/assets/'))return intercepted.fulfill({status:204,body:''});
-  const entry={path:url.pathname,query:url.search,method,headers:request.headers(),body:request.postData()?JSON.parse(request.postData()):null};state.requests.push(entry);
+  if(url.pathname.startsWith('/media/'))return intercepted.fulfill({contentType:'image/png',body:fs.readFileSync(path.join(__dirname,'fixtures/avatar.png'))});
+  const multipart=request.headers()['content-type']?.startsWith('multipart/form-data');
+  const bytes=request.postDataBuffer();
+  const entry={path:url.pathname,query:url.search,method,headers:request.headers(),body:bytes&&!multipart?JSON.parse(bytes.toString()):null};state.requests.push(entry);
+  if(url.pathname==='/api/v1/media'){
+   // Ignore the browser-generated multipart boundary when comparing retries.
+   const raw=bytes.toString('latin1'),file=raw.slice(raw.indexOf('\r\n\r\n')+4,raw.lastIndexOf('\r\n--'));
+   entry.fileHash=createHash('sha256').update(file,'latin1').digest('hex');
+   entry.filename=raw.match(/filename="([^"]*)"/)?.[1];
+   const key=entry.headers['idempotency-key'];
+   if(!state.media.has(key))state.media.set(key,{state:'ready',media_id:'00000000-0000-4000-8000-'+String(state.media.size+1).padStart(12,'0')});
+   if(state.failMedia-->0)return send({error:{code:'LOST_REPLY',message:'合成上传已提交但未确认'}},503);
+   if(state.malformedMedia-->0)return send({state:'ready',media_id:''});
+   return send(state.media.get(key),201);
+  }
   const once=(create,status=200)=>{
    const key=method+' '+url.pathname+' '+entry.headers['idempotency-key'],signature=JSON.stringify([entry.body,entry.headers['if-match']]);
    let saved=state.ledger.get(key);
@@ -43,6 +62,12 @@ async function fixture(browser,assets,route,options={}){
    if(state.malformedReplies[url.pathname]>0){state.malformedReplies[url.pathname]--;return send({})}
    return send(saved.value,status);
   };
+  if(url.pathname==='/api/v1/admin/home'&&method==='GET')return send(state.home);
+  if(url.pathname==='/api/v1/admin/home/items'&&method==='GET')return send(pageOf(state.homeItems));
+  if(url.pathname==='/api/v1/admin/home/items'&&method==='POST')return once(()=>{const row={...entry.body,id:String(state.homeItems.length+1),version:1,playtime_minutes:null,source:'manual'};state.homeItems.push(row);return row},201);
+  if(url.pathname==='/api/v1/admin/home/projects')return send(pageOf([]));
+  if(url.pathname==='/api/v1/admin/products'&&method==='GET')return send(pageOf(state.products));
+  if(url.pathname==='/api/v1/admin/products'&&method==='POST')return once(()=>{const row={...entry.body,id:String(state.products.length+1),version:1};state.products.push(row);return row},201);
   if(url.pathname==='/api/v1/session')return send({authenticated:true,user:{id:'7',username:'fixture',display_name:'合成站长',role:'owner'},csrf_token:'synthetic-csrf'});
   if(url.pathname==='/api/v1/me/posts'){
    if(state.failList-->0)return send({error:{code:'FIXTURE_FAILURE',message:'合成列表加载失败'}},503);
@@ -50,7 +75,7 @@ async function fixture(browser,assets,route,options={}){
    return send(pageOf(state.posts.filter(post=>(!status||status==='all'||post.status===status)&&post.title.includes(q))));
   }
   if(url.pathname==='/api/v1/me/moments')return send({...pageOf(state.moment?[state.moment]:[]),max_text_length:500,max_images:9,max_image_bytes:10485760});
-  if(url.pathname==='/api/v1/moments'&&method==='POST'){state.moment={...moment(),...entry.body};return send(state.moment,201)}
+  if(url.pathname==='/api/v1/moments'&&method==='POST'){state.moment={...moment(),...entry.body,images:(entry.body.images||[]).map(image=>({...image,url:'/media/'+image.media_id}))};return send(state.moment,201)}
   if(url.pathname==='/api/v1/studio/moments/9/draft'){
    if(state.failMomentSave-->0)return send({error:{code:'VERSION_CONFLICT',message:'版本冲突'}},409);
    Object.assign(state.moment,entry.body,{version:state.moment.version+1});return send(state.moment);
@@ -172,6 +197,50 @@ async function capture(page,name){
   {
    const {page,state}=await fixture(browser,assets,'/studio/posts/2');const title=page.locator('.editor-title');await title.waitFor();await title.fill('统一请求后的标题');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.save-state')?.textContent.includes('已保存'));
    const save=writes(state,'/api/v1/studio/posts/2/draft')[0];check('editor save preserves draft version and stable request key',save.body.title==='统一请求后的标题'&&save.body.expected_draft_version===2&&save.headers['if-match']==='"3"'&&!!save.headers['idempotency-key']);await page.close();
+  }
+  {
+   const {page,state}=await fixture(browser,assets,'/studio/moments',{failMedia:1});
+   const image={name:'moment.png',mimeType:'image/png',buffer:fs.readFileSync(path.join(__dirname,'fixtures/avatar.png'))};
+   await page.locator('.moment-image-upload input[type=file]').setInputFiles(image);
+   await page.locator('.moment-image-item [role=alert]').filter({hasText:'合成上传'}).waitFor();
+   check('unconfirmed upload does not attach or save a moment',state.moment===null&&writes(state,'/api/v1/moments').length===0);
+   await page.locator('.moment-image-item').getByRole('button',{name:'重试上传第 1 张图片',exact:true}).click();
+   await page.waitForFunction(()=>document.querySelector('.moment-image-item')?.dataset.uploadState==='ready');
+   const uploads=writes(state,'/api/v1/media');
+   check('moment upload retry keeps the original key and bytes',uploads.length===2&&uploads[0].headers['idempotency-key']===uploads[1].headers['idempotency-key']&&uploads[0].fileHash===uploads[1].fileHash&&uploads[1].filename==='moment.png');
+   await page.getByRole('form',{name:'动态编辑'}).getByRole('button',{name:'保存草稿',exact:true}).click();
+   await page.locator('.moment-composer-state').filter({hasText:'已保存'}).waitFor();
+   check('upload attaches only through explicit draft save',state.moment.images.length===1&&!state.moment.published&&state.media.size===1);
+   await page.close();
+  }
+  {
+   const {page,state}=await fixture(browser,assets,'/studio/products',{malformedMedia:1});
+   await page.setViewportSize({width:390,height:844});
+   await page.waitForFunction(()=>document.querySelector('.workbench')?.classList.contains('is-phone'));
+   await page.getByRole('button',{name:'添加产品',exact:true}).click();
+   await page.getByRole('tab',{name:'图片',exact:true}).click();
+   await page.getByLabel('选择产品截图',{exact:true}).setInputFiles({name:'product.png',mimeType:'image/png',buffer:fs.readFileSync(path.join(__dirname,'fixtures/avatar.png'))});
+   await page.locator('.product-upload-list').getByRole('button',{name:'重试',exact:true}).waitFor();
+   check('malformed upload success cannot attach a product screenshot',await page.locator('.product-screenshot-editor li').count()===0&&state.products.length===0);
+   await page.locator('.product-upload-list').getByRole('button',{name:'重试',exact:true}).click();
+   await page.locator('.product-screenshot-editor li').waitFor();
+   check('product upload retry confirms the same server media',state.media.size===1&&writes(state,'/api/v1/media')[0].headers['idempotency-key']===writes(state,'/api/v1/media')[1].headers['idempotency-key']);
+   check('product images remain unsaved until explicit product save',writes(state,'/api/v1/admin/products').length===0);
+   await page.close();
+  }
+  {
+   const {page,state}=await fixture(browser,assets,'/studio/home');
+   await page.getByRole('tab',{name:'展示墙',exact:true}).click();
+   await page.getByRole('combobox',{name:'展示墙',exact:true}).click();
+   await page.getByRole('option',{name:'个人照片',exact:true}).click();
+   await page.locator('.homepage-photo-batch input[type=file]').setInputFiles({name:'home.png',mimeType:'image/png',buffer:fs.readFileSync(path.join(__dirname,'fixtures/avatar.png'))});
+   await page.locator('.homepage-photo-batch').getByRole('button',{name:'编辑并保存',exact:true}).waitFor();
+   check('homepage photos remain private local attachments until reviewed',state.homeItems.length===0&&state.media.size===1);
+   await page.locator('.homepage-photo-batch').getByRole('button',{name:'编辑并保存',exact:true}).click();
+   await page.getByRole('button',{name:'保存条目',exact:true}).click();
+   await page.waitForFunction(()=>document.querySelector('.homepage-photo-queue')===null);
+   check('homepage photo save preserves hidden-by-default semantics',state.homeItems.length===1&&state.homeItems[0].visible===false&&!!state.homeItems[0].media_id);
+   await page.close();
   }
   check('all workbench routes finish without runtime errors or unexpected requests',errors.length===0);
   fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({status:'passed',checks,errors},null,2));

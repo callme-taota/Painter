@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {uploadMedia} from '../mediaUpload'
 import {t} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
@@ -60,7 +61,7 @@ async function remove(){if(!selected.value?.id||busy.value||pendingSave.value)re
 function showPicker(){picker.value=!picker.value;if(picker.value&&!candidates.value.length)void findPosts()}
 function add(post:Row){const id=String(post.id);if(selectedIDs.value.has(id)||chapters.value.length>=300)return;chapters.value.push({id,post_id:id,title:post.title,status:post.status})}
 function move(index:number,delta:number){const target=index+delta;if(target<0||target>=chapters.value.length)return;const copy=[...chapters.value];[copy[index],copy[target]]=[copy[target]!,copy[index]!];chapters.value=copy}
-async function upload(event:Event){const input=event.target as HTMLInputElement,file=input.files?.[0];if(!file||!selected.value||busy.value)return;busy.value=true;error.value='';try{const data=new FormData();data.append('file',file);const value=await api('/media',{method:'POST',body:data});selected.value.cover_media_id=value.media_id;selected.value.cover_url='/media/'+value.media_id;toast.success(t("封面已上传，保存专栏后生效"))}catch(e){mutationError(e)}finally{busy.value=false;input.value=''}}
+async function upload(event:Event){const input=event.target as HTMLInputElement,file=input.files?.[0];if(!file||!selected.value||busy.value)return;busy.value=true;error.value='';try{const value=await uploadMedia(file);selected.value.cover_media_id=value.media_id;selected.value.cover_url='/media/'+value.media_id;toast.success(t("封面已上传，保存专栏后生效"))}catch(e){mutationError(e)}finally{busy.value=false;input.value=''}}
 function beforeUnload(event:BeforeUnloadEvent){if(dirty.value||pendingSave.value){event.preventDefault();event.returnValue=''}}
 onMounted(()=>{void load();addEventListener('beforeunload',beforeUnload)})
 onBeforeUnmount(()=>{detailVersion++;removeEventListener('beforeunload',beforeUnload)})
