@@ -25,8 +25,9 @@ async function bundle(){
  return {js:result.outputFiles.find(f=>f.path.endsWith('.js')).text,css:result.outputFiles.find(f=>f.path.endsWith('.css')).text};
 }
 async function fixture(browser,assets,route,options={}){
- const state={posts:[post(1,'published'),post(2)],moment:null,phrases:[{id:'5',version:1,text:'合成片语',source:'',kind:'sentence',published:false}],friends:[],series:[],ledger:new Map(),lostReplies:{},malformedReplies:{},requests:[],media:new Map(),home:home(),homeItems:[],products:[],failMedia:0,malformedMedia:0,failList:0,failMomentSave:0,...options};
+ const state={posts:[post(1,'published'),post(2)],moment:null,phrases:[{id:'5',version:1,text:'合成片语',source:'',kind:'sentence',published:false}],friends:[],series:[],ledger:new Map(),lostReplies:{},malformedReplies:{},requests:[],media:new Map(),home:home(),homeItems:[],homeProjects:[],psn:{version:7,connected:true,online_id:'fixture-online',account_id:'fixture-account',auto_sync:false,status:'idle',last_error:'',game_count:0},products:[],failMedia:0,malformedMedia:0,failList:0,failMomentSave:0,...options};
  const page=await browser.newPage({viewport:{width:1200,height:900},reducedMotion:'reduce'});page.setDefaultTimeout(10000);
+ if(options.clock)await page.clock.install();
  await page.addInitScript(()=>localStorage.setItem('painter-analytics','off'));
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/*',async intercepted=>{
@@ -63,9 +64,23 @@ async function fixture(browser,assets,route,options={}){
    return send(saved.value,status);
   };
   if(url.pathname==='/api/v1/admin/home'&&method==='GET')return send(state.home);
-  if(url.pathname==='/api/v1/admin/home/items'&&method==='GET')return send(pageOf(state.homeItems));
+  if(url.pathname==='/api/v1/admin/home/items'&&method==='GET'){
+   if(state.failHomeKind===url.searchParams.get('kind'))return send({error:{message:'合成筛选失败'}},503);
+   const items=state.homeItems.filter(item=>item.kind===url.searchParams.get('kind'));
+   return send({...pageOf(items),...(state.homeCursor?{has_more:true,next_cursor:state.homeCursor}:{})});
+  }
   if(url.pathname==='/api/v1/admin/home/items'&&method==='POST')return once(()=>{const row={...entry.body,id:String(state.homeItems.length+1),version:1,playtime_minutes:null,source:'manual'};state.homeItems.push(row);return row},201);
-  if(url.pathname==='/api/v1/admin/home/projects')return send(pageOf([]));
+  if(url.pathname==='/api/v1/admin/home'&&method==='PUT')return once(()=>{
+   const steam={...state.home.steam,...entry.body.steam};
+   steam.api_key_configured=!!steam.api_key||(!steam.clear_api_key&&steam.api_key_configured);delete steam.api_key;delete steam.clear_api_key;
+   state.home={...state.home,...entry.body,steam,version:state.home.version+1};return state.home;
+  });
+  if(url.pathname==='/api/v1/admin/home/psn'&&method==='GET')return send(state.psn);
+  if(url.pathname==='/api/v1/admin/home/psn'&&method==='PUT')return once(()=>{state.psn={...state.psn,...entry.body,version:state.psn.version+1};return state.psn});
+  if(url.pathname==='/api/v1/admin/home/projects'&&method==='GET')return send(pageOf(state.homeProjects));
+  if(url.pathname==='/api/v1/admin/home/projects'&&method==='POST')return once(()=>{
+   const row={...entry.body,id:String(state.homeProjects.length+1),version:1,title_override:null,description_override:null,url_override:null,language_override:null};state.homeProjects.push(row);return row;
+  },201);
   if(url.pathname==='/api/v1/admin/products'&&method==='GET')return send(pageOf(state.products));
   if(url.pathname==='/api/v1/admin/products'&&method==='POST')return once(()=>{const row={...entry.body,id:String(state.products.length+1),version:1};state.products.push(row);return row},201);
   if(url.pathname==='/api/v1/session')return send({authenticated:true,user:{id:'7',username:'fixture',display_name:'合成站长',role:'owner'},csrf_token:'synthetic-csrf'});
@@ -126,7 +141,7 @@ async function capture(page,name){
 (async()=>{
  const assets=await bundle(),browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
  try{
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/posts',{failList:1});
    await page.getByRole('button',{name:'重新加载',exact:true}).click();await page.locator('.posts-table tbody tr').filter({hasText:'文章 1'}).waitFor();
    check('article list retries through shared loader',state.requests.filter(r=>r.path==='/api/v1/me/posts').length===2);
@@ -138,7 +153,7 @@ async function capture(page,name){
    const write=writes(state,'/api/v1/studio/posts/1/publication')[0];check('article withdrawal preserves version and CSRF',write.method==='DELETE'&&write.headers['if-match']==='"3"'&&write.headers['x-csrf-token']==='synthetic-csrf');
    await page.evaluate(()=>document.querySelectorAll('.painter-toast-close').forEach(button=>button.click()));await capture(page,'posts-desktop.png');await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>document.querySelector('.workbench')?.classList.contains('is-phone'));await capture(page,'posts-mobile.png');await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/moments');const form=page.getByRole('form',{name:'动态编辑'});
    await form.getByLabel('动态内容',{exact:true}).fill('新的合成动态');await form.getByRole('button',{name:'保存草稿',exact:true}).click();await page.locator('.moment-composer-state').filter({hasText:'已保存'}).waitFor();
    check('moment create retains caller payload and idempotency',writes(state,'/api/v1/moments')[0].body.text==='新的合成动态'&&!!writes(state,'/api/v1/moments')[0].headers['idempotency-key']);
@@ -151,15 +166,15 @@ async function capture(page,name){
    await form.getByRole('button',{name:'保存草稿',exact:true}).click();await page.locator('.moment-composer-state').filter({hasText:'已保存'}).waitFor();
    await page.evaluate(()=>document.querySelectorAll('.painter-toast-close').forEach(button=>button.click()));await capture(page,'moments-desktop.png');await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>document.querySelector('.workbench')?.classList.contains('is-phone'));await capture(page,'moments-mobile.png');await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/phrases');await page.locator('.phrase-library-row').filter({hasText:'合成片语'}).waitFor();
    check('phrase manager mounts with shared list state',state.requests.filter(r=>r.path==='/api/v1/admin/phrases').length===1);await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/series');await page.getByRole('button',{name:'新建专栏',exact:true}).click();await page.getByRole('button',{name:'添加文章',exact:true}).click();await page.locator('.series-post-options li').filter({hasText:'文章 1'}).waitFor();
    check('chapter picker uses the same article list client',state.requests.filter(r=>r.path==='/api/v1/me/posts').length===1);await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const path='/api/v1/admin/phrases', {page,state}=await fixture(browser,assets,'/studio/phrases',{lostReplies:{[path]:1}}),form=page.locator('.phrase-composer');
    await form.locator('#phrase-text').fill('首次片语');await form.getByRole('button',{name:'保存草稿',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
    await page.evaluate(()=>document.querySelectorAll('.painter-toast-close').forEach(button=>button.click()));await capture(page,'phrase-pending-desktop.png');await page.setViewportSize({width:390,height:844});await capture(page,'phrase-pending-mobile.png');await page.setViewportSize({width:1200,height:900});
@@ -169,7 +184,7 @@ async function capture(page,name){
    await form.getByRole('button',{name:'保存并公开',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.phrase-unsaved')===null);
    check('phrase subsequent update uses acknowledged ID and version',writes(state,'/api/v1/admin/phrases/6').length===1&&state.phrases.at(-1).text==='后续片语'&&state.phrases.at(-1).published);await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const path='/api/v1/studio/friends',{page,state}=await fixture(browser,assets,'/studio/friends',{malformedReplies:{[path]:1}}),form=page.getByRole('form',{name:'友链编辑'});
    await form.getByLabel('网站名称',{exact:true}).fill('首次友链');await form.getByLabel('网站地址',{exact:true}).fill('https://example.org');await form.getByRole('button',{name:'添加友链',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
    await form.getByLabel('网站名称',{exact:true}).fill('后续友链');await form.getByLabel('网站地址',{exact:true}).fill('not-a-url');await page.getByRole('button',{name:'重试确认保存',exact:true}).click();await page.getByText('上次保存已确认，当前新修改仍未保存。',{exact:true}).waitFor();
@@ -179,7 +194,7 @@ async function capture(page,name){
    await form.getByRole('button',{name:'保存修改',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.friends-composer .friends-unsaved')===null);
    check('friend update protocol remains versioned PUT',writes(state,'/api/v1/studio/friends/8').length===1&&state.friends[0].name==='后续友链');await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const path='/api/v1/series',{page,state}=await fixture(browser,assets,'/studio/series',{lostReplies:{[path]:1}});
    await page.getByRole('button',{name:'新建专栏',exact:true}).click();const form=page.locator('.series-editor');await form.getByLabel('专栏名称',{exact:true}).fill('首次专栏');await page.getByRole('button',{name:'添加文章',exact:true}).click();await page.locator('.series-post-options li').filter({hasText:'文章 1'}).getByRole('button',{name:'加入',exact:true}).click();
    await form.getByRole('button',{name:'保存专栏',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
@@ -190,15 +205,15 @@ async function capture(page,name){
    state.lostReplies['/api/v1/studio/series/10']=1;await form.getByRole('button',{name:'保存专栏',exact:true}).click();await page.getByRole('button',{name:'重试确认保存',exact:true}).click();await page.waitForFunction(()=>!document.body.textContent.includes('暂未确认保存结果'));
    const updates=writes(state,'/api/v1/studio/series/10');check('series update retries retain version and command identity',updates.length===2&&updates[0].headers['if-match']==='"1"'&&updates[1].headers['if-match']==='"1"'&&updates[0].headers['idempotency-key']===updates[1].headers['idempotency-key']&&state.series[0].version===2);await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/me/bookmarks',{failList:1});await page.getByRole('button',{name:'重新加载',exact:true}).click();await page.getByText('文章 1',{exact:true}).waitFor();
    check('workbench bookmark list retries with shared state',state.requests.filter(r=>r.path==='/api/v1/me/bookmarks').length===2);await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/posts/2');const title=page.locator('.editor-title');await title.waitFor();await title.fill('统一请求后的标题');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.save-state')?.textContent.includes('已保存'));
    const save=writes(state,'/api/v1/studio/posts/2/draft')[0];check('editor save preserves draft version and stable request key',save.body.title==='统一请求后的标题'&&save.body.expected_draft_version===2&&save.headers['if-match']==='"3"'&&!!save.headers['idempotency-key']);await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/moments',{failMedia:1});
    const image={name:'moment.png',mimeType:'image/png',buffer:fs.readFileSync(path.join(__dirname,'fixtures/avatar.png'))};
    await page.locator('.moment-image-upload input[type=file]').setInputFiles(image);
@@ -213,7 +228,7 @@ async function capture(page,name){
    check('upload attaches only through explicit draft save',state.moment.images.length===1&&!state.moment.published&&state.media.size===1);
    await page.close();
   }
-  {
+  if(process.env.CONTENT_MANAGERS_GROUP!=='home'){
    const {page,state}=await fixture(browser,assets,'/studio/products',{malformedMedia:1});
    await page.setViewportSize({width:390,height:844});
    await page.waitForFunction(()=>document.querySelector('.workbench')?.classList.contains('is-phone'));
@@ -240,6 +255,65 @@ async function capture(page,name){
    await page.getByRole('button',{name:'保存条目',exact:true}).click();
    await page.waitForFunction(()=>document.querySelector('.homepage-photo-queue')===null);
    check('homepage photo save preserves hidden-by-default semantics',state.homeItems.length===1&&state.homeItems[0].visible===false&&!!state.homeItems[0].media_id);
+   await page.close();
+  }
+  {
+   const {page,state}=await fixture(browser,assets,'/studio/home',{lostReplies:{'/api/v1/admin/home':1}});
+   const name=page.getByLabel('开场问候',{exact:false});
+   await name.fill('第一次保存');await page.getByRole('button',{name:'保存首页设置',exact:true}).click();
+   await page.getByRole('button',{name:'重试确认保存',exact:true}).waitFor();
+   await name.fill('新'.repeat(81));await page.getByRole('button',{name:'重试确认保存',exact:true}).click();
+   await page.getByRole('button',{name:'保存首页设置',exact:true}).waitFor();
+   const attempts=writes(state,'/api/v1/admin/home');
+   check('home settings retry preserves exact body, key and original version',attempts.length===2&&JSON.stringify(attempts[0].body)===JSON.stringify(attempts[1].body)&&attempts[0].headers['idempotency-key']===attempts[1].headers['idempotency-key']&&attempts[1].headers['if-match']==='"1"');
+   check('confirming old home settings preserves newer invalid input',state.home.version===2&&state.home.config.sections.intro.title==='第一次保存'&&await name.inputValue()==='新'.repeat(81));
+   await name.fill('后续修改');await page.getByRole('button',{name:'保存首页设置',exact:true}).click();
+   await page.locator('.homepage-config-form .homepage-savebar').filter({hasText:'首页设置已保存'}).waitFor();
+   check('next home settings save uses acknowledged version with new input',writes(state,'/api/v1/admin/home').at(-1).headers['if-match']==='"2"'&&state.home.config.sections.intro.title==='后续修改'&&state.home.version===3);
+   await page.getByRole('tab',{name:'游戏账号',exact:true}).click();
+   await page.locator('[name=psn-online-id]').fill('fixture-updated');
+   await page.getByRole('button',{name:'保存 PlayStation 设置',exact:true}).click();
+   await page.locator('.homepage-psn-form .homepage-savebar').filter({hasText:'PlayStation 设置已保存'}).waitFor();
+   const psnWrite=writes(state,'/api/v1/admin/home/psn')[0];
+   check('PSN saves keep their independent version and payload',psnWrite.headers['if-match']==='"7"'&&psnWrite.body.online_id==='fixture-updated'&&!('steam' in psnWrite.body)&&!('config' in psnWrite.body)&&state.home.version===3);
+   await page.close();
+  }
+  {
+   const {page,state}=await fixture(browser,assets,'/studio/home');
+   await page.getByRole('tab',{name:'项目卡片',exact:true}).click();
+   await page.getByRole('combobox',{name:'项目来源',exact:true}).click();await page.getByRole('option',{name:'手动维护',exact:true}).click();
+   const form=page.locator('form').filter({has:page.getByRole('button',{name:'保存项目',exact:true})});
+   await form.getByLabel('标题',{exact:false}).fill('独立项目');await form.getByLabel('项目链接',{exact:false}).fill('https://example.com/project');
+   await form.getByRole('button',{name:'保存项目',exact:true}).click();
+   await page.locator('.homepage-project-list').getByText('独立项目',{exact:true}).waitFor();
+   check('extracted project editor preserves hidden defaults and explicit save',state.homeProjects.length===1&&state.homeProjects[0].visible===false&&state.homeProjects[0].source==='manual'&&!!writes(state,'/api/v1/admin/home/projects')[0].headers['idempotency-key']);
+   await page.close();
+  }
+  {
+   const {page,state}=await fixture(browser,assets,'/studio/home',{clock:true,psn:{version:7,connected:true,online_id:'fixture-online',account_id:'fixture-account',auto_sync:false,status:'queued',last_error:'',game_count:0}});
+   const reads=()=>state.requests.filter(r=>r.path==='/api/v1/admin/home/psn'&&r.method==='GET').length;
+   check('PSN does not poll outside its account view',reads()===0);
+   await page.getByRole('tab',{name:'游戏账号',exact:true}).click();await page.locator('.homepage-psn-status').waitFor();
+   await page.getByRole('tab',{name:'页面内容',exact:true}).click();await page.clock.runFor(3100);
+   check('leaving game accounts stops PSN polling',reads()===1);
+   await page.getByRole('tab',{name:'游戏账号',exact:true}).click();await page.locator('.homepage-psn-status').waitFor();
+   await page.waitForFunction(()=>!document.querySelector('input[name=psn-online-id]')?.disabled);
+   const polled=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v1/admin/home/psn');await page.clock.runFor(3100);await polled;
+   check('returning to game accounts resumes PSN state reads',reads()>=3);
+   await page.evaluate(()=>window.unmountFixture());const before=reads();await page.clock.runFor(6100);
+   check('unmounting homepage stops the PSN timer and further reads',reads()===before);
+   await page.close();
+  }
+  {
+   const items=Array.from({length:20},(_,index)=>({id:String(index+1),version:1,kind:'steam',platform:'steam',platforms:[],title:'游戏 '+index,subtitle:'',alt:'',url:'https://store.steampowered.com/app/1',image_url:'',hero_url:'',logo_url:'',media_id:'',provider_id:'1',position:index,visible:false,playtime_minutes:null,source:'manual'}));
+   const {page,state}=await fixture(browser,assets,'/studio/home',{homeItems:items,homeCursor:'games-next',failHomeKind:'photos'});
+   await page.getByRole('tab',{name:'展示墙',exact:true}).click();
+   await page.getByRole('combobox',{name:'展示墙',exact:true}).click();await page.getByRole('option',{name:'个人照片',exact:true}).click();
+   await page.getByRole('button',{name:'刷新条目',exact:true}).waitFor();
+   check('failed wall filter invalidates previous pagination',await page.getByRole('button',{name:'重试载入',exact:true}).count()===0&&state.requests.filter(r=>r.path==='/api/v1/admin/home/items'&&r.query.includes('kind=photos')).every(r=>!new URLSearchParams(r.query).has('cursor')));
+   state.failHomeKind='';state.homeCursor='';await page.getByRole('button',{name:'刷新条目',exact:true}).click();
+   await page.waitForFunction(()=>document.querySelector('.homepage-items-table')?.textContent.includes('还没有'));
+   check('wall filter retry replaces previous game rows with photo results',await page.locator('.homepage-items-table tbody tr').count()===1);
    await page.close();
   }
   check('all workbench routes finish without runtime errors or unexpected requests',errors.length===0);

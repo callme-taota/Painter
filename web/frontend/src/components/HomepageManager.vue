@@ -2,11 +2,16 @@
 import {t, formatDate, formatNumber} from "../i18n"
 
 import InfiniteList from './InfiniteList.vue'
-import {computed,nextTick,onBeforeUnmount,onMounted,reactive,ref,useId,watch} from 'vue'
-import {appendUnique,api,APIError,body,list,type Row} from '../api'
+import {computed,nextTick,onBeforeUnmount,onMounted,reactive,ref,useId} from 'vue'
+import {api,APIError,body,type Row} from '../api'
 import {confirmAction} from '../confirm'
 import {toast} from '../toast'
 import {randomID} from '../random'
+import {useCursorList} from '../useCursorList'
+import {withCursor} from '../pagination'
+import {useHomeSettings} from '../useHomeSettings'
+import {useHomeProjects} from '../useHomeProjects'
+import {useHomePlayStation} from '../useHomePlayStation'
 import {imageFileIssue,releaseUploadPreview} from '../mediaUpload'
 import {useMediaUploadQueue} from '../useMediaUploadQueue'
 import SelectField from './SelectField.vue'
@@ -19,27 +24,21 @@ type GameFilter='all'|GamePlatform
 type Upload={id:string;file:File;key:string;state:'queued'|'uploading'|'failed'|'ready';media_id:string;preview:string;error:string;retryable:boolean}
 const names:Record<string,string>={intro:t("个人介绍"),articles:t("最近文章"),steam:t("游戏墙"),music:t("唱片墙"),photos:t("照片墙"),closing:t("结尾"),activity:t("更新频率"),projects:t("项目卡片")}
 const kinds=[{value:'steam',label:t("游戏墙")},{value:'music',label:t("Apple Music 唱片")},{value:'photos',label:t("个人照片")}]
-const uid=useId(),view=ref('content'),section=ref('intro'),kind=ref<Kind>('steam'),busy=ref(''),ready=ref(false),loadingHome=ref(true),loadingItems=ref(false)
+const uid=useId(),view=ref('content'),section=ref('intro'),kind=ref<Kind>('steam'),busy=ref('')
 const gameFilter=ref<GameFilter>('all')
-const config=ref<Row>({}),version=ref(0),roles=ref(''),steam=reactive({steam_id:'',mode:'owned',auto_sync_enabled:false}),steamStatus=ref<Row>({}),apiKey=ref(''),clearKey=ref(false)
-const homeInitial=ref(''),homeError=ref(''),homeConflict=ref(false),itemError=ref(''),listError=ref(''),importError=ref('')
-const items=ref<Row[]>([]),nextCursor=ref(''),item=reactive<Row>({}),itemInitial=ref(''),itemConflict=ref(false),importInput=ref(''),importPreview=ref<Row|null>(null)
+const itemError=ref(''),importError=ref('')
+const item=reactive<Row>({}),itemInitial=ref(''),itemConflict=ref(false),importInput=ref(''),importPreview=ref<Row|null>(null)
 const playlistStatus=ref<Row|null>(null),playlistPreview=ref<Row|null>(null),playlistInput=ref(''),playlistError=ref(''),playlistLoading=ref(false),playlistConflict=ref(false),playlistImportedID=ref(''),playlistExpired=ref(false)
 const isPlaylist=computed(()=>{if(kind.value!=='music')return false;try{return /\/playlist\//.test(new URL(importInput.value.trim()).pathname)}catch{return false}})
 const playlistInputChanged=computed(()=>!!playlistPreview.value&&importInput.value.trim()!==playlistInput.value)
 const playlistDirty=computed(()=>!!playlistPreview.value&&playlistImportedID.value!==playlistPreview.value.preview_id)
-const cover=ref<Upload|null>(null),photos=ref<Upload[]>([]),activePhoto=ref(''),fileInput=ref<HTMLInputElement>(),photoInput=ref<HTMLInputElement>(),maxBytes=ref(10485760)
+const cover=ref<Upload|null>(null),photos=ref<Upload[]>([]),activePhoto=ref(''),fileInput=ref<HTMLInputElement>(),photoInput=ref<HTMLInputElement>()
 const selectedSection=computed(()=>config.value.sections?.[section.value])
 const uploading=computed(()=>cover.value?.state==='uploading'||photos.value.some(p=>p.state==='queued'||p.state==='uploading'))
 const locked=computed(()=>!!busy.value||uploading.value)
 const sizeLabel=computed(()=>`${Number((maxBytes.value/1048576).toFixed(1))} MiB`)
 const count=(value:unknown)=>Array.from(String(value||'')).length
 const clone=<T,>(value:T):T=>JSON.parse(JSON.stringify(value))
-const configValue=():Row=>({...clone(config.value),intro_roles:roles.value.split(/[、,，\n]/).map(s=>s.trim()).filter(Boolean)})
-const steamValue=()=>({steam_id:steam.steam_id,mode:steam.mode,auto_sync_enabled:steam.auto_sync_enabled})
-const homeSnapshot=()=>JSON.stringify({config:configValue(),steam:steamValue()})
-const homeAttemptSnapshot=()=>JSON.stringify({home:homeSnapshot(),api_key:apiKey.value,clear_api_key:clearKey.value})
-const homeDirty=computed(()=>ready.value&&(homeSnapshot()!==homeInitial.value||!!apiKey.value||clearKey.value))
 function blankItem(value:Kind):Row{return {id:'',version:0,kind:value,title:'',subtitle:'',alt:'',url:'',image_url:'',hero_url:'',logo_url:'',playtime_minutes:null,media_id:'',provider_id:'',position:0,visible:false,source:'manual',platform:value==='steam'?(gameFilter.value==='psn'?'psn':'steam'):'',platforms:[]}}
 function gamePlatform(value:Row):GamePlatform{return value.platform==='psn'?'psn':'steam'}
 function platformLabel(value:Row){return gamePlatform(value)==='psn'?'PlayStation':'Steam'}
@@ -49,53 +48,11 @@ const itemDirty=computed(()=>itemSnapshot()!==itemInitial.value||!!cover.value)
 const dirty=computed(()=>homeDirty.value||itemDirty.value||photos.value.length>0||uploading.value||playlistDirty.value||projectDirty.value)
 function remotePreview(value:string){try{const url=new URL(value);if(['image.api.playstation.com','image.api.np.km.playstation.net'].includes(url.hostname))return value.length<=2048&&url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&!url.hash&&url.search.length<=513?url.href:'';return url.protocol==='https:'&&/(^|\.)(steamstatic\.com|steamcdn-a\.akamaihd\.net|steamusercontent\.com|mzstatic\.com)$/.test(url.hostname)?url.href:''}catch{return ''}}
 const imageSource=computed(()=>cover.value?.preview||(item.media_id?'/media/'+item.media_id:remotePreview(item.image_url)))
-const credentialsReady=computed(()=>!!steam.steam_id&&(!!apiKey.value||(!clearKey.value&&!!steamStatus.value.api_key_configured)))
-let stopped=false,sequence=0,listController:AbortController|undefined
-let itemKey=randomID(),syncKey=randomID(),pendingItem:{key:string;payload:Row}|null=null,pendingHome:{key:string;version:number;payload:Row;snapshot:string}|null=null
+let stopped=false
+let itemKey=randomID(),pendingItem:{key:string;payload:Row}|null=null
 let pendingPlaylistPreview:{key:string;input:string;refresh:boolean}|null=null,pendingPlaylistImport:{key:string;version:number;preview_id:string}|null=null,playlistSequence=0
 
-function parseHome(data:Row){
- const c=data?.config,s=data?.steam,keys=Object.keys(names)
- if(!Number.isSafeInteger(Number(data?.version))||Number(data.version)<1||!c||!s||!Array.isArray(c.order)||c.order.length!==keys.length||new Set(c.order).size!==keys.length||c.order.some((k:string)=>!keys.includes(k))||keys.some(k=>!c.sections?.[k]||typeof c.sections[k].enabled!=='boolean'||!Number.isSafeInteger(c.sections[k].limit)||['title','description','link_label','link_url'].some(f=>typeof c.sections[k][f]!=='string'))||!c.activity||!['posts_moments','posts','moments'].includes(c.activity.source)||!['rolling','year'].includes(c.activity.period)||typeof c.activity.timezone!=='string'||!Number.isInteger(c.activity.year)||!Array.isArray(c.intro_roles)||c.intro_roles.some((r:unknown)=>typeof r!=='string')||(c.intro_card_name!==undefined&&typeof c.intro_card_name!=='string')||typeof c.use_site_intro!=='boolean'||typeof c.motion_enabled!=='boolean'||typeof c.warmth_enabled!=='boolean'||['intro_name','writing_title','writing_description','scroll_label'].some(k=>typeof c[k]!=='string')||typeof s.steam_id!=='string'||typeof s.auto_sync_enabled!=='boolean'||typeof s.api_key_configured!=='boolean'||!['owned','recent'].includes(s.mode))throw new Error(t("首页设置未完整载入，当前修改已保留。"))
- return data
-}
-function applyHome(data:Row,preserve=false){
- parseHome(data);version.value=Number(data.version);steamStatus.value=clone(data.steam)
- homeInitial.value=JSON.stringify({config:clone(data.config),steam:{steam_id:data.steam.steam_id,mode:data.steam.mode,auto_sync_enabled:!!data.steam.auto_sync_enabled}})
- if(!preserve){config.value=clone(data.config);roles.value=data.config.intro_roles.join('、');Object.assign(steam,{steam_id:data.steam.steam_id,mode:data.steam.mode,auto_sync_enabled:!!data.steam.auto_sync_enabled});apiKey.value='';clearKey.value=false}
- const bytes=Number(data.max_image_bytes);if(Number.isSafeInteger(bytes)&&bytes>0)maxBytes.value=bytes
- ready.value=true;homeConflict.value=false
-}
-async function loadHome(replace=false){
- if(locked.value)return
- if(replace&&homeDirty.value&&!await confirmAction(t("载入服务器首页设置？"),t("当前页面内容和 Steam 设置修改将被替换，展示墙条目输入会保留。"),t("载入最新设置")))return
- loadingHome.value=true;busy.value='read-home';homeError.value=''
- try{const data=await api('/admin/home');if(!stopped){applyHome(data);pendingHome=null}}catch(e){homeError.value=(e as Error).message}finally{loadingHome.value=false;busy.value=''}
-}
-function homeProblem(){
- if(!ready.value)return t("请先载入首页设置。")
- const c=configValue()
- if(!Number.isInteger(c.activity?.year)||(c.activity.year!==0&&(c.activity.year<2000||c.activity.year>2100)))return t("统计年份请选择0（当前年份）或2000至2100之间的年份。")
- for(const key of c.order){const s=c.sections[key],label=names[key];if(count(s.title)>80||count(s.description)>600||count(s.link_label)>60||count(s.link_url)>2048)return t("{value1}的文案或链接超出上限。", {value1:label});const max=key==='articles'?12:['steam','music','photos','projects'].includes(key)?24:0;if(!Number.isInteger(Number(s.limit))||Number(s.limit)<0||Number(s.limit)>max)return t("{value1}的显示数量不正确。", {value1:label})}
- if(count(c.intro_name)>80||count(c.intro_card_name)>80||c.intro_roles.length>12||c.intro_roles.some((r:string)=>count(r)>60)||count(c.writing_title)>80||count(c.writing_description)>600||count(c.scroll_label)>60)return t("介绍或滚动文案超出上限，请检查后保存。")
- if(steam.steam_id&&!/^\d{17}$/.test(steam.steam_id))return t("Steam ID64 须为17位数字。")
- if(steam.auto_sync_enabled&&!credentialsReady.value)return t("自动同步需要先填写 Steam ID64 和 API Key。")
- return ''
-}
-async function saveHome(){
- if(locked.value||homeConflict.value||!homeDirty.value)return
- const problem=homeProblem();if(problem){homeError.value=problem;return}
- busy.value='save-home';homeError.value=''
- try{
-  pendingHome||={key:randomID(),version:version.value,snapshot:homeAttemptSnapshot(),payload:{config:configValue(),steam:{...steamValue(),...(apiKey.value?{api_key:apiKey.value}:{}),...(clearKey.value?{clear_api_key:true}:{})}}}
-  const attempt=pendingHome,result=await api('/admin/home',{method:'PUT',version:attempt.version,key:attempt.key,body:body(attempt.payload)})
-  if(stopped)return
-  const preserve=homeAttemptSnapshot()!==attempt.snapshot;applyHome(result,preserve);pendingHome=null
-  if(preserve){if(apiKey.value===attempt.payload.steam.api_key)apiKey.value='';if(attempt.payload.steam.clear_api_key)clearKey.value=false}
-  if(preserve)toast.warning(t("已确认上次保存。当前新修改仍未保存。"));else toast.success(t("首页设置已保存。"))
- }catch(e){if(e instanceof APIError&&[409,412].includes(e.status)){homeConflict.value=true;pendingHome=null;homeError.value=t("首页设置已在其他位置更新，当前修改已保留。请确认后载入最新设置。")}else if(e instanceof APIError&&[400,422].includes(e.status)){pendingHome=null;homeError.value=e.message}else toast.error((e as Error).message)}
- finally{busy.value=''}
-}
+const {config,roles,steam,steamStatus,apiKey,clearKey,ready,loadingHome,homeError,homeConflict,maxBytes,homeDirty,pendingHomeSave,credentialsReady,loadHome,saveHome,syncSteam}=useHomeSettings({names,busy,locked,isGameWall:()=>kind.value==='steam',refreshItems:()=>loadItems(),hasUnsavedChanges:()=>dirty.value})
 async function moveSection(index:number|string,step:number){if(locked.value)return;const at=Number(index),order=config.value.order,target=at+step;if(target<0||target>=order.length)return;const [key]=order.splice(at,1);order.splice(target,0,key);await nextTick();document.getElementById(uid+'-section-'+key)?.focus()}
 async function editSection(key:string){section.value=key;await nextTick();document.getElementById(uid+'-section-editor')?.focus()}
 function tabKey(event:KeyboardEvent){const buttons=Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role=tab]')),at=buttons.indexOf(event.target as HTMLButtonElement);let to=at;if(event.key==='ArrowRight')to=(at+1)%buttons.length;else if(event.key==='ArrowLeft')to=(at-1+buttons.length)%buttons.length;else if(event.key==='Home')to=0;else if(event.key==='End')to=buttons.length-1;else return;event.preventDefault();buttons[to]?.click();buttons[to]?.focus()}
@@ -104,11 +61,16 @@ const release=releaseUploadPreview
 function resetCover(){release(cover.value);cover.value=null}
 function fillItem(data?:Row,preserve=false){const local=clone(itemValue()),photo=activePhoto.value;if(!preserve)resetCover();Object.keys(item).forEach(k=>delete item[k]);Object.assign(item,data?parseItem(data):blankItem(kind.value));itemInitial.value=JSON.stringify(itemValue());if(preserve)Object.assign(item,local);itemConflict.value=false;if(!preserve){activePhoto.value='';itemKey=randomID();pendingItem=null}else activePhoto.value=photo}
 fillItem()
-async function loadItems(append=false){if(append&&(loadingItems.value||locked.value||!nextCursor.value))return;
- const at=++sequence;listController?.abort();listController=new AbortController();loadingItems.value=true;listError.value=''
- try{const q=new URLSearchParams({kind:kind.value,limit:'20'});if(kind.value==='steam')q.set('platform',gameFilter.value);if(append&&nextCursor.value)q.set('cursor',nextCursor.value);const data=await api('/admin/home/items?'+q,{signal:listController.signal});if(!stopped&&at===sequence){items.value=append?appendUnique(items.value,list(data).map(parseItem)):list(data).map(parseItem);nextCursor.value=data.has_more===false?'':data.next_cursor||data.cursor||''}}
- catch(e){if(at===sequence&&(e as Error).name!=='AbortError')listError.value=(e as Error).message}finally{if(at===sequence)loadingItems.value=false}
-}
+const {items,loading:loadingItems,error:listError,cursor:nextCursor,load:loadItems}=useCursorList({
+ request:async(cursor,signal)=>{
+  const q=new URLSearchParams({kind:kind.value,limit:'20'})
+  if(kind.value==='steam')q.set('platform',gameFilter.value)
+  const data=await api(withCursor('/admin/home/items?'+q,cursor),{signal})
+  return {...data,next_cursor:data.next_cursor||data.cursor||''}
+ },
+ disabled:()=>locked.value,
+ parse:parseItem,
+})
 async function changeKind(value:string|number){
  if(locked.value)return
  if((itemDirty.value||photos.value.length||playlistDirty.value)&&!await confirmAction(t("切换展示墙？"),t("当前未保存的条目、歌单预览和待核对照片会放弃，已保存内容不受影响。"),t("切换展示墙")))return
@@ -134,7 +96,7 @@ async function saveItem(){
  finally{busy.value=''}
 }
 async function reloadItem(){if(locked.value||!item.id)return;if(itemDirty.value&&!await confirmAction(t("载入最新条目？"),t("当前条目输入会被服务器内容替换。"),t("载入最新条目")))return;busy.value='read-item';try{const latest=await api('/admin/home/items/'+item.id);if(!stopped){fillItem(latest);itemError.value=''}}catch(e){itemError.value=t("读取失败，当前输入已保留。{value1}", {value1:(e as Error).message})}finally{busy.value=''}}
-function rowMutationError(e:unknown,project=false){const message=(e as Error).message;if(e instanceof APIError&&[409,412].includes(e.status)){if(project)projectListError.value=t("{value1} 请刷新项目列表后重试。", {value1:message});else listError.value=t("{value1} 请刷新列表后重试。", {value1:message})}else toast.error(message)}
+function rowMutationError(e:unknown){const message=(e as Error).message;if(e instanceof APIError&&[409,412].includes(e.status)){listError.value=t("{value1} 请刷新列表后重试。", {value1:message})}else toast.error(message)}
 async function deleteItem(row:Row){if(locked.value)return;if(!await confirmAction(t("删除这条首页内容？"),item.id===row.id&&itemDirty.value?t("当前未保存的修改也会放弃。图片文件不会删除。"):t("这会从展示墙移除条目，图片文件不会删除。"),t("删除条目")))return;busy.value='delete-item';listError.value='';try{await api('/admin/home/items/'+row.id,{method:'DELETE',version:row.version});if(item.id===row.id)fillItem();toast.success(t("条目已删除。"));await loadItems()}catch(e){rowMutationError(e)}finally{busy.value=''}}
 async function toggleVisible(row:Row,event:Event){const input=event.target as HTMLInputElement;if(locked.value||(item.id===row.id&&itemDirty.value)){input.checked=row.visible;return}busy.value='visibility';try{const result=parseItem(await api('/admin/home/items/'+row.id,{method:'PUT',version:row.version,body:body({...itemValue(row),visible:input.checked})}));if(item.id===row.id)fillItem(result);await loadItems();toast.success(result.visible?t("条目已设为显示。"):t("条目已设为隐藏。"))}catch(e){input.checked=row.visible;rowMutationError(e)}finally{busy.value=''}}
 function parsePlaylistStatus(data:Row):Row{if(!data||!Number.isSafeInteger(Number(data.version))||Number(data.version)<1||['source_url','resolved_url','playlist_id','title','last_error','last_attempt_source_url'].some(k=>typeof data[k]!=='string')||['track_count','album_count'].some(k=>!Number.isSafeInteger(data[k])||data[k]<0)||typeof data.partial!=='boolean')throw new Error(t("歌单状态不完整，上次记录和当前输入已保留。"));return {...data,version:Number(data.version)}}
@@ -197,7 +159,6 @@ function pickPhotos(event:Event){const input=event.target as HTMLInputElement,fi
 function retryPhoto(upload:Upload){if(locked.value||!upload.retryable)return;upload.state='queued';void photoUploads()}
 async function cancelPhoto(upload:Upload){if(busy.value||upload.state==='uploading')return;if(activePhoto.value===upload.id){itemError.value=t("这张照片正在编辑。请先保存或新建其他条目。");return}const at=photos.value.indexOf(upload);release(upload);photos.value=photos.value.filter(p=>p.id!==upload.id);await nextTick();document.getElementById(photos.value[Math.min(at,photos.value.length-1)]?uid+'-photo-'+photos.value[Math.min(at,photos.value.length-1)].id:uid+'-photos-add')?.focus()}
 async function reviewPhoto(upload:Upload){if(locked.value||upload.state!=='ready')return;if(itemDirty.value&&!await confirmAction(t("编辑这张照片？"),t("当前未保存的条目输入将被替换。"),t("编辑照片")))return;fillItem();Object.assign(item,{...blankItem('photos'),title:Array.from(upload.file.name.replace(/\.[^.]+$/,'')).slice(0,80).join(''),media_id:upload.media_id});activePhoto.value=upload.id;await nextTick();document.getElementById(uid+'-item-title')?.focus()}
-async function syncSteam(){if(locked.value||dirty.value||!credentialsReady.value||!ready.value)return;busy.value='sync';homeError.value='';try{const data=await api('/admin/home/steam-sync',{method:'POST',version:version.value,key:syncKey});if(!stopped){applyHome(data);syncKey=randomID();toast.success(t("Steam 同步完成，本次处理 {value1} 项。", {value1:Number(data.synced_count)||0}));if(kind.value==='steam')await loadItems()}}catch(e){if(e instanceof APIError&&[409,412].includes(e.status)){homeConflict.value=true;homeError.value=e.message}else toast.error((e as Error).message)}finally{busy.value=''}}
 function date(value:unknown){if(!value)return t("尚未同步");const d=new Date(typeof value==='number'?value:/^\d{13}$/.test(String(value))?Number(value):String(value));return Number.isNaN(d.valueOf())?t("尚未同步"):formatDate(d,{dateStyle:'medium',timeStyle:'short'})}
 function playtime(value:unknown){return value===null||value===undefined?t("未提供"):t("{value1} 小时", {value1:formatNumber(Number(value)/60,{maximumFractionDigits:2})})}
 function sourceLabel(row:Row){return row.source==='psn_sync'?t("PlayStation 同步"):row.source==='steam_sync'?t("Steam 同步"):row.source==='music_playlist'?t("歌单导入"):t("手动添加")}
@@ -208,74 +169,13 @@ const activityChanged=computed(()=>!!activityPreview.value&&JSON.stringify(confi
 const browserTimezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Shanghai'
 const activityZones=computed(()=>Array.from(new Set(['Asia/Shanghai',browserTimezone,config.value.activity?.timezone,'UTC','America/New_York','Europe/London'].filter(Boolean))).map(value=>({value,label:value==='Asia/Shanghai'?t("北京时间 · Asia/Shanghai"):value})))
 async function previewActivity(){if(locked.value||activityLoading.value)return;activityError.value='';activityLoading.value=true;const snapshot=JSON.stringify(config.value.activity);try{const data=await api('/admin/home/activity?'+new URLSearchParams(Object.fromEntries(Object.entries(config.value.activity).map(([k,v])=>[k,String(v)]))));if(!stopped){activityPreview.value=data;activitySnapshot.value=snapshot;await nextTick();const scroll=activityScroll.value,latest=scroll?.querySelectorAll<HTMLElement>('[data-in-range=true]');if(scroll&&latest?.length){const day=latest[latest.length-1];scroll.scrollLeft+=day.getBoundingClientRect().right-scroll.getBoundingClientRect().right+6}}}catch(e){if(!stopped)activityError.value=(e as Error).message}finally{activityLoading.value=false}}
-const projects=ref<Row[]>([]),projectsLoading=ref(false),projectError=ref(''),projectListError=ref(''),projectConflict=ref(false),project=reactive<Row>({}),projectInitial=ref('')
-const projectActions=new Map<string,string>()
-let pendingProject:{key:string;payload:Row;id:string;version:number}|null=null
-function projectValue(value:Row=project):Row{return {source:value.source,repo_url:value.source==='github'?value.repo_url:'',title:value.source==='manual'||value.custom_title?value.title:null,description:value.source==='manual'||value.custom_description?value.description:null,url:value.source==='manual'||value.custom_url?value.url:null,language:value.source==='manual'||value.custom_language?value.language:null,position:value.position,visible:value.visible}}
-const projectDirty=computed(()=>JSON.stringify(projectValue())!==projectInitial.value)
-function fillProject(row?:Row){Object.assign(project,{id:'',version:0,source:'github',repo_url:'',title:'',description:'',url:'',language:'',position:0,visible:false,custom_title:false,custom_description:false,custom_url:false,custom_language:false},row||{});if(row){for(const key of ['title','description','url','language'])project['custom_'+key]=row[key+'_override']!==null}projectInitial.value=JSON.stringify(projectValue());projectConflict.value=false;pendingProject=null}
-fillProject()
-async function loadProjects(){if(projectsLoading.value)return;projectsLoading.value=true;projectListError.value='';try{const data=await api('/admin/home/projects');if(!stopped){const rows=list(data);if(rows.some(r=>!String(r.id||'')||!Number.isSafeInteger(r.version)||r.version<1||!['github','manual'].includes(r.source)||typeof r.visible!=='boolean'))throw new Error(t("项目列表未完整载入，请重试。"));projects.value=rows}}catch(e){if(!stopped)projectListError.value=(e as Error).message}finally{projectsLoading.value=false}}
-async function editProject(row?:Row){if(locked.value)return;if(projectDirty.value&&!await confirmAction(t("载入项目？"),t("当前未保存的项目修改将被替换。"),t("载入项目")))return;fillProject(row);projectError.value='';await nextTick();document.getElementById(uid+'-project-source')?.focus()}
-async function saveProject(){if(locked.value||!projectDirty.value||projectConflict.value)return;const payload=projectValue();if(payload.source==='github'&&!payload.repo_url.trim()){projectError.value=t("请填写公开 GitHub 仓库链接或 owner/repo。");return}if(payload.source==='manual'&&(!payload.title?.trim()||!payload.url?.trim())){projectError.value=t("请填写项目标题和链接。");return}busy.value='save-project';projectError.value='';const attempt=pendingProject||{key:randomID(),payload:clone(payload),id:project.id,version:project.version};pendingProject=attempt;try{const row=await api('/admin/home/projects'+(attempt.id?'/'+attempt.id:''),{method:attempt.id?'PUT':'POST',key:attempt.key,version:attempt.version,body:body(attempt.payload)});if(!stopped){fillProject(row);await loadProjects();toast.success(row.source==='github'?t("项目已保存。点击「刷新资料」可从 GitHub 读取公开信息。"):t("项目已保存。"))}}catch(e){if(e instanceof APIError&&[409,412].includes(e.status)){projectConflict.value=true;pendingProject=null;projectError.value=e.message}else{if(e instanceof APIError&&e.status<500)pendingProject=null;if(e instanceof APIError&&[400,422].includes(e.status))projectError.value=e.message;else toast.error((e as Error).message)}}finally{busy.value=''}}
-function projectActionKey(action:string,row:Row){const id=action+':'+row.id+':'+row.version;if(!projectActions.has(id))projectActions.set(id,randomID());return projectActions.get(id)!}
-async function projectAction(row:Row,action:'refresh'|'delete'){if(locked.value)return;if(project.id===row.id&&projectDirty.value){projectError.value=t("请先保存或放弃当前项目修改。");return}if(action==='delete'&&!await confirmAction(t("删除这个项目？"),t("{value1} 将从项目库移除。", {value1:row.title}),t("删除项目")))return;busy.value=action+'-project';projectListError.value='';try{const data=await api('/admin/home/projects/'+row.id+(action==='refresh'?'/refresh':''),{method:action==='refresh'?'POST':'DELETE',key:projectActionKey(action,row),version:row.version});if(!stopped){if(action==='delete'&&project.id===row.id)fillProject();if(action==='refresh'&&project.id===row.id)fillProject(data);await loadProjects();if(action==='delete')toast.success(t("项目已删除。"));else if(data.last_error)toast.warning(data.last_error);else toast.success(t("GitHub 资料已刷新，自定义文字已保留。"))}}catch(e){rowMutationError(e,true)}finally{busy.value=''}}
-async function projectVisibility(row:Row,event:Event){const input=event.target as HTMLInputElement;if(locked.value||(project.id===row.id&&projectDirty.value)){input.checked=row.visible;return}busy.value='project-visibility';try{const value={...row};for(const key of ['title','description','url','language'])value['custom_'+key]=row[key+'_override']!==null;const data=await api('/admin/home/projects/'+row.id,{method:'PUT',version:row.version,key:projectActionKey('visible-'+input.checked,row),body:body({...projectValue(value),visible:input.checked})});if(!stopped){if(project.id===row.id)fillProject(data);await loadProjects();toast.success(data.visible?t("项目已设为显示。"):t("项目已设为隐藏。"))}}catch(e){input.checked=row.visible;rowMutationError(e,true)}finally{busy.value=''}}
-async function reloadProject(){await loadProjects();const row=projects.value.find(r=>r.id===project.id);if(row)await editProject(row);else projectError.value=t("列表中已找不到这个项目，当前输入已保留。")}
+const {projects,projectsLoading,projectError,projectListError,projectConflict,project,projectDirty,loadProjects,editProject,saveProject,projectAction,projectVisibility,reloadProject}=useHomeProjects({busy,locked,uid})
 
-// PlayStation account state has its own version and never enters Steam's payload.
-const psn=ref<Row|null>(null),psnVersion=ref(0),psnReady=ref(false),psnLoading=ref(false),psnBusy=ref(''),psnError=ref(''),psnConflict=ref(false)
-const psnSecretAllowed=location.protocol==='https:'||['localhost','127.0.0.1','[::1]','::1'].includes(location.hostname)
-const psnNpsso=ref(''),psnAuto=ref(false),psnOnlineID=ref(''),psnInitial=ref(''),psnPendingAction=ref('')
-const psnSnapshot=()=>JSON.stringify({auto_sync:psnAuto.value,online_id:psnOnlineID.value.trim()})
-const psnDirty=computed(()=>psnReady.value&&(!!psnNpsso.value||psnSnapshot()!==psnInitial.value||psnPendingAction.value==='save'))
-const psnRunning=computed(()=>psn.value?.status==='queued'||psn.value?.status==='syncing')
-const psnStateLabels:Record<string,string>={idle:t("就绪"),queued:t("等待同步"),syncing:t("正在同步"),reauth_required:t("需要重新连接"),error:t("同步失败")}
-let psnTimer:ReturnType<typeof setTimeout>|undefined,psnReadController:AbortController|undefined,psnReadSequence=0,psnPollFailures=0
-let pendingPsnSave:{key:string;version:number;payload:Row}|null=null,pendingPsnSync:{key:string;version:number}|null=null,pendingPsnDisconnect:{key:string;version:number}|null=null
-function parsePsn(data:Row):Row{
- if(!data||!Number.isSafeInteger(data.version)||data.version<1||typeof data.connected!=='boolean'||typeof data.online_id!=='string'||typeof data.account_id!=='string'||typeof data.auto_sync!=='boolean'||!Object.keys(psnStateLabels).includes(data.status)||typeof data.last_error!=='string'||!Number.isSafeInteger(data.game_count)||data.game_count<0)throw new Error(t("PlayStation 状态未完整载入，请重试。"))
- return {version:data.version,connected:data.connected,online_id:data.online_id,account_id:data.account_id,auto_sync:data.auto_sync,status:data.status,last_sync_at:data.last_sync_at??null,last_error:data.last_error,next_sync_at:data.next_sync_at??null,game_count:data.game_count}
-}
-function psnSafeError(error:unknown){let text=error instanceof Error?error.message:t("请求失败，请稍后重试。");for(const secret of [psnNpsso.value,pendingPsnSave?.payload.npsso])if(typeof secret==='string'&&secret)text=text.split(secret).join(t("[凭据已隐藏]"));return text}
-function applyPsn(data:Row,replace=false){const value=parsePsn(data),hadDirty=psnDirty.value;psn.value=value;if(!psnReady.value||replace||!hadDirty){psnVersion.value=value.version;psnAuto.value=value.auto_sync;psnOnlineID.value=value.online_id;psnInitial.value=psnSnapshot();psnConflict.value=false;if(replace){psnNpsso.value='';pendingPsnSave=null;pendingPsnSync=null;pendingPsnDisconnect=null;psnPendingAction.value=''}}else if(value.version!==psnVersion.value){psnConflict.value=true;psnError.value=t("PlayStation 设置已在其他位置更新，当前输入已保留。请确认后载入最新状态。")}psnReady.value=true}
-function stopPsnPoll(){clearTimeout(psnTimer);psnTimer=undefined}
-function schedulePsnPoll(){stopPsnPoll();if(!stopped&&view.value==='steam'&&!document.hidden&&psnRunning.value&&!psnBusy.value&&!psnLoading.value&&psnPollFailures<3)psnTimer=setTimeout(()=>void loadPsn(false,true),3000)}
-async function loadPsn(replace=false,automatic=false){
- if(psnBusy.value||psnLoading.value||stopped)return
- if(replace&&psnDirty.value&&!await confirmAction(t("载入最新 PlayStation 状态？"),t("当前未保存的 PlayStation 设置及本页输入的凭据会被放弃。Steam 设置和游戏条目不受影响。"),t("载入最新状态")))return
- stopPsnPoll();const at=++psnReadSequence;psnReadController?.abort();psnReadController=new AbortController();psnLoading.value=true;if(!automatic)psnError.value=''
- try{const data=await api('/admin/home/psn',{signal:psnReadController.signal});if(stopped||at!==psnReadSequence)return;const previous=psn.value?.last_sync_at;applyPsn(data,replace);psnPollFailures=0;if(previous!==undefined&&data.last_sync_at!==previous&&kind.value==='steam')void loadItems()}
- catch(error){if(!stopped&&at===psnReadSequence&&(error as Error).name!=='AbortError'){psnPollFailures++;psnError.value=psnSafeError(error)+(psnPollFailures>=3?t(" 自动读取已暂停，可手动刷新状态。"):'')}}
- finally{if(at===psnReadSequence){psnLoading.value=false;schedulePsnPoll()}}
-}
-function psnWriteError(error:unknown){if(error instanceof APIError&&(error.code==='VERSION_CONFLICT'||error.status===412)){psnConflict.value=true;psnError.value=t("PlayStation 设置已更新，当前输入已保留。请载入最新状态后重试。");pendingPsnSave=null;pendingPsnSync=null;pendingPsnDisconnect=null;psnPendingAction.value=''}else{if(error instanceof APIError&&error.status<500){pendingPsnSave=null;pendingPsnSync=null;pendingPsnDisconnect=null;psnPendingAction.value=''}if(error instanceof APIError&&[400,401,403,422].includes(error.status))psnError.value=psnSafeError(error);else toast.error(psnSafeError(error))}}
-async function savePsn(){
- if(!psnReady.value||psnBusy.value||psnLoading.value||psnConflict.value||!psnDirty.value||(psnPendingAction.value&&psnPendingAction.value!=='save'))return
- if(!pendingPsnSave&&!psn.value?.connected&&!psnNpsso.value.trim()){psnError.value=t("请先在自己的后台填入 NPSSO 凭据以连接账号。");return}
- if(!psnSecretAllowed&&(psnNpsso.value.trim()||pendingPsnSave?.payload.npsso)){psnError.value=t("请通过 HTTPS 后台连接，或在本地服务器使用安全 CLI 填入凭据。");return}
- const payload:Row={auto_sync:psnAuto.value};if(psnNpsso.value.trim())payload.npsso=psnNpsso.value.trim();if(psnOnlineID.value.trim())payload.online_id=psnOnlineID.value.trim()
- pendingPsnSave||={key:randomID(),version:psnVersion.value,payload};const attempt=pendingPsnSave;psnPendingAction.value='save'
- stopPsnPoll();psnBusy.value='save';psnError.value=''
- try{const data=await api('/admin/home/psn',{method:'PUT',version:attempt.version,key:attempt.key,body:body(attempt.payload)});if(stopped)return;applyPsn(data,true);psnNpsso.value='';pendingPsnSave=null;toast.success(t("PlayStation 设置已保存，凭据输入已清空。已保存的游戏不会因更新连接而删除。"))}catch(error){if(!stopped)psnWriteError(error)}finally{psnBusy.value='';schedulePsnPoll()}
-}
-async function syncPsn(){
- if(!psnReady.value||!psn.value?.connected||psnBusy.value||psnLoading.value||psnDirty.value||psnConflict.value||psnRunning.value||(psnPendingAction.value&&psnPendingAction.value!=='sync'))return
- pendingPsnSync||={key:randomID(),version:psnVersion.value};const attempt=pendingPsnSync;psnPendingAction.value='sync';stopPsnPoll();psnBusy.value='sync';psnError.value=''
- try{await api('/admin/home/psn/sync',{method:'POST',version:attempt.version,key:attempt.key,body:body({})});if(stopped)return;pendingPsnSync=null;psnPendingAction.value='';toast.info(t("同步请求已提交，正在读取处理状态。"))}catch(error){if(!stopped)psnWriteError(error)}finally{psnBusy.value='';if(!stopped&&!pendingPsnSync)await loadPsn(false,true);else schedulePsnPoll()}
-}
-async function disconnectPsn(){
- if(!psnReady.value||!psn.value?.connected||psnBusy.value||psnLoading.value||psnConflict.value||(psnPendingAction.value&&psnPendingAction.value!=='disconnect'))return
- if(!pendingPsnDisconnect&&!await confirmAction(t("断开 PlayStation 连接？"),t("将移除已保存的连接凭据并停止自动同步，本页未保存的 PlayStation 输入会放弃；现有游戏条目、封面与排序会保留。"),t("断开连接")))return
- pendingPsnDisconnect||={key:randomID(),version:psnVersion.value};const attempt=pendingPsnDisconnect;psnPendingAction.value='disconnect';stopPsnPoll();psnBusy.value='disconnect';psnError.value=''
- try{const data=await api('/admin/home/psn',{method:'PUT',version:attempt.version,key:attempt.key,body:body({auto_sync:false,disconnect:true})});if(stopped)return;applyPsn(data,true);psnNpsso.value='';pendingPsnDisconnect=null;toast.success(t("PlayStation 连接已断开，现有游戏条目已保留。"))}catch(error){if(!stopped)psnWriteError(error)}finally{psnBusy.value='';schedulePsnPoll()}
-}
-function psnVisibility(){if(document.hidden){stopPsnPoll();psnReadController?.abort()}else if(view.value==='steam')schedulePsnPoll()}
-watch(view,value=>{stopPsnPoll();if(value==='steam'){psnPollFailures=0;void loadPsn(false,true)}else{psnReadSequence++;psnReadController?.abort();psnLoading.value=false}})
+const {psn,psnReady,psnLoading,psnBusy,psnError,psnConflict,psnSecretAllowed,psnNpsso,psnAuto,psnOnlineID,psnPendingAction,psnDirty,psnRunning,psnStateLabels,loadPsn,savePsn,syncPsn,disconnectPsn,pendingPsnSave,pendingPsnSync,pendingPsnDisconnect,psnPollFailures}=useHomePlayStation({view,isGameWall:()=>kind.value==='steam',refreshItems:()=>loadItems()})
 
 function beforeLeave(event:BeforeUnloadEvent){if(dirty.value||psnDirty.value||psnPendingAction.value){event.preventDefault();event.returnValue=''}}
-onMounted(()=>{void loadHome();void loadItems();void loadProjects();window.addEventListener('beforeunload',beforeLeave);document.addEventListener('visibilitychange',psnVisibility)})
-onBeforeUnmount(()=>{stopped=true;sequence++;playlistSequence++;stopPsnPoll();psnReadSequence++;psnReadController?.abort();psnNpsso.value='';pendingPsnSave=null;pendingPsnSync=null;pendingPsnDisconnect=null;document.removeEventListener('visibilitychange',psnVisibility);listController?.abort();resetCover();photos.value.forEach(release);window.removeEventListener('beforeunload',beforeLeave)})
+onMounted(()=>{void loadHome();void loadItems();void loadProjects();window.addEventListener('beforeunload',beforeLeave)})
+onBeforeUnmount(()=>{stopped=true;playlistSequence++;resetCover();photos.value.forEach(release);window.removeEventListener('beforeunload',beforeLeave)})
 </script>
 
 <template>
@@ -299,7 +199,7 @@ onBeforeUnmount(()=>{stopped=true;sequence++;playlistSequence++;stopPsnPoll();ps
        <div v-if="activityPreview" class="homepage-activity-preview"><p>{{t("{value1} — {value2} · {value3} 次发布 · {value4} 天有记录", {value1:(activityPreview.start),value2:(activityPreview.end),value3:(activityPreview.total),value4:(activityPreview.active_days)})}}</p><p v-if="activityChanged" class="homepage-help">{{t("统计设置已变化，重新预览可查看当前范围。")}}</p><div ref="activityScroll" class="homepage-activity-scroll" tabindex="0" :aria-label="t('真实发布频率预览，可横向滚动')"><div class="homepage-activity-grid"><div v-for="(week,wi) in activityPreview.weeks" :key="wi" class="homepage-activity-week"><span v-for="day in week" :key="day.date" :data-level="day.level" :data-in-range="day.in_range&&!day.future" :title="t('{value1}：{value2} 次发布', {value1:day.date,value2:day.count})" :aria-label="t('{value1}：{value2} 次发布', {value1:day.date,value2:day.count})"></span></div></div></div><p class="homepage-help">{{t("左右滑动查看更多日期；悬停或点击格子查看当天记录。")}}</p><p v-if="activityPreview.total===0" class="homepage-help">{{t("此范围内尚无符合来源的公开发布记录。")}}</p></div>
       </template><div class="homepage-field-pair"><label>{{t("链接文字")}}<input v-model="selectedSection.link_label" :disabled="locked"><small>{{section==='steam'?t("选填，留空显示“查看更多游戏”。"):t("选填，最多60字符。")}}</small></label><label>{{t("链接地址")}}<input v-if="section==='steam'" value="/games" readonly><input v-else v-model="selectedSection.link_url" :disabled="locked" :placeholder="t('/posts 或 https://…')"><small v-if="section==='steam'">{{t("查看更多固定进入 /games")}}</small></label></div></div></section></div>
      <details class="homepage-common"><summary>{{t("写作场景与滚动")}}</summary><div class="homepage-fields"><div class="homepage-field-pair"><label>{{t("写作标题")}}<textarea v-model="config.writing_title" rows="2" :disabled="locked"></textarea><small>{{t("最多80字符。")}}</small></label><label>{{t("写作介绍")}}<textarea v-model="config.writing_description" rows="3" :disabled="locked"></textarea><small>{{t("最多600字符。")}}</small></label></div><label>{{t("向下探索提示")}}<input v-model="config.scroll_label" :disabled="locked"><small>{{t("最多60字符。")}}</small></label><div class="homepage-checks"><label class="check"><input v-model="config.motion_enabled" type="checkbox" :disabled="locked">{{t("启用滚动视差")}}</label><label class="check"><input v-model="config.warmth_enabled" type="checkbox" :disabled="locked">{{t("滚动时渐变背景")}}</label></div></div></details>
-     <div class="homepage-savebar"><span>{{homeDirty?t("有未保存的首页设置"):t("首页设置已保存")}}</span><button class="primary" :disabled="locked||!homeDirty||homeConflict">{{busy==='save-home'?t("正在保存…"):t("保存首页设置")}}</button></div>
+     <div class="homepage-savebar"><span>{{pendingHomeSave?t("上次保存结果尚未确认"):homeDirty?t("有未保存的首页设置"):t("首页设置已保存")}}</span><button class="primary" :disabled="locked||!homeDirty||homeConflict">{{busy==='save-home'?t("正在保存…"):pendingHomeSave?t("重试确认保存"):t("保存首页设置")}}</button></div>
     </form>
    </section>
 
@@ -352,7 +252,7 @@ onBeforeUnmount(()=>{stopped=true;sequence++;playlistSequence++;stopPsnPoll();ps
    </section>
 
    <section :id="uid+'-panel-steam'" v-show="view==='steam'" role="tabpanel" :aria-labelledby="uid+'-tab-steam'">
-    <form class="homepage-steam-form" @submit.prevent="saveHome"><h2>{{t("Steam 游戏同步")}}</h2><p class="homepage-help">{{t("填写自己的 Steam ID64 和 Web API Key。启用后每6小时尝试同步，资料是否可读取仍取决于 Steam 隐私设置。")}}</p><div class="homepage-fields"><label>Steam ID64<input v-model="steam.steam_id" inputmode="numeric" :disabled="locked" :placeholder="t('17位数字')"></label><label>Steam Web API Key<input v-model="apiKey" type="password" autocomplete="new-password" :disabled="locked" :placeholder="steamStatus.api_key_configured?t('已配置，留空保持'):t('尚未配置')" @input="clearKey=false"><small>{{steamStatus.api_key_configured?t("密钥已保存，不回显。"):t("保存密钥后才能同步。")}}</small></label><label v-if="steamStatus.api_key_configured" class="check"><input v-model="clearKey" type="checkbox" :disabled="locked" @change="clearKey&&(apiKey='')">{{t("移除已保存的 API Key")}}</label><SelectField v-model="steam.mode" :label="t('同步范围')" :disabled="locked" :options="[{value:'owned',label:t('已拥有游戏')},{value:'recent',label:t('最近游玩')}]"/><label class="check"><input v-model="steam.auto_sync_enabled" type="checkbox" :disabled="locked">{{t("每6小时自动同步")}}</label></div><div class="homepage-savebar"><span>{{homeDirty?t("有未保存的首页设置"):t("设置已保存")}}</span><button class="primary" :disabled="locked||!homeDirty||homeConflict">{{t("保存设置")}}</button></div></form><section class="homepage-steam-status" :aria-label="t('Steam 同步状态')"><h2>{{t("同步状态")}}</h2><dl><dt>API Key</dt><dd>{{steamStatus.api_key_configured?t("已配置"):t("未配置")}}</dd><dt>{{t("上次同步")}}</dt><dd>{{date(steamStatus.last_sync_at)}}</dd></dl><p v-if="steamStatus.last_error" class="homepage-feedback is-error">{{steamStatus.last_error}}</p><p class="homepage-help">{{dirty?t("先保存或放弃当前修改，再开始同步。"):!credentialsReady?t("先填写并保存 ID64 和 API Key。"):t("同步后可在展示墙调整显示、排序和自选封面。")}}</p><button type="button" :disabled="locked||dirty||!credentialsReady" @click="syncSteam">{{busy==='sync'?t("正在同步…"):t("立即同步")}}</button></section>
+    <form class="homepage-steam-form" @submit.prevent="saveHome"><h2>{{t("Steam 游戏同步")}}</h2><p class="homepage-help">{{t("填写自己的 Steam ID64 和 Web API Key。启用后每6小时尝试同步，资料是否可读取仍取决于 Steam 隐私设置。")}}</p><div class="homepage-fields"><label>Steam ID64<input v-model="steam.steam_id" inputmode="numeric" :disabled="locked" :placeholder="t('17位数字')"></label><label>Steam Web API Key<input v-model="apiKey" type="password" autocomplete="new-password" :disabled="locked" :placeholder="steamStatus.api_key_configured?t('已配置，留空保持'):t('尚未配置')" @input="clearKey=false"><small>{{steamStatus.api_key_configured?t("密钥已保存，不回显。"):t("保存密钥后才能同步。")}}</small></label><label v-if="steamStatus.api_key_configured" class="check"><input v-model="clearKey" type="checkbox" :disabled="locked" @change="clearKey&&(apiKey='')">{{t("移除已保存的 API Key")}}</label><SelectField v-model="steam.mode" :label="t('同步范围')" :disabled="locked" :options="[{value:'owned',label:t('已拥有游戏')},{value:'recent',label:t('最近游玩')}]"/><label class="check"><input v-model="steam.auto_sync_enabled" type="checkbox" :disabled="locked">{{t("每6小时自动同步")}}</label></div><div class="homepage-savebar"><span>{{pendingHomeSave?t("上次保存结果尚未确认"):homeDirty?t("有未保存的首页设置"):t("设置已保存")}}</span><button class="primary" :disabled="locked||!homeDirty||homeConflict">{{t("保存设置")}}</button></div></form><section class="homepage-steam-status" :aria-label="t('Steam 同步状态')"><h2>{{t("同步状态")}}</h2><dl><dt>API Key</dt><dd>{{steamStatus.api_key_configured?t("已配置"):t("未配置")}}</dd><dt>{{t("上次同步")}}</dt><dd>{{date(steamStatus.last_sync_at)}}</dd></dl><p v-if="steamStatus.last_error" class="homepage-feedback is-error">{{steamStatus.last_error}}</p><p class="homepage-help">{{dirty?t("先保存或放弃当前修改，再开始同步。"):!credentialsReady?t("先填写并保存 ID64 和 API Key。"):t("同步后可在展示墙调整显示、排序和自选封面。")}}</p><button type="button" :disabled="locked||dirty||!credentialsReady" @click="syncSteam">{{busy==='sync'?t("正在同步…"):t("立即同步")}}</button></section>
     <section class="homepage-psn-section" :aria-label="t('PlayStation 账号')">
      <h2>{{t("PlayStation 账号")}}</h2><p class="homepage-help">{{t("连接自己的 PSN 账号，将平台返回的游戏记录加入同一面游戏墙。时长、封面或链接未提供时会保留缺失状态，不按0或其他游戏代替。")}}</p>
      <p class="homepage-help">{{t("PlayStation 同步记录仅属于一个账号。同一账号更改 Online ID 后可以重新连接；换绑其他账号前，须先清理已有的 PlayStation 同步记录或由管理员维护。没有同步记录时可直接换绑。")}}</p>
