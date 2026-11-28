@@ -45,6 +45,8 @@ async function fixture(browser,assets,options={}){
   if(url.pathname==='/api/v1/site')return send(route,200,{comments_enabled:state.enabled,collections_enabled:true});
   if(url.pathname==='/api/v1/posts/42/metrics')return send(route,200,{like_count:0,comment_count:state.roots.length});
   if(url.pathname==='/api/v1/me/post-states')return send(route,200,{items:[{post_id:'42',liked:false,bookmarked:false}]});
+  const context=url.pathname.match(/^\/api\/v1\/posts\/42\/comments\/(\d+)\/context$/);
+  if(context){if(state.contextStatus)return send(route,state.contextStatus,{error:{message:'通知中的讨论已不可用'}});return send(route,200,{root:state.contextRoot,target:state.contextTarget})}
   if(url.pathname==='/api/v1/posts/42/comments'&&method==='GET'){
    if(state.failRootReads>0){state.failRootReads--;return send(route,503,{error:{code:'FIXTURE_ROOT_READ_FAILED',message:'讨论刷新暂不可用'}})}
    const cursor=url.searchParams.get('cursor')||'';
@@ -85,10 +87,10 @@ async function fixture(browser,assets,options={}){
   }
   errors.push('Unexpected fixture API: '+method+' '+url.pathname);return send(route,500,{error:{message:'Unexpected fixture request'}});
  });
- await page.goto('https://comment-replies.test/');
- await page.locator('#comment-101').waitFor();
+ await page.goto('https://comment-replies.test/'+(state.focus?'?comment='+state.focus:''));
+ if(state.contextStatus)await page.locator('.notice.error').waitFor();else await page.locator('#comment-'+(state.contextRoot?.id||'101')).waitFor();
  await page.locator('.discussion-loading').waitFor({state:'hidden'});
- if(state.authenticated&&state.enabled)await page.locator('[data-comment-reply]').first().waitFor({state:'visible'});
+ if(!state.contextStatus&&state.authenticated&&state.enabled)await page.locator('[data-comment-reply]').first().waitFor({state:'visible'});
  await frame(page);fixtures.push({page,state});return{page,state};
 }
 const posts=state=>state.requests.filter(request=>request.method==='POST');
@@ -209,6 +211,21 @@ async function submitReply(page,id,text){await replyButton(page,id).click();awai
  }
  {
   const{page,state}=await fixture(browser,assets,{enabled:false});await openReplies(page);check('feature off preserves public thread while hiding new reply controls',await page.locator('#comment-201').count()===1&&await page.locator('[data-comment-reply],.discussion-composer,[data-reply-to]').count()===0&&posts(state).length===0);await page.close();
+ }
+ {
+  const root=comment('999','首屏以外的主评论',author,{reply_count:50}),target=comment('1001','首屏以外的目标回复',friend,{parent_id:'999',reply_to:{id:'999',user:author},thread_reply_count:50});
+  const {page,state}=await fixture(browser,assets,{focus:'1001',contextRoot:root,contextTarget:target,roots:[comment('101','普通讨论'),root],replies:{'999':[target]}});
+  check('notification deep link loads a bounded context beyond ordinary pagination',await page.locator('#comment-1001').count()===1&&state.requests.filter(r=>r.path==='/api/v1/posts/42/comments'&&r.method==='GET').length===0&&state.requests.filter(r=>r.path.endsWith('/context')).length===1);
+  await submitReply(page,'1001','直接继续通知中的讨论');await page.getByText('直接继续通知中的讨论',{exact:true}).waitFor();
+  check('reply from notification retains the actual reply target',posts(state)[0].body.reply_to_id==='1001');
+  await page.getByRole('button',{name:'查看完整讨论',exact:true}).click();await page.locator('#comment-101').waitFor();
+  check('full-discussion action restores normal pagination and removes focus URL',state.requests.filter(r=>r.path==='/api/v1/posts/42/comments'&&r.method==='GET').length===1&&!new URL(page.url()).searchParams.has('comment'));await page.close();
+ }
+ {
+  const {page,state}=await fixture(browser,assets,{focus:'1001',contextStatus:404});
+  check('unavailable notification context shows an actionable error without stale comments',await page.locator('.discussion-comment').count()===0&&(await page.locator('.notice.error').innerText()).includes('不可用'));
+  await page.getByRole('button',{name:'查看完整讨论',exact:true}).click();await page.locator('#comment-101').waitFor();
+  check('unavailable context can return to the ordinary public discussion',state.requests.filter(r=>r.path==='/api/v1/posts/42/comments'&&r.method==='GET').length===1);await page.close();
  }
  check('real component graph completed without script errors or unmocked traffic',errors.length===0);
 }finally{for(const fixture of fixtures)if(!fixture.page.isClosed())await fixture.page.close();fs.writeFileSync(path.join(out,'comment-replies-report.json'),JSON.stringify({checks,errors,requests:fixtures.map(({state})=>state.requests.map(({method,path,query})=>({method,path,query})))},null,2));await browser.close()}})().catch(error=>{console.error(error);process.exitCode=1});

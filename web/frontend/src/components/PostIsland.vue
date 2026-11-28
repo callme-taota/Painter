@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {t} from '../i18n'
-import {computed,onMounted,onBeforeUnmount,reactive,ref,watch} from 'vue'
+import {computed,nextTick,onMounted,onBeforeUnmount,reactive,ref,watch} from 'vue'
 import InfiniteList from './InfiniteList.vue'
 import DiscussionComment from './DiscussionComment.vue'
 import CommentReplyComposer from './CommentReplyComposer.vue'
@@ -21,6 +21,7 @@ const replyText=computed({get:()=>replyTarget.value?replyDrafts[replyTarget.valu
 const canInteract=computed(()=>!session.loading&&session.authenticated)
 const actionDisabled=computed(()=>busy.value||loading.value||commentsLoading.value)
 const threadReads=new Map<string,AbortController>(),replyMutations=new Map<string,{text:string;key:string}>()
+const focused=ref(/^[1-9][0-9]*$/.test(new URL(location.href).searchParams.get('comment')||''))
 let disposed=false,rootsGeneration=0,rootRead:AbortController|undefined,rootMutation:{text:string;key:string}|undefined,lastActor=''
 function thread(id:string):Thread{return threads[id]||(threads[id]={open:false,items:[],loaded:false,loading:false,next:'',more:false,error:'',generation:0})}
 function cancelThreadRead(id:string){const read=threadReads.get(id);if(!read)return;thread(id).generation++;read.abort();threadReads.delete(id);thread(id).loading=false}
@@ -73,7 +74,7 @@ async function submitReply(){
  }catch(e){if(e instanceof APIError&&e.status===404)toast.error(t('这条评论已不可用，回复内容已保留。'),{id:'post-operation:'+props.postId});else report(e,true)}finally{busy.value=false}
 }
 async function relation(kind:'like'|'bookmark'){if(!canInteract.value)return;if(kind==='like'){await toggleLike(props.postId);return}if(busy.value)return;busy.value=true;error.value='';const before=bookmarked.value;bookmarked.value=!before;try{await api(`/posts/${props.postId}/${kind}`,{method:before?'DELETE':'PUT'});setBookmarked(props.postId,!before);toast.success(before?t('已取消收藏'):t('文章已收藏'),{id:'post-bookmark:'+props.postId})}catch(e){bookmarked.value=before;report(e,true)}finally{busy.value=false}}
-async function refreshDiscussion(message:string){try{await loadComments();toast.success(message,{id:'post-operation:'+props.postId})}catch{error.value=t('{value1}，但讨论列表未能更新，请重新加载。',{value1:message});toast.warning(error.value,{id:'post-operation:'+props.postId})}}
+async function refreshDiscussion(message:string){try{if(focused.value)exitFocused();await loadComments();toast.success(message,{id:'post-operation:'+props.postId})}catch{error.value=t('{value1}，但讨论列表未能更新，请重新加载。',{value1:message});toast.warning(error.value,{id:'post-operation:'+props.postId})}}
 async function submit(){if(!canInteract.value||!features.value.comments_enabled||actionDisabled.value||!text.value.trim())return;busy.value=true;error.value='';const value=text.value;if(rootMutation?.text!==value)rootMutation={text:value,key:randomID()};try{await api(`/posts/${props.postId}/comments`,{method:'POST',key:rootMutation.key,body:body({body:value})});text.value='';rootMutation=undefined;await refreshDiscussion(t('评论已发表'))}catch(e){report(e,true)}finally{busy.value=false}}
 async function remove(c:Row,root:Row){
  if(!canInteract.value||actionDisabled.value)return
@@ -88,7 +89,25 @@ async function remove(c:Row,root:Row){
  }catch(e){report(e,true)}finally{busy.value=false}
 }
 async function commentLike(c:Row){if(!canInteract.value||actionDisabled.value)return;busy.value=true;const before=c.liked;try{await api(`/comments/${c.id}/like`,{method:before?'DELETE':'PUT'});c.liked=!before;c.like_count=Number(c.like_count||0)+(before?-1:1)}catch(e){report(e,true)}finally{busy.value=false}}
-async function initialize(){loading.value=true;error.value='';try{await Promise.all([loadSession(),api('/site').then(data=>{features.value=data}),loadComments()]);if(canInteract.value){const state=await loadLike(props.postId);liked.value=state.liked;bookmarked.value=state.bookmarked;metrics.value.like_count=state.count}}catch(e){report(e)}finally{loading.value=false}}
+async function loadFocused(){
+ const id=new URL(location.href).searchParams.get('comment'),generation=++rootsGeneration
+ rootRead?.abort();const controller=new AbortController();rootRead=controller
+ const data=await api(`/posts/${props.postId}/comments/${id}/context`,{signal:controller.signal,cache:'no-store'})
+ if(disposed||generation!==rootsGeneration)return
+ if(!data.root||!data.target||String(data.target.id)!==id||data.root.parent_id||data.target.parent_id&&String(data.target.parent_id)!==String(data.root.id))throw new Error(t('讨论未能完整载入，请重试。'))
+ for(const read of threadReads.values())read.abort();threadReads.clear();for(const key of Object.keys(threads))delete threads[key]
+ comments.value=[data.root];next.value=null;more.value=false
+ if(data.target.parent_id){const state=thread(String(data.root.id));state.open=true;state.loaded=true;state.items=[data.target]}
+ await nextTick();if(!disposed)document.getElementById('comment-'+id)?.scrollIntoView({block:'center'})
+}
+function exitFocused(){
+ focused.value=false
+ const url=new URL(location.href);url.searchParams.delete('comment');url.hash='comments';history.replaceState(history.state,'',url.pathname+url.search+url.hash)
+ for(const read of threadReads.values())read.abort();threadReads.clear();for(const key of Object.keys(threads))delete threads[key]
+ replyTarget.value=null
+}
+async function allComments(){exitFocused();comments.value=[];await initialize()}
+async function initialize(){loading.value=true;error.value='';try{await Promise.all([loadSession(),api('/site').then(data=>{features.value=data}),focused.value?loadFocused():loadComments()]);if(canInteract.value){const state=await loadLike(props.postId);liked.value=state.liked;bookmarked.value=state.bookmarked;metrics.value.like_count=state.count}}catch(e){report(e)}finally{loading.value=false}}
 onMounted(()=>{window.addEventListener('painter:like',receiveLike);void initialize()})
 onBeforeUnmount(()=>{disposed=true;rootRead?.abort();for(const controller of threadReads.values())controller.abort();stopSessionEnd();window.removeEventListener('painter:like',receiveLike)})
 </script>
@@ -101,11 +120,12 @@ onBeforeUnmount(()=>{disposed=true;rootRead?.abort();for(const controller of thr
    <p v-if="!features.comments_enabled&&canInteract" class="notice">{{t('站点目前关闭了新评论，已有讨论仍然保留。')}}</p>
    <form v-if="canInteract&&features.comments_enabled" class="discussion-composer" @submit.prevent="submit"><label for="comment-body">{{t('分享你的想法')}}<textarea id="comment-body" v-model="text" maxlength="5000" rows="3" required :placeholder="t('留下你的思考，让讨论继续。')" :disabled="busy"></textarea></label><div><small>{{t('友善交流，言之有物。')}}</small><button class="primary" :disabled="actionDisabled||!text.trim()">{{busy?t('提交中…'):t('发表评论')}}</button></div></form>
    <div v-if="loading" class="discussion-loading" role="status">{{t('正在载入讨论…')}}</div>
+   <p v-if="focused" class="discussion-focus-note">{{t("当前显示通知对应的讨论。")}} <button type="button" class="quiet" :disabled="actionDisabled" @click="allComments">{{t("查看完整讨论")}}</button></p>
    <div class="discussion-list">
     <div v-for="c in comments" :key="c.id" class="discussion-thread" :data-thread-id="c.id">
      <DiscussionComment :comment="c" :authenticated="canInteract" :reply-enabled="features.comments_enabled" :disabled="actionDisabled" :owner="session.user?.role==='owner'" @reply="startReply($event,c)" @remove="remove($event,c)" @like="commentLike"/>
      <CommentReplyComposer v-if="canInteract&&features.comments_enabled&&replyTarget?.id===String(c.id)" :key="replyTarget.id" v-model="replyText" :target-id="replyTarget.id" :name="replyTarget.name" :busy="busy" :disabled="actionDisabled" @submit="submitReply" @cancel="cancelReply"/>
-     <button v-if="Number(c.reply_count)>0" type="button" class="quiet discussion-replies-toggle" :aria-expanded="!!threads[c.id]?.open" :aria-controls="'replies-'+c.id" @click="toggleReplies(c)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>{{threads[c.id]?.open?t('收起回复'):t('查看 {count} 条回复',{count:c.reply_count})}}</button>
+     <button v-if="Number(c.reply_count)>0" type="button" class="quiet discussion-replies-toggle" :aria-expanded="!!threads[c.id]?.open" :aria-controls="'replies-'+c.id" @click="toggleReplies(c)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>{{focused&&threads[c.id]?.loaded?(threads[c.id]?.open?t('收起通知回复'):t('展开通知回复')):threads[c.id]?.open?t('收起回复'):t('查看 {count} 条回复',{count:c.reply_count})}}</button>
      <div v-if="threads[c.id]?.open" :id="'replies-'+c.id" class="discussion-replies" :aria-label="t('评论回复')" :aria-busy="threads[c.id].loading">
       <template v-for="reply in threads[c.id].items" :key="reply.id">
        <DiscussionComment :comment="reply" reply :authenticated="canInteract" :reply-enabled="features.comments_enabled" :disabled="actionDisabled" :owner="session.user?.role==='owner'" @reply="startReply($event,c)" @remove="remove($event,c)" @like="commentLike"/>

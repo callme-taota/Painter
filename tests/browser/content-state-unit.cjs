@@ -85,6 +85,11 @@ function setup(options){const h=harness(),scope=vue.effectScope();const state=sc
   equal([upload.state,attached],['failed',false],'incomplete success keeps the file without attaching it');
   scope.stop();
  }
+ {
+  const pending=deferred(),{state,scope}=setup({request:()=>pending.promise});const running=state.load();state.reset();
+  pending.resolve({items:[{id:'private'}],next_cursor:'private-cursor'});await running;
+  equal([state.items.value,state.cursor.value,state.loading.value],[[],'',false],'reset cancels a private collection and isolates late responses');scope.stop();
+ }
  const {withCursor}=harness().load('pagination');
  equal(withCursor('/me/posts?tag_id=1&tag_id=2&q=a+b&cursor=old','x+y/='),'/me/posts?tag_id=1&tag_id=2&q=a+b&cursor=x%2By%2F%3D','cursor replacement preserves repeated filters and encoding');
  equal(withCursor('/me/posts?cursor=old'),'/me/posts','refresh removes previous cursor');

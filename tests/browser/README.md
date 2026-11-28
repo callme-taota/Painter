@@ -71,6 +71,8 @@ Go 集成用例仅使用显式 `PAINTER_TEST_DATABASE_URL`，不回退到 `DATAB
 
 ## 统一操作通知
 
+业务站内通知由 `notifications.cjs` 覆盖，和本节 toast 提示区分。脚本编译真实工作台并拦截全部请求，无须账号、应用或数据库；覆盖全部／未读、追加重试、显式已读丢响应重试、迟到请求、账号变化、会话过期、返回缓存、双语和 320／390px 视口。`comment-replies.cjs` 另覆盖通知定位首屏之外的主评论／回复，以及返回完整讨论。运行方式与下方 `toast-core.cjs` 相同，将脚本名替换即可；它们已加入 `node tests/ci/frontend.mjs browser` 的显式列表。真实持久化由 `internal/app/notifications_test.go` 使用显式可丢弃 PostgreSQL 18 测试库验证。
+
 `toast-core.cjs` 使用独立 DOM 验证通知的去重、数量限制、计时暂停、文本安全、主题、手机位置、原生 dialog 与 popover 回退，不连接应用或数据库。需要前端锁定依赖中的 TypeScript、Playwright 与 Chromium。
 
 `editor-toast.cjs` 访问明确指定的回环候选地址，使用候选站长的私有 `OWNER_STATE_FILE` 进入真实编辑器，拦截业务写入以验证保存 ACK 时序、幂等重试、自动保存安静状态、失败与恢复、发布、冲突、导入、导出和卡片插入。候选 SSR 路由仍需正常登录；模拟写入不证明后端持久化。另以独立候选的真实保存检查完成持久化闭环。

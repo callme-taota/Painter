@@ -47,6 +47,10 @@ export function useCursorList<T extends Row=Row>(options:CursorListOptions<T>) {
     }
   }
 
+  function reset() {
+    generation++;controller?.abort();items.value=[];cursor.value='';error.value='';loading.value=false
+  }
+
   onScopeDispose(()=>{disposed=true;generation++;controller?.abort()})
-  return {items,loading,error,cursor,hasMore,load}
+  return {items,loading,error,cursor,hasMore,load,reset}
 }

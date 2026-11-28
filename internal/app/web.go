@@ -697,8 +697,12 @@ func (a *App) RegisterWeb() {
 	a.Mux.HandleFunc("GET /login", authPage)
 	a.Mux.HandleFunc("GET /register", authPage)
 	shell := func(w http.ResponseWriter, r *http.Request) {
+		if strings.TrimRight(r.URL.Path, "/") == "/me/notifications" {
+			w.Header().Set("Cache-Control", "private, no-store")
+			w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+		}
 		path := strings.TrimRight(r.URL.Path, "/")
-		known := map[string]bool{"/me": true, "/me/bookmarks": true, "/me/following": true, "/me/followers": true, "/me/history": true, "/me/sessions": true, "/me/media": true, "/studio": true, "/studio/posts": true, "/studio/posts/new": true, "/studio/moments": true, "/studio/series": true, "/studio/products": true, "/studio/home": true, "/studio/settings": true, "/studio/phrases": true, "/studio/friends": true, "/studio/taxonomy": true, "/studio/members": true, "/studio/comments": true, "/studio/analytics": true, "/studio/operations": true}
+		known := map[string]bool{"/me": true, "/me/bookmarks": true, "/me/notifications": true, "/me/following": true, "/me/followers": true, "/me/history": true, "/me/sessions": true, "/me/media": true, "/studio": true, "/studio/posts": true, "/studio/posts/new": true, "/studio/moments": true, "/studio/series": true, "/studio/products": true, "/studio/home": true, "/studio/settings": true, "/studio/phrases": true, "/studio/friends": true, "/studio/taxonomy": true, "/studio/members": true, "/studio/comments": true, "/studio/analytics": true, "/studio/operations": true}
 		if !known[path] && !(strings.HasPrefix(path, "/studio/posts/") && positiveID(strings.TrimPrefix(path, "/studio/posts/"))) {
 			failure(w, r, NotFound())
 			return

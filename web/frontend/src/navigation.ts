@@ -25,6 +25,7 @@ export function navigation(role:string):NavigationGroup[]{
    {id:'members',label:t("成员权限"),url:'/studio/members',roles:owner}]},
   {id:'personal',label:t("个人空间"),icon:'user',children:[
    {id:'profile',label:t("个人中心"),url:'/me'},
+   {id:'notifications',label:t("通知"),url:'/me/notifications'},
    {id:'bookmarks',label:t("收藏文章"),url:'/me/bookmarks'},
    {id:'following-feed',label:t("关注更新"),url:'/following'},
    {id:'following',label:t("关注与粉丝"),url:'/me/following',aliases:['/me/followers']},

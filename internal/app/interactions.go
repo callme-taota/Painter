@@ -105,6 +105,9 @@ func interactionPublicPost(tx pgx.Tx, r *http.Request, id string) (string, error
 
 func (a *App) RegisterInteractions() {
 	a.Handle("GET /api/v1/me/feed", a.followingFeed)
+	a.Handle("GET /api/v1/me/notifications", a.notificationList)
+	a.Handle("PUT /api/v1/me/notifications/{id}/read", a.notificationRead)
+	a.Handle("GET /api/v1/posts/{postID}/comments/{commentID}/context", a.interactionCommentContext)
 	a.Handle("GET /api/v1/users/{id}/follow-state", a.followState)
 	a.Handle("GET /api/v1/me/post-states", a.interactionStates)
 	for _, kind := range []string{"like", "bookmark"} {
@@ -382,6 +385,9 @@ func (a *App) interactionCreateComment(w http.ResponseWriter, r *http.Request) e
 		var cid string
 		now := NowMillis()
 		if e := tx.QueryRow(r.Context(), `INSERT INTO comments(post_id,user_id,body,created_at_ms,updated_at_ms,parent_id,reply_to_id) VALUES($1,$2,$3,$4,$4,$5,$6) RETURNING id::text`, id, p.ID, d.Body, now, parentID, d.ReplyToID).Scan(&cid); e != nil {
+			return nil, e
+		}
+		if e := commentNotifications(r.Context(), tx, cid); e != nil {
 			return nil, e
 		}
 		if e := interactionFact(tx, r, p, "comment.created.v1", "comment", cid, "comment.created:"+cid, map[string]any{"post_id": id}); e != nil {

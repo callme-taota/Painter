@@ -39,6 +39,7 @@ flowchart TB
 | 媒体状态机、授权读取、恢复与 GC | `media.go` |
 | 作者主页背景、独立版本与作者文章查询绑定 | `author_profile.go` |
 | 评论、赞、收藏、关注、阅读历史 | `interactions.go` |
+| 评论／回复站内通知、已读、有界讨论定位 | `notifications.go` |
 | 站点、标签、成员、任务、审计、存储概览、浮控场景 | `admin.go`、`site_experience.go` |
 | 埋点接收、聚合、outbox 和保留期 | `analytics.go` |
 | 健康、受保护 metrics、实际备份观测 | `operations_http.go` |
@@ -81,6 +82,7 @@ flowchart TB
 | 公开投影 | `post_publications`、`search_documents`、`search_state` | 仅已发布修订可见；发布/撤回与检索代次同事务更新 |
 | 媒体 | `media_assets`、`media_aliases` | staging → ready → deleting → deleted；引用保护含历史修订 |
 | 互动 | `comments`、`comment_likes`、`post_likes`、`bookmarks`、`follows`、`reading_history` | 关系唯一键；读写需重新检查当前可见性 |
+| 站内通知 | `notifications` | 评论同事务投递；收件人／评论唯一；来源按当前可见性读取，已读操作只限本人 |
 | 命令和事实 | `idempotency_keys`、`outbox`、`outbox_consumptions`、`audit_logs`、`business_daily` | 幂等结果与业务同事务；消费收据防重；审计关联请求 ID |
 | 访问分析 | `analytics_events`、`analytics_daily`、`analytics_scope_visitors`、`analytics_rollup_state` | 传输/语义去重；事件持久后 ACK；站点/文章分别去重 UV |
 | 迁移与运维 | `legacy_counters`、`backup_records` | legacy 不混入新埋点；备份成功/恢复验证有真实记录 |
